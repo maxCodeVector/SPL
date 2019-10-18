@@ -21,9 +21,9 @@ letter [a-zA-Z]
 digits [0-9]
 under_line _
 HEX [0-9]|[A-Fa-f]
+HEXCHAR 0x{HEX}|0x{HEX}{HEX}
 HEXINT 0x{HEX}+
-HEXCHAR 0x{HEX}{HEX}
-INT_Pattern     [0-9]+|HEXINT
+INT_Pattern     [0-9]+|{HEXINT}
 FLOAT_Pattern   (([0-9]+)\.([0-9]*))
 IDENTIFIER      ([_a-zA-Z][_a-zA-Z0-9]*)
 Hexa    [-]?(0[xX][0-9A-F]+)
@@ -91,9 +91,9 @@ WHITESPACE      ([ \t]*)
 {WHITESPACE}    { /* ignore every whitespace */ }
 
 "int"|"float"|"char" {yylval = make_node("TYPE");_DUPTEXT; RECORD_LINENO;return TYPE;}
+"\'"."\'"|{HEXCHAR}    {yylval = make_node("CHAR");_DUPTEXT;yylval->ch=yytext[0]; RECORD_LINENO;return CHAR;}
 {INT_Pattern}   {yylval = make_node("INT");_DUPTEXT; RECORD_LINENO;return INT;}
 {FLOAT_Pattern} {yylval = make_node("FLOAT");_DUPTEXT; RECORD_LINENO;return FLOAT;}
-"\'"."\'"|{HEXCHAR}    {yylval = make_node("CHAR");_DUPTEXT;yylval->ch=yytext[0]; RECORD_LINENO;return CHAR;}
 {IDENTIFIER}    {yylval = make_node("ID");_DUPTEXT; RECORD_LINENO;return ID;}
 .   {printf("Error type A at Line %d: unknown lexeme %s\n", yylineno, yytext);return TOKENERROR;}
 
