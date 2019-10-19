@@ -13,7 +13,7 @@
 %token WHILE
 %token RETURN STRUCT
 %token SEMI COMMA
-%token INT FLOAT CHAR ID
+%token INT FLOAT CHAR ID STRING
 %right ASSIGN
 %left OR
 %left AND
@@ -346,8 +346,7 @@ Args: Exp COMMA Args{
     ;
 %%
 void yyerror(const char *s){
-    has_error++;
-    fprintf(stderr, "ERROR type B at Line: %d: %s\n", yylloc.first_line, s);
+    fprintf(stderr, "Error type B at Line %d: %s\n", yylloc.first_line, s);
 }
 int main(int argc, char **argv){
     yyin = fopen(argv[1], "r");

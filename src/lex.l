@@ -17,6 +17,8 @@
 
 
 %}
+
+%option yylineno
 letter [a-zA-Z]
 digits [0-9]
 under_line _
@@ -28,6 +30,7 @@ FLOAT_Pattern   (([0-9]+)\.([0-9]*))
 IDENTIFIER      ([_a-zA-Z][_a-zA-Z0-9]*)
 Hexa    [-]?(0[xX][0-9A-F]+)
 WHITESPACE      ([ \t]*)
+STRING_LITERAL \"[^\"]*\"
 %%
 "struct" {yylval = make_node("STRUCT"); RECORD_LINENO;return STRUCT;}
 "if"    {yylval = make_node("IF"); RECORD_LINENO;return IF;}
@@ -57,20 +60,20 @@ WHITESPACE      ([ \t]*)
 "]" {yylval = make_node("RB"); RECORD_LINENO;return RB;}
 "{" {yylval = make_node("LC"); RECORD_LINENO;return LC;}
 "}" {yylval = make_node("RC"); RECORD_LINENO;return RC;}
-"\n"        {yycolno = 1;yylineno++;}
+"\n"        {yycolno = 1;}
 "//" { char c; while((c=input()) != '\n'); unput('\n');printf("apperaed a one line comment in line %d!\n", yylineno);}
 "/*" { 
         char c = input();
         int new_line_no = 0;
         int comment_end = 0;
-        show_sytax_tree(NULL);
+        int start_line_no = yylineno;
         while(comment_end!=1 && c!=0){
             switch(c){
                 case '\n':new_line_no ++;break;
                 case '*':
                     c = input();
                     if(c=='/'){
-                        printf("apperaed a multiline comment from line %d to %d\n", yylineno, yylineno+new_line_no);
+                        printf("apperaed a multiline comment from line %d to %d\n", start_line_no, yylineno);
                         comment_end = 1;
                     }else unput(c);
                     break;
@@ -84,7 +87,7 @@ WHITESPACE      ([ \t]*)
             unput('\n');
         }
         if(comment_end!=1){
-            printf("Unfinished comment at %d\n", yylineno);
+            printf("Unfinished comment at %d\n", start_line_no);
             return TOKENERROR;
         }
     }
@@ -95,6 +98,18 @@ WHITESPACE      ([ \t]*)
 {INT_Pattern}   {yylval = make_node("INT");_DUPTEXT; RECORD_LINENO;return INT;}
 {FLOAT_Pattern} {yylval = make_node("FLOAT");_DUPTEXT; RECORD_LINENO;return FLOAT;}
 {IDENTIFIER}    {yylval = make_node("ID");_DUPTEXT; RECORD_LINENO;return ID;}
+{STRING_LITERAL} {
+        if(yytext[yyleng-2] == '\\') {
+            yyless(yyleng-1);
+            yymore();
+        } else {
+            yylval = make_node("STRING");
+            _DUPTEXT;
+             RECORD_LINENO;
+            return STRING;
+        }
+    }
+
 .   {printf("Error type A at Line %d: unknown lexeme %s\n", yylineno, yytext);return TOKENERROR;}
 
 %%

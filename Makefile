@@ -27,5 +27,4 @@ check:
 		bin/splc test/test_1_r0$$testf.spl > /tmp/my.out ; \
 		diff test/test_1_r0$$testf.out /tmp/my.out ; \
 	done
-	pwd
-	@rm -f my.out
+	@rm -f /tmp/my.out

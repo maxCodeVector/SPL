@@ -3,8 +3,9 @@
 #include <malloc.h>
 
 
-void show_tree_helper(struct AttrNode* node, int indent){ 
-    if(node==NULL){
+void show_tree_helper(struct AttrNode* node, int indent){
+    /* none of node will be in line -1 */
+    if(node==NULL || node->lineNo == -1){
         return;
     }
     for(int i=0;i<indent;i++){

@@ -1,8 +1,8 @@
 // there is a comment
 /* there is a 
-multiline comment */
+multiline /*comment */
 int test(){
     int var;
-    char c = x5;
+    char c = hh;
     return var;
 }
