@@ -10,3 +10,4 @@ bin
 !*/test/*.out
 syntax.output
 .vscode/
+*.res

@@ -87,7 +87,7 @@ STRING_LITERAL \"[^\"]*\"
             unput('\n');
         }
         if(comment_end!=1){
-            printf("Unfinished comment at %d\n", start_line_no);
+            fprintf(stderr, "Unfinished comment at %d\n", start_line_no);
             return TOKENERROR;
         }
     }
@@ -110,6 +110,6 @@ STRING_LITERAL \"[^\"]*\"
         }
     }
 
-.   {printf("Error type A at Line %d: unknown lexeme %s\n", yylineno, yytext);return TOKENERROR;}
+.   {fprintf(stderr, "Error type A at Line %d: unknown lexeme %s\n", yylineno, yytext);return TOKENERROR;}
 
 %%
