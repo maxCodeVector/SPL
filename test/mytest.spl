@@ -1,8 +1,13 @@
+/*
+ there is a 
+multiline comment 
+*/
 // there is a comment
 /* there is a 
-multiline /*comment */
+multiline comment /* 
+* /
 int test(){
     int var;
-    char c = "aa\"a";
+    char c = '\x6A';
     return var;
 }

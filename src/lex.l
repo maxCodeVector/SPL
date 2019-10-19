@@ -65,10 +65,11 @@ STRING_LITERAL \"[^\"]*\"
 "\n"        {yycolno = 1;}
 "//" { char c; while((c=input()) != '\n'); unput('\n');printf("apperaed a one line comment in line %d!\n", yylineno);}
 "/*" { 
+        int start_line_no = yylineno;
         char c = input();
         int new_line_no = 0;
         int comment_end = 0;
-        int start_line_no = yylineno;
+        int nested = 0;
         while(comment_end!=1 && c!=0){
             switch(c){
                 case '\n':new_line_no ++;break;
@@ -79,8 +80,15 @@ STRING_LITERAL \"[^\"]*\"
                         comment_end = 1;
                     }else unput(c);
                     break;
+                 case '/':
+                    c = input();
+                    if(c=='*'){
+                        printf("apperaed a nested multiline comment in line %d\n", yylineno);
+                        nested = yylineno; // nested comment
+                    }else unput(c);
+                    break;
             }
-            if(comment_end==1){
+            if(comment_end!=0){
                 break;
             }
             c = input();
@@ -88,9 +96,12 @@ STRING_LITERAL \"[^\"]*\"
         for(int i=0;i<new_line_no;i++){
             unput('\n');
         }
+        if(nested!=0){
+            fprintf(stderr, "Error type B at Line %d: %s\n", nested, "syntax error, nested multiline comment");
+        }
         if(comment_end!=1){
-            fprintf(stderr, "Unfinished comment at %d\n", start_line_no);
-            return TOKENERROR;
+            fprintf(stderr, "Error type B at Line %d: %s\n", start_line_no, "syntax error, unfinished comment");
+            // return TOKENERROR;
         }
     }
 {WHITESPACE}    { /* ignore every whitespace */ }
