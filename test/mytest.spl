@@ -3,6 +3,6 @@
 multiline /*comment */
 int test(){
     int var;
-    char c = hh;
+    char c = "aa\"a";
     return var;
 }
