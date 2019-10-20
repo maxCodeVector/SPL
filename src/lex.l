@@ -2,7 +2,7 @@
     #define YYSTYPE struct AttrNode*
     #include"syntax.tab.h"
     #include "deliver.h"
-
+    int has_error = 0;
    /* library inclusions */
    int yycolno = 1;
    #define YY_USER_ACTION \
@@ -98,9 +98,11 @@ STRING_LITERAL \"[^\"]*\"
         }
         if(nested!=0){
             fprintf(stderr, "Error type B at Line %d: %s\n", nested, "syntax error, nested multiline comment");
+            has_error ++;
         }
         if(comment_end!=1){
             fprintf(stderr, "Error type B at Line %d: %s\n", start_line_no, "syntax error, unfinished comment");
+            has_error ++;
             // return TOKENERROR;
         }
     }

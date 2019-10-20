@@ -4,10 +4,28 @@ multiline comment
 */
 // there is a comment
 /* there is a 
-multiline comment /* 
-* /
-int test(){
+multiline comment 
+*/
+
+struct a{};
+struct _q1;
+float a, b;
+int bb[7];
+int test(int a){
+    int a, b = 9;
     int var;
-    char c = '\x6A';
+    char c = 100.002;
     return var;
 }
+
+int hhh(){
+    int a = 0;
+    if(a>0){
+        return 6;
+    }
+    while (a = 7){
+        return 5;
+    }
+    return 7;
+}
+int;
