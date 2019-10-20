@@ -80,14 +80,14 @@ STRING_LITERAL \"[^\"]*\"
                 case '*':
                     c = input();
                     if(c=='/'){
-                        printf("apperaed a multiline comment from line %d to %d\n", start_line_no, yylineno);
+                        //printf("apperaed a multiline comment from line %d to %d\n", start_line_no, yylineno);
                         comment_end = 1;
                     }else unput(c);
                     break;
                  case '/':
                     c = input();
                     if(c=='*'){
-                        printf("apperaed a nested multiline comment in line %d\n", yylineno);
+                        //printf("apperaed a nested multiline comment in line %d\n", yylineno);
                         nested = yylineno; // nested comment
                     }else unput(c);
                     break;

@@ -415,6 +415,6 @@ int main(int argc, char **argv){
     yyin = fopen(argv[1], "r");
     yyparse();
     fclose(yyin);
-    fprintf(stderr, "total error %d\n", has_error);
+   // fprintf(stderr, "total error %d\n", has_error);
 }
 

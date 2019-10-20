@@ -4,7 +4,7 @@ multiline comment
 */
 // there is a comment
 /* there is a 
-multiline comment 
+multiline comment /**
 */
 
 struct a{};
@@ -19,7 +19,7 @@ int test(int a){
 }
 
 int hhh(){
-    return @123;
+    return ^;
     return 7;
 }
 struct a _int;
