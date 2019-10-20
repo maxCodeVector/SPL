@@ -112,6 +112,9 @@ VarDec: ID   {
                 add_childs($$, $3);
                 add_childs($$, $4);
             }
+    | TOKENERROR {
+                $$ = make_parent($1, "VarDec");
+            }
     | VarDec error INT RB
     | VarDec LB INT error
     | VarDec LB error RB
@@ -344,7 +347,7 @@ Exp: Exp ASSIGN Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
             }
-    |NOT error
+    | NOT error
     | ID LP Args RP{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
@@ -386,7 +389,12 @@ Exp: Exp ASSIGN Exp{
     | CHAR{
                 $$ = make_parent($1, "Exp");
             }
-    | TOKENERROR {$$ = make_parent($1, "Exp");has_error++;}
+    | Exp TOKENERROR Exp {
+                $$ = make_parent($1, "Exp");
+                add_childs($$, $2);
+                add_childs($$, $3);
+            }
+    | TOKENERROR {$$ = make_parent($1, "Exp");}
     ;
 Args: Exp COMMA Args{
                 $$ = make_parent($1, "Args");
@@ -407,5 +415,6 @@ int main(int argc, char **argv){
     yyin = fopen(argv[1], "r");
     yyparse();
     fclose(yyin);
+    fprintf(stderr, "total error %d\n", has_error);
 }
 

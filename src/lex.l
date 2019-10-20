@@ -13,7 +13,9 @@
         yycolno += yyleng;
     #define _DUPTEXT  yylval->value = strdup(yytext)
     #define RECORD_LINENO  yylval->lineNo = yylineno;yylval->isTerminal=1
-
+    #define REPORT_LEX_ERROR \
+        fprintf(stderr, "Error type A at Line %d: unknown lexeme %s\n", yylineno, yytext); \
+        has_error++
 
 
 %}
@@ -31,6 +33,8 @@ INT_PART ({non_zero_digits}{digits}*|0)
 INT_Pattern     {INT_PART}|{HEXINT_SEQUENCE}
 FLOAT_Pattern   ({INT_PART}\.([0-9]+))
 IDENTIFIER      ([_a-zA-Z][_a-zA-Z0-9]*)
+BAD_IDENTIFIER      ([0-9][_a-zA-Z0-9]+)
+BAD_CHAR (\'[^\']*\')
 WHITESPACE      ([ \t]*)
 STRING_LITERAL \"[^\"]*\"
 %%
@@ -120,11 +124,36 @@ STRING_LITERAL \"[^\"]*\"
         } else {
             yylval = make_node("STRING");
             _DUPTEXT;
-             RECORD_LINENO;
+            RECORD_LINENO;
             return STRING;
         }
     }
-
-.   {fprintf(stderr, "Error type A at Line %d: unknown lexeme %s\n", yylineno, yytext);return TOKENERROR;}
+{BAD_CHAR} {
+        REPORT_LEX_ERROR;
+        yylval = make_node("CHAR");
+        _DUPTEXT;
+        yylval->ch=yytext[0]; 
+        RECORD_LINENO;
+        return TOKENERROR;
+    }
+{BAD_IDENTIFIER}    {REPORT_LEX_ERROR;yylval = make_node("ID");_DUPTEXT; RECORD_LINENO;return TOKENERROR;}
+.   {
+        yylval = make_node("ERROR");
+        _DUPTEXT;
+        RECORD_LINENO;
+        // char c = input();
+        // int term = 0;
+        // while(1){
+        //     if(c=='\n' || c=='\t' || c==' ' || c==';')
+        //     {
+        //         unput(c);
+        //         break;
+        //     }
+        //     c = input();
+        //     yymore();
+        // }
+        REPORT_LEX_ERROR; 
+        return TOKENERROR;
+    }
 
 %%

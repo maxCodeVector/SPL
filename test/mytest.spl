@@ -19,6 +19,7 @@ int test(int a){
 }
 
 int hhh(){
-    
+    return @123;
+    return 7;
 }
 struct a _int;
