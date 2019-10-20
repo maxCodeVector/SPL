@@ -19,13 +19,6 @@ int test(int a){
 }
 
 int hhh(){
-    int a = 0;
-    if(a>0){
-        return 6;
-    }
-    while (a = 7){
-        return 5;
-    }
-    return 7;
+    
 }
-int;
+struct a _int;

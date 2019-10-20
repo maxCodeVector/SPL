@@ -227,6 +227,7 @@ Def: Specifier DecList SEMI{
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
+    | Specifier DecList error
     ;
 DecList: Dec{
                 $$ = make_parent($1, "DecList");
@@ -236,6 +237,7 @@ DecList: Dec{
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
+    | Dec error DecList
     ;
 Dec: VarDec{
                 $$ = make_parent($1, "Dec");
@@ -245,6 +247,7 @@ Dec: VarDec{
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
+    | VarDec ASSIGN error
     ;
 
 /* Expression */
@@ -393,6 +396,7 @@ Args: Exp COMMA Args{
     | Exp{
                 $$ = make_parent($1, "Args");
             }
+    | Exp error Args
     ;
 %%
 void yyerror(const char *s){
