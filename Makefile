@@ -1,4 +1,4 @@
-CC=gcc
+CC=g++
 FLEX=flex
 BISON=bison
 
@@ -12,13 +12,13 @@ BISON=bison
 splc:
 	test -d bin || mkdir bin
 	cd src && \
-	$(BISON) -t -v -d syntax.y && \
+	$(BISON) -t -v -d syntax.ypp && \
 	$(FLEX) lex.l  && \
-	$(CC) deliver.c syntax.tab.c -lfl -ly -o ../bin/splc
+	$(CC) deliver.cpp syntax.tab.cpp -lfl -ly -o ../bin/splc
 	@chmod +x bin/splc
 clean:
 	@rm -rf bin/
-	cd src && rm -f lex.yy.c syntax.tab* *.out *.so syntax.output
+	cd src && rm -f lex.yy.cc syntax.tab* *.out *.so syntax.output
 .PHONY: splc
 
 check:

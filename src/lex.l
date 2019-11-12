@@ -1,6 +1,6 @@
 %{
     #define YYSTYPE struct AttrNode*
-    #include"syntax.tab.h"
+    #include"syntax.tab.hpp"
     #include "deliver.h"
     int has_error = 0;
    /* library inclusions */
@@ -19,7 +19,7 @@
 
 
 %}
-
+%option c++
 %option yylineno
 letter [a-zA-Z]
 digits [0-9]
