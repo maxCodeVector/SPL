@@ -1,6 +1,6 @@
 %{
     #include "deliver.h"
-    #include"lex.yy.cc"
+    #include"lex.yy.c"
     void yyerror(const char*);
     int result;
     //yydebug = 1;
