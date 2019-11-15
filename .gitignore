@@ -4,7 +4,7 @@
 *.bak
 peda-session-*
 .gdb_history
-lex.yy.cc
+lex.yy.*
 syntax.tab.[hc]
 bin
 !*/test/*.out
