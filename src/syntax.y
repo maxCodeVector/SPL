@@ -413,6 +413,10 @@ void yyerror(const char *s){
 }
 int main(int argc, char **argv){
     yyin = fopen(argv[1], "r");
+    if(yyin==0){
+       fprintf(stderr, "file not found:%s\n", argv[1]);
+       return 1;
+    }
     yyparse();
     fclose(yyin);
    // fprintf(stderr, "total error %d\n", has_error);
