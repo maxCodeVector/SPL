@@ -63,8 +63,8 @@ ExtDef: Specifier ExtDecList SEMI  {
         add_childs($$, $2);
         add_childs($$, $3);
     }
-    | Specifier ExtDecList error
-    | Specifier error
+    // | Specifier ExtDecList error
+    // | Specifier error
     ;
 ExtDecList: VarDec  {
         $$ = make_parent($1, "ExtDecList");
@@ -74,7 +74,7 @@ ExtDecList: VarDec  {
         add_childs($$, $2);
         add_childs($$, $3);
     }
-    |  VarDec error ExtDecList 
+    // |  VarDec error ExtDecList 
     ;
 
 /* specifier */
@@ -96,10 +96,10 @@ StructSpecifier: STRUCT ID LC DefList RC {
         $$ = make_parent($1, "StructSpecifier");
         add_childs($$, $2);
     }
-    | STRUCT error LC DefList RC
-    | STRUCT ID error DefList RC
-    | STRUCT ID LC DefList error
-    | STRUCT error
+    // | STRUCT error LC DefList RC
+    // | STRUCT ID error DefList RC
+    // | STRUCT ID LC DefList error
+    // | STRUCT error
     ;
 
 /* declarator */
@@ -115,9 +115,9 @@ VarDec: ID   {
     | TOKENERROR {
                 $$ = make_parent($1, "VarDec");
             }
-    | VarDec error INT RB
-    | VarDec LB INT error
-    | VarDec LB error RB
+    // | VarDec error INT RB
+    // | VarDec LB INT error
+    // | VarDec LB error RB
     ;
 FunDec: ID LP VarList RP {
                 $$ = make_parent($1, "FunDec");
@@ -130,9 +130,9 @@ FunDec: ID LP VarList RP {
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | ID LP error
-    | ID error RP
-    | ID error
+    // | ID LP error
+    // | ID error RP
+    // | ID error
     ;
 VarList: ParamDec COMMA VarList {
                 $$ = make_parent($1, "VarList");
@@ -142,7 +142,7 @@ VarList: ParamDec COMMA VarList {
     | ParamDec{
                 $$ = make_parent($1, "VarList");
             }
-    | ParamDec COMMA error
+    // | ParamDec COMMA error
     ;
 ParamDec: Specifier VarDec {
                 $$ = make_parent($1, "ParamDec");
@@ -157,8 +157,8 @@ CompSt: LC DefList StmtList RC {
                 add_childs($$, $3);
                 add_childs($$, $4);
             }
-    | LC DefList StmtList error
-    | error DefList StmtList RC
+    // | LC DefList StmtList error
+    // | error DefList StmtList RC
     ;
 StmtList: Stmt StmtList {
                 $$ = make_parent($1, "StmtList");
@@ -170,7 +170,7 @@ Stmt: Exp SEMI{
                 $$ = make_parent($1, "Stmt");
                 add_childs($$, $2);
             }
-    | Exp error
+    // | Exp error
     | CompSt{
                 $$ = make_parent($1, "Stmt");
             }
@@ -179,8 +179,8 @@ Stmt: Exp SEMI{
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | RETURN error SEMI
-    | RETURN Exp error
+    // | RETURN error SEMI
+    // | RETURN Exp error
     | IF LP Exp RP Stmt{
                 $$ = make_parent($1, "Stmt");
                 add_childs($$, $2);
@@ -188,10 +188,10 @@ Stmt: Exp SEMI{
                 add_childs($$, $4);
                 add_childs($$, $5);
             }
-    | IF error Exp RP Stmt
-    | IF LP Exp error Stmt
-    | IF LP error RP Stmt
-    | IF LP Exp RP error
+    // | IF error Exp RP Stmt
+    // | IF LP Exp error Stmt
+    // | IF LP error RP Stmt
+    // | IF LP Exp RP error
     | IF LP Exp RP Stmt ELSE Stmt{
                 $$ = make_parent($1, "Stmt");
                 add_childs($$, $2);
@@ -201,11 +201,11 @@ Stmt: Exp SEMI{
                 add_childs($$, $6);
                 add_childs($$, $7);
             }
-    | IF error Exp RP Stmt ELSE Stmt
-    | IF LP Exp error Stmt ELSE Stmt
-    | IF LP error RP Stmt ELSE Stmt
-    | IF LP Exp RP error ELSE Stmt
-    | IF LP Exp RP Stmt ELSE error
+    // | IF error Exp RP Stmt ELSE Stmt
+    // | IF LP Exp error Stmt ELSE Stmt
+    // | IF LP error RP Stmt ELSE Stmt
+    // | IF LP Exp RP error ELSE Stmt
+    // | IF LP Exp RP Stmt ELSE error
     | WHILE LP Exp RP Stmt{
                 $$ = make_parent($1, "Stmt");
                 add_childs($$, $2);
@@ -213,9 +213,9 @@ Stmt: Exp SEMI{
                 add_childs($$, $4);
                 add_childs($$, $5);
             }
-    | WHILE error Exp RP Stmt
-    | WHILE LP Exp error Stmt
-    | WHILE LP Exp RP error
+    // | WHILE error Exp RP Stmt
+    // | WHILE LP Exp error Stmt
+    // | WHILE LP Exp RP error
     ;
 
 /* local definition */
@@ -230,7 +230,7 @@ Def: Specifier DecList SEMI{
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Specifier DecList error
+    // | Specifier DecList error
     ;
 DecList: Dec{
                 $$ = make_parent($1, "DecList");
@@ -240,7 +240,7 @@ DecList: Dec{
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Dec error DecList
+    // | Dec error DecList
     ;
 Dec: VarDec{
                 $$ = make_parent($1, "Dec");
@@ -250,7 +250,7 @@ Dec: VarDec{
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | VarDec ASSIGN error
+    // | VarDec ASSIGN error
     ;
 
 /* Expression */
@@ -259,43 +259,43 @@ Exp: Exp ASSIGN Exp{
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Exp ASSIGN error
+    // | Exp ASSIGN error
     | Exp AND Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Exp AND error
+    // | Exp AND error
     | Exp OR Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Exp OR error
+    // | Exp OR error
     | Exp LT Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Exp LT error
+    // | Exp LT error
     | Exp LE Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Exp LE error
+    // | Exp LE error
     | Exp GT Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Exp GT error
+    // | Exp GT error
     | Exp GE Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Exp GE error
+    // | Exp GE error
     | Exp NE Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
@@ -306,77 +306,77 @@ Exp: Exp ASSIGN Exp{
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Exp EQ error
+    // | Exp EQ error
     | Exp PLUS Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Exp PLUS error
+    // | Exp PLUS error
     | Exp MINUS Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Exp MINUS error
+    // | Exp MINUS error
     | Exp MUL Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Exp MUL error
+    // | Exp MUL error
     | Exp DIV Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Exp DIV error
+    // | Exp DIV error
     | LP Exp RP{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | error Exp RP
-    | LP Exp error
+    // | error Exp RP
+    // | LP Exp error
     | MINUS Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
             }
-    | MINUS error
+    // | MINUS error
     | NOT Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
             }
-    | NOT error
+    // | NOT error
     | ID LP Args RP{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
                 add_childs($$, $4);
             }
-    | ID LP Args error
-    | ID error Args RP
+    // | ID LP Args error
+    // | ID error Args RP
     | ID LP RP{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Exp error RP
-    | Exp LP error
+    // | Exp error RP
+    // | Exp LP error
     | Exp LB Exp RB{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
                 add_childs($$, $4);
             }
-    | Exp error Exp RB
-    | Exp LB Exp error
+    // | Exp error Exp RB
+    // | Exp LB Exp error
     | Exp DOT ID{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
             }
-    | Exp DOT error
+    // | Exp DOT error
     | ID   {
                 $$ = make_parent($1, "Exp"); 
             }
@@ -404,7 +404,7 @@ Args: Exp COMMA Args{
     | Exp{
                 $$ = make_parent($1, "Args");
             }
-    | Exp error Args
+    // | Exp error Args
     ;
 %%
 void yyerror(const char *s){

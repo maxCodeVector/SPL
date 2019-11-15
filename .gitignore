@@ -8,6 +8,7 @@ lex.yy.*
 syntax.tab.[hc]
 bin
 !*/test/*.out
+!proj1-test/*.out
 syntax.output
 .vscode/
 *.res

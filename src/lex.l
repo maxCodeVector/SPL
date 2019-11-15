@@ -67,7 +67,12 @@ STRING_LITERAL \"[^\"]*\"
 "{" {yylval = make_node("LC"); RECORD_LINENO;return LC;}
 "}" {yylval = make_node("RC"); RECORD_LINENO;return RC;}
 "\n"        {yycolno = 1;}
-"//" { char c; while((c=yyinput()) != '\n'); unput('\n');printf("apperaed a one line comment in line %d!\n", yylineno);}
+"//" { 
+        char c; 
+        while((c=yyinput()) != '\n'); 
+        unput('\n');
+        // printf("apperaed a one line comment in line %d!\n", yylineno);
+    }
 "/*" { 
         int start_line_no = yylineno;
         char c = yyinput();
@@ -141,17 +146,6 @@ STRING_LITERAL \"[^\"]*\"
         yylval = make_node("ERROR");
         _DUPTEXT;
         RECORD_LINENO;
-        // char c = input();
-        // int term = 0;
-        // while(1){
-        //     if(c=='\n' || c=='\t' || c==' ' || c==';')
-        //     {
-        //         unput(c);
-        //         break;
-        //     }
-        //     c = input();
-        //     yymore();
-        // }
         REPORT_LEX_ERROR; 
         return TOKENERROR;
     }
