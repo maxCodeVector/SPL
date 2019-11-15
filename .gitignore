@@ -5,7 +5,7 @@
 peda-session-*
 .gdb_history
 lex.yy.*
-syntax.tab.[hc]
+syntax.tab.*
 bin
 !*/test/*.out
 !proj1-test/*.out

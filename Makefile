@@ -3,23 +3,24 @@ FLEX=flex
 BISON=bison
 
 
-TEST_DIR=test
-SOURCE=$(sort $(wildcard $(TEST_DIR)/*.spl))
+SRC_DIR=src
+OUT_DIR=bin
 OBJS=$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SOURCE)))
+
+TEST_DIR=proj1-test
+TEST_SOURCE=$(sort $(wildcard $(TEST_DIR)/*.spl))
 
 .lex: lex.l
 	$(FLEX) lex.l
 .syntax: syntax.y
 	$(BISON) -t -d syntax.ypp
-	
-
 
 splc:
 	test -d bin || mkdir bin
-	cd src && \
-	$(BISON) -t -v -d syntax.y && \
-	$(FLEX) lex.l  && \
-	$(CC) deliver.cpp syntax.tab.c -lfl -ly -o ../bin/splc
+	cd $(SRC_DIR) && \
+	$(BISON) -t -v -d syntax.ypp && \
+	$(FLEX) lex.l
+	$(CC) $(wildcard $(SRC_DIR)/*.cpp) -lfl -ly -o $(OUT_DIR)/splc
 	@chmod +x bin/splc
 clean:
 	@rm -rf bin/
@@ -30,7 +31,7 @@ clean:
 
 
 test: bin/splc
-	@$(foreach var, $(SOURCE),\
+	@$(foreach var, $(TEST_SOURCE),\
 		bin/splc $(var) > $(patsubst %.spl,%.res,$(var)) 2>&1; \
 		test -f $(patsubst %.spl,%.out,$(var)) || echo $(var) "ignore test"; \
 		test -f $(patsubst %.spl,%.out,$(var)) && \

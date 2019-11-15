@@ -13,7 +13,8 @@
                 "-lfl",
                 "-ly",
                 "deliver.cpp",
-                "syntax.tab.c",
+                "syntax.tab.cpp",
+                "sematic.cpp",
                 "-o",
                 "${fileDirname}/../bin/${fileBasenameNoExtension}"
             ],

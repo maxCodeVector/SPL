@@ -1,9 +1,14 @@
 %{
+    #ifndef _SYNTAX
+    #define _SYNTAX
     #include "deliver.h"
+    #include "sematic.h"
     #include"lex.yy.c"
     void yyerror(const char*);
     int result;
+    static AttrNode* root;
     //yydebug = 1;
+    #endif
 %}
 
 %locations
@@ -38,9 +43,10 @@
 /* high-level definition */
 Program: ExtDefList {
                 $$ = make_parent($1, "Program");
-                if(has_error==0){
-                    show_sytax_tree($$);
-                }
+                root = $$;
+                // if(has_error==0){
+                //     show_sytax_tree($$);
+                // }
             }
     ;
 ExtDefList: ExtDef ExtDefList  {
@@ -419,6 +425,10 @@ int main(int argc, char **argv){
     }
     yyparse();
     fclose(yyin);
+    if(has_error==0){
+        show_sytax_tree(root);
+        semetic_analysis(root);
+    }
    // fprintf(stderr, "total error %d\n", has_error);
 }
 

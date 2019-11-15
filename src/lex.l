@@ -1,12 +1,12 @@
 %{
     extern "C" int yylex();
     #define YYSTYPE struct AttrNode*
-    #include"syntax.tab.h"
+    #include"syntax.tab.hpp"
     #include "deliver.h"
     int has_error = 0;
-   /* library inclusions */
-   int yycolno = 1;
-   #define YY_USER_ACTION \
+    /* library inclusions */
+    int yycolno = 1;
+    #define YY_USER_ACTION \
         yylloc.first_line = yylineno; \
         yylloc.first_column = yycolno; \
         yylloc.last_line = yylineno; \
