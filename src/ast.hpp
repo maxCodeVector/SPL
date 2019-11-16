@@ -1,10 +1,16 @@
 #ifndef __SPLAST__
 #define __SPLAST__
-#include "deliver.h"
-#include "scope.h"
+#include "deliver.hpp"
+#include "extnode.hpp"
+#include "list"
+using namespace std;
 
-class AST{
+
+class AST: public BaseNode{
     void convert2AST(AttrNode* root);
+    list<Entity> declaritionList;
+    struct AttrNode* root;
+
 
 public:
     AST(AttrNode* root){
@@ -12,13 +18,10 @@ public:
     }
 
     list<Entity> declaritions();
-    void setScope(Scope &scope);
     void setConstant(ConstantTable &constantTable);
-
- 
+    list<DefinedFunction> defineFunctions();
 
 };
-
 
 
 

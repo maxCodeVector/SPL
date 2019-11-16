@@ -1,9 +1,9 @@
 %{
     #ifndef _SYNTAX
     #define _SYNTAX
-    #include "deliver.h"
-    #include "sematic.h"
-    #include"lex.yy.c"
+    #include "deliver.hpp"
+    #include "sematic.hpp"
+    #include "lex.yy.c"
     void yyerror(const char*);
     int result;
     static AttrNode* root;

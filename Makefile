@@ -13,16 +13,21 @@ TEST_DIR=test
 TEST_SOURCE=$(sort $(wildcard $(TEST_DIR)/*.spl))
 
 
-splc:$(SRC_DIR)/syntax.tab.c $(OBJS)
+splc:$(SRC_DIR)/syntax.tab.o $(OBJS)
 	test -d bin || mkdir bin
-	$(CC) $(OBJS) $(SRC_DIR)/syntax.tab.c -lfl -ly -o $(OUT_DIR)/splc
+	$(CC) -s $(OBJS) $(SRC_DIR)/syntax.tab.o -lfl -ly -o $(OUT_DIR)/splc
 	@chmod +x bin/splc
 
 %.o: %.cpp $(INCLUDE)
-	$(CC) -c $< -o $@
+	$(CC) -c -g $< -o $@
 
-$(SRC_DIR)/syntax.tab.c:$(SRC_DIR)/lex.l $(SRC_DIR)/syntax.y
-	cd $(SRC_DIR) && $(FLEX) lex.l && $(BISON) -t -v -d syntax.y
+$(SRC_DIR)/syntax.tab.o:$(SRC_DIR)/lex.l $(SRC_DIR)/syntax.y
+	cd $(SRC_DIR) && $(FLEX) lex.l && $(BISON) -t -v -d syntax.y && \
+	$(CC) -c -g syntax.tab.c -o syntax.tab.o
+
+
+debug:$(SRC_DIR)/syntax.tab.o $(OBJS)
+	$(CC) -g $(OBJS) $(SRC_DIR)/syntax.tab.o -lfl -ly -o $(SRC_DIR)/splc.out
 
 
 test: bin/splc

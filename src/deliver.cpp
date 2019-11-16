@@ -1,4 +1,4 @@
-#include "deliver.h"
+#include "deliver.hpp"
 #include <stdlib.h>
 #include <malloc.h>
 
@@ -26,6 +26,13 @@ void show_tree_helper(struct AttrNode* node, int indent){
     struct AttrNode* child = node->firstChild;
     while(child!=NULL){
         show_tree_helper(child, indent+1);
+        if(node->childsName == "")
+            node->childsName = child->name;
+        else
+        {
+            node->childsName += " "+child->name;
+        }
+        
         child = child->nextSibling;
     }
 }

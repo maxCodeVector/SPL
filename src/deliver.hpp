@@ -10,6 +10,7 @@ struct AttrNode{
     char ch;
     string name;
     char* value;
+    string childsName;
     int lineNo;
     int child_num;
     struct AttrNode* firstChild;

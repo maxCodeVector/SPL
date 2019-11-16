@@ -6,20 +6,12 @@
         {
             "type": "shell",
             "label": "g++ build spl",
-            "command": "/usr/bin/g++",
+            "command": "/usr/bin/make",
             "args": [
-                "-std=c++11",
-                "-g",
-                "-lfl",
-                "-ly",
-                "deliver.cpp",
-                "syntax.tab.c",
-                "sematic.cpp",
-                "-o",
-                "${fileDirname}/../bin/${fileBasenameNoExtension}"
+                "debug"
             ],
             "options": {
-                "cwd": "${fileDirname}"
+                "cwd": "${fileDirname}/../"
             },
             "problemMatcher": [
                 "$gcc"

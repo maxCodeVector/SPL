@@ -1,6 +1,6 @@
 #ifndef _SEMATIC
 #define _SEMATIC
-#include "deliver.h"
+#include "deliver.hpp"
 
 
 int sematic_analysis(AttrNode* root);

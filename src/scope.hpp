@@ -4,32 +4,15 @@
 #include <map>
 #include <list>
 #include <string>
-#include "error.h"
+#include "error.hpp"
+#include "extnode.hpp"
 using namespace std;
 
-class Entity{
-public:
-    string name;
-    Entity(string name){
-        this->name = name;
-    }
-
-};
-
-class DefinedVariable{
-
-};
-
-class ConstantTable{
-
-
-
-};
-
+class LocalScope;
 class Scope{
 
 protected:
-    list<Scope> children; // the actual type is LocalScope, will be type convert
+    list<LocalScope> children; // the actual type is LocalScope, will be type convert
 
 };
 
@@ -39,7 +22,7 @@ protected:
     map<string, Entity> enties;
     list<DefinedVariable> staticLocalVariables; //cache
 public:
-    void declareEntity(Entity entity);
+    bool declareEntity(Entity entity);
     void checkReferences(ErrorHandler &err);
 
 };
@@ -49,6 +32,14 @@ class LocalScope: public Scope{
 protected:
     Scope parent;
     map<string, DefinedVariable> variables;
+
+public:
+    LocalScope(Scope &scope):Scope(){
+
+    }
+    bool isDefinedLocally(string& name);
+    void defineVariable(DefinedVariable &var);
+
 
 };
 
