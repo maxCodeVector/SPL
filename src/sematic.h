@@ -3,6 +3,6 @@
 #include "deliver.h"
 
 
-int semetic_analysis(AttrNode* root);
+int sematic_analysis(AttrNode* root);
 
 #endif

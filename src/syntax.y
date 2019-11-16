@@ -427,7 +427,7 @@ int main(int argc, char **argv){
     fclose(yyin);
     if(has_error==0){
         show_sytax_tree(root);
-        semetic_analysis(root);
+        sematic_analysis(root);
     }
    // fprintf(stderr, "total error %d\n", has_error);
 }

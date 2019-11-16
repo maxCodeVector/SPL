@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${fileDirname}/../bin/${fileBasenameNoExtension}",
-            "args": ["test/test_2_o01.spl"],
+            "args": ["test/test_2_r01.spl"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
