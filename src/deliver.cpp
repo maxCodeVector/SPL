@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <malloc.h>
 
-
 void show_tree_helper(struct AttrNode* node, int indent){
     /* none of node will be in line -1 */
     if(node==NULL || node->lineNo == -1){
@@ -13,15 +12,15 @@ void show_tree_helper(struct AttrNode* node, int indent){
     }
     if(node->value==NULL){
         if (node->isTerminal!=1){
-            printf("%s (%d)\n", node->name, node->lineNo);
+            printf("%s (%d)\n", node->name.c_str(), node->lineNo);
         }else
         {
-            printf("%s\n", node->name);
+            printf("%s\n", node->name.c_str());
         }
         
     }else
     {
-       printf("%s: %s\n", node->name, node->value);
+       printf("%s: %s\n", node->name.c_str(), node->value);
     }
     
     struct AttrNode* child = node->firstChild;
@@ -35,16 +34,16 @@ void show_sytax_tree(struct AttrNode* root){
     show_tree_helper(root, 0);
 }
 
-struct AttrNode* make_node(char* name){
-    struct AttrNode* node = malloc(sizeof(struct AttrNode));
-    node->name = strdup(name);
+struct AttrNode* make_node(string name){
+    struct AttrNode* node = (struct AttrNode*)malloc(sizeof(struct AttrNode));
+    node->name = name;
     return node;
 }
 
 
-struct AttrNode* make_parent(struct AttrNode* child, char* name){
-    struct AttrNode* parent = malloc(sizeof(struct AttrNode));
-    parent->name = strdup(name);
+struct AttrNode* make_parent(struct AttrNode* child, string name){
+    struct AttrNode* parent = (struct AttrNode*)malloc(sizeof(struct AttrNode));
+    parent->name = name;
     parent->firstChild = child;
     parent->lineNo = child->lineNo;
     return parent;

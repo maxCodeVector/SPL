@@ -1,11 +1,12 @@
 %{
+    extern "C" int yylex();
     #define YYSTYPE struct AttrNode*
     #include"syntax.tab.h"
     #include "deliver.h"
     int has_error = 0;
-   /* library inclusions */
-   int yycolno = 1;
-   #define YY_USER_ACTION \
+    /* library inclusions */
+    int yycolno = 1;
+    #define YY_USER_ACTION \
         yylloc.first_line = yylineno; \
         yylloc.first_column = yycolno; \
         yylloc.last_line = yylineno; \
@@ -19,7 +20,6 @@
 
 
 %}
-
 %option yylineno
 letter [a-zA-Z]
 digits [0-9]
@@ -67,10 +67,15 @@ STRING_LITERAL \"[^\"]*\"
 "{" {yylval = make_node("LC"); RECORD_LINENO;return LC;}
 "}" {yylval = make_node("RC"); RECORD_LINENO;return RC;}
 "\n"        {yycolno = 1;}
-"//" { char c; while((c=input()) != '\n'); unput('\n');printf("apperaed a one line comment in line %d!\n", yylineno);}
+"//" { 
+        char c; 
+        while((c=yyinput()) != '\n'); 
+        unput('\n');
+        // printf("apperaed a one line comment in line %d!\n", yylineno);
+    }
 "/*" { 
         int start_line_no = yylineno;
-        char c = input();
+        char c = yyinput();
         int new_line_no = 0;
         int comment_end = 0;
         int nested = 0;
@@ -78,14 +83,14 @@ STRING_LITERAL \"[^\"]*\"
             switch(c){
                 case '\n':new_line_no ++;break;
                 case '*':
-                    c = input();
+                    c = yyinput();
                     if(c=='/'){
                         //printf("apperaed a multiline comment from line %d to %d\n", start_line_no, yylineno);
                         comment_end = 1;
                     }else unput(c);
                     break;
                  case '/':
-                    c = input();
+                    c = yyinput();
                     if(c=='*'){
                         //printf("apperaed a nested multiline comment in line %d\n", yylineno);
                         nested = yylineno; // nested comment
@@ -95,7 +100,7 @@ STRING_LITERAL \"[^\"]*\"
             if(comment_end!=0){
                 break;
             }
-            c = input();
+            c = yyinput();
         }
         for(int i=0;i<new_line_no;i++){
             unput('\n');
@@ -141,17 +146,6 @@ STRING_LITERAL \"[^\"]*\"
         yylval = make_node("ERROR");
         _DUPTEXT;
         RECORD_LINENO;
-        // char c = input();
-        // int term = 0;
-        // while(1){
-        //     if(c=='\n' || c=='\t' || c==' ' || c==';')
-        //     {
-        //         unput(c);
-        //         break;
-        //     }
-        //     c = input();
-        //     yymore();
-        // }
         REPORT_LEX_ERROR; 
         return TOKENERROR;
     }
