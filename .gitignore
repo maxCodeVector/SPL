@@ -12,3 +12,4 @@ bin
 syntax.output
 .vscode/
 *.res
+*.o

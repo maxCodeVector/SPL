@@ -5,21 +5,24 @@ BISON=bison
 
 SRC_DIR=src
 OUT_DIR=bin
+SOURCE=$(wildcard $(SRC_DIR)/*.cpp)
 OBJS=$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SOURCE)))
+INCLUDE=$(wildcard $(SRC_DIR)/*.h) $(wildcard $(SRC_DIR)/*.hpp)
 
 TEST_DIR=test
 TEST_SOURCE=$(sort $(wildcard $(TEST_DIR)/*.spl))
 
-.lex: $(SRC_DIR)/lex.l
-	cd $(SRC_DIR) && $(FLEX) lex.l
-.syntax: $(SRC_DIR)/syntax.y
-	cd $(SRC_DIR) && $(BISON) -t -v -d syntax.y
 
-
-splc:.lex .syntax
+splc:$(SRC_DIR)/syntax.tab.c $(OBJS)
 	test -d bin || mkdir bin
-	$(CC) $(wildcard $(SRC_DIR)/*.cpp) $(SRC_DIR)/syntax.tab.c -lfl -ly -o $(OUT_DIR)/splc
+	$(CC) $(OBJS) $(SRC_DIR)/syntax.tab.c -lfl -ly -o $(OUT_DIR)/splc
 	@chmod +x bin/splc
+
+%.o: %.cpp $(INCLUDE)
+	$(CC) -c $< -o $@
+
+$(SRC_DIR)/syntax.tab.c:$(SRC_DIR)/lex.l $(SRC_DIR)/syntax.y
+	cd $(SRC_DIR) && $(FLEX) lex.l && $(BISON) -t -v -d syntax.y
 
 
 test: bin/splc
@@ -36,5 +39,5 @@ test: bin/splc
 .PHONY: clean
 clean:
 	@rm -rf bin/
-	@cd src && rm -f lex.yy.* syntax.tab* *.out *.so syntax.output
+	@cd src && rm -f lex.yy.* syntax.tab* *.out *.so syntax.output *.o
 	@-rm $(TEST_DIR)/*.res

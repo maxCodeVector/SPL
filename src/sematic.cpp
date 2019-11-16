@@ -1,7 +1,7 @@
 #include "sematic.h"
-#include "scope.hpp"
-#include "error.hpp"
-#include "ast.hpp"
+#include "scope.h"
+#include "error.h"
+#include "ast.h"
 using namespace std;
 
 
@@ -49,6 +49,6 @@ int sematic_analysis(AttrNode* root){
     AST ast =  AST(root);
     ErrorHandler h = ErrorHandler();
     LocalResolver local(h);
-    local.resove(ast);
+    // local.resove(ast);
     return 1;
 }

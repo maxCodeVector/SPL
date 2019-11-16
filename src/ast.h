@@ -1,7 +1,7 @@
 #ifndef __SPLAST__
 #define __SPLAST__
 #include "deliver.h"
-#include "scope.hpp"
+#include "scope.h"
 
 class AST{
     void convert2AST(AttrNode* root);

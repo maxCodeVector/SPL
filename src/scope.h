@@ -4,10 +4,15 @@
 #include <map>
 #include <list>
 #include <string>
-#include "error.hpp"
+#include "error.h"
 using namespace std;
 
 class Entity{
+public:
+    string name;
+    Entity(string name){
+        this->name = name;
+    }
 
 };
 
