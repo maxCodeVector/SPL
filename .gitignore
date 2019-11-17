@@ -13,3 +13,5 @@ syntax.output
 .vscode/
 *.res
 *.o
+.idea/
+cmake-build-debug/

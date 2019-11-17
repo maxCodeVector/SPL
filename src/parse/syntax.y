@@ -1,8 +1,8 @@
 %{
     #ifndef _SYNTAX
     #define _SYNTAX
-    #include "deliver.hpp"
-    #include "sematic.hpp"
+    #include "../ast.hpp"
+    #include "../sematic.hpp"
     #include "lex.yy.c"
     void yyerror(const char*);
     int result;
@@ -44,6 +44,8 @@
 Program: ExtDefList {
                 $$ = make_parent($1, "Program");
                 root = $$;
+                AST* ast = new AST($1);
+                root -> baseNode = ast;
                 // if(has_error==0){
                 //     show_sytax_tree($$);
                 // }
@@ -52,6 +54,9 @@ Program: ExtDefList {
 ExtDefList: ExtDef ExtDefList  {
                 $$ = make_parent($1, "ExtDefList");
                 add_childs($$, $2);
+                DefinedVariable* var = (DefinedVariable*)$1->baseNode;
+                var->setNext($2);
+                $$->baseNode = var;
             }
     |   {$$ = make_node("ExtDefList");$$->lineNo=-1;}
     ;
@@ -59,6 +64,8 @@ ExtDef: Specifier ExtDecList SEMI  {
         $$ = make_parent($1, "ExtDef");
         add_childs($$, $2);
         add_childs($$, $3);
+        DefinedVariable* var = new DefinedVariable($1, $2);
+        $$->baseNode = var;
     }
     | Specifier SEMI {
         $$ = make_parent($1, "ExtDef");
@@ -68,6 +75,8 @@ ExtDef: Specifier ExtDecList SEMI  {
         $$ = make_parent($1, "ExtDef");
         add_childs($$, $2);
         add_childs($$, $3);
+        DefinedFunction* func = new DefinedFunction($1, $2);
+        $$->baseNode = func;
     }
     // | Specifier ExtDecList error
     // | Specifier error

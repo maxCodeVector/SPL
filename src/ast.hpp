@@ -7,12 +7,15 @@ using namespace std;
 
 
 class AST: public BaseNode{
+private:
     void convert2AST(AttrNode* root);
     list<Entity> declaritionList;
     struct AttrNode* root;
 
 
 public:
+    list<DefinedVariable> vars;
+    list<DefinedFunction> functions;
     AST(AttrNode* root){
         convert2AST(root);
     }

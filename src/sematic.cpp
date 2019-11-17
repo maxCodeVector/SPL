@@ -50,8 +50,8 @@ public:
     void pushScope(list<DefinedVariable> vars){
         LocalScope scope = LocalScope(currentScope());
         for(DefinedVariable var: vars){
-            if(scope.isDefinedLocally(var.name)){
-                error(var.location(), "duplicated variable in scope:"+var.name);
+            if(scope.isDefinedLocally(var.name())){
+                error(var.location(), "duplicated variable in scope:"+var.name());
             }else{
                 scope.defineVariable(var);
             }
@@ -78,9 +78,9 @@ public:
 
 
 int sematic_analysis(AttrNode* root){
-    AST ast =  AST(root);
+    AST* ast =  (AST*)root->baseNode;
     ErrorHandler h = ErrorHandler();
     LocalResolver local(h);
-    local.resove(ast);
+    local.resove(*ast);
     return 1;
 }

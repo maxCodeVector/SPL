@@ -67,3 +67,19 @@ void add_childs(struct AttrNode* parent, struct AttrNode* other_child){
     }
     child->nextSibling = other_child;
 }
+
+struct AttrNode* get_child(struct AttrNode* parent, int index){
+    if(index < 0)
+        return NULL;
+    AttrNode* first = parent->firstChild;
+    AttrNode* res = first;
+    while (index > 0)
+    {
+        index --;
+        res = res->nextSibling;
+        if(res==NULL){
+            break;
+        }
+    }
+    return res;
+}
