@@ -22,6 +22,8 @@ splc:$(BISON_SRC)/syntax.tab.o $(OBJS)
 %.o: %.cpp $(INCLUDE)
 	$(CC) -c -g $< -o $@
 
+parse:$(BISON_SRC)/syntax.tab.o
+
 $(BISON_SRC)/syntax.tab.o:$(BISON_SRC)/lex.l $(BISON_SRC)/syntax.y
 	cd $(BISON_SRC) && $(FLEX) lex.l && $(BISON) -t -v -d syntax.y && \
 	$(CC) -c -g syntax.tab.c -o syntax.tab.o
@@ -45,6 +47,6 @@ test: bin/splc
 .PHONY: clean
 clean:
 	@rm -rf bin/
-	@cd src && rm *.o
-	@cd src/parse && rm -f lex.yy.* syntax.tab* *.out *.so syntax.output
+	@-cd src && rm *.o
+	@-cd src/parse && rm -f lex.yy.* syntax.tab* *.out *.so syntax.output
 	@-rm $(TEST_DIR)/*.res

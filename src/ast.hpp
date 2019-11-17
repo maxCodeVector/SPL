@@ -9,7 +9,7 @@ using namespace std;
 class AST: public BaseNode{
 private:
     void convert2AST(AttrNode* root);
-    list<Entity> declaritionList;
+    void findEntity(BaseNode *extList);
     struct AttrNode* root;
 
 

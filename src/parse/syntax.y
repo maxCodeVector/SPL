@@ -54,7 +54,7 @@ Program: ExtDefList {
 ExtDefList: ExtDef ExtDefList  {
                 $$ = make_parent($1, "ExtDefList");
                 add_childs($$, $2);
-                DefinedVariable* var = (DefinedVariable*)$1->baseNode;
+                BaseNode* var = $1->baseNode;
                 var->setNext($2);
                 $$->baseNode = var;
             }

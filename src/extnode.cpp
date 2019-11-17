@@ -1,6 +1,6 @@
 #include "extnode.hpp"
 
-void DefinedVariable::setNext(AttrNode* extDef)
+void BaseNode::setNext(AttrNode* extDef)
 {
     BaseNode* base = extDef -> baseNode;
     if(base==NULL){
@@ -14,3 +14,23 @@ void DefinedVariable::setNext(AttrNode* extDef)
         next  = base;
     }
 }
+
+DefinedVariable::DefinedVariable(AttrNode *spec, AttrNode *decList) {
+    this->type = spec->firstChild->value;
+    this->id = decList->firstChild->firstChild->value;
+    this->flag = VAR;
+}
+
+AST& DefinedFunction::body(){
+
+
+}
+
+DefinedFunction::DefinedFunction(AttrNode *spec, AttrNode *fundec) {
+    this->type = spec->firstChild->value;
+    this->name = fundec->firstChild->value;
+    this->flag = FUNC;
+    getParameters(fundec);
+}
+
+

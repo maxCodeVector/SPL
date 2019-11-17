@@ -35,12 +35,15 @@ enum NodeType{
 };
 
 class BaseNode{
+
 public:
     enum NodeType flag;
+    BaseNode* next;
     virtual void setScope(Scope &scope){}
     virtual Location& location(){};
 
 
+    void setNext(AttrNode *extDef);
 };
 
 class ConstantEntry{
@@ -62,14 +65,8 @@ private:
     string type;
     string id;
     string value;
-    BaseNode* next;
 public:
-    DefinedVariable(AttrNode* spec, AttrNode* decList){
-        this->type = spec->firstChild->value;
-        this->id = decList->firstChild->firstChild->value;
-        this->flag = VAR;
-    }
-    void setNext(AttrNode* extDef);
+    DefinedVariable(AttrNode* spec, AttrNode* decList);
     string& name(){
         return this->id;
     }
@@ -87,12 +84,7 @@ private:
     }
 
 public:
-    DefinedFunction(AttrNode* spec, AttrNode* fundec){
-        this->type = spec->firstChild->value;
-        this->name = fundec->firstChild->value;
-        this->flag = FUNC;
-        getParameters(fundec);
-    }
+    DefinedFunction(AttrNode* spec, AttrNode* fundec);
     list<DefinedVariable> parameters();
     AST& body();
 
