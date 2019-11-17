@@ -22,7 +22,7 @@ protected:
     map<string, Entity> enties;
     list<DefinedVariable> staticLocalVariables; //cache
 public:
-    bool declareEntity(Entity entity);
+    Entity* declareEntity(Entity entity);
     void checkReferences(ErrorHandler &err);
 
 };

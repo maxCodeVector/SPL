@@ -11,7 +11,7 @@ struct AttrNode{
     float fv;
     char ch;
     string name;
-    char* value;
+    string value;
     string childsName;
     int lineNo;
     int child_num;

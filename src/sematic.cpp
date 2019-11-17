@@ -23,8 +23,11 @@ public:
         ToplevelScope toplevelScope;
         scopeStack.push_back(toplevelScope);
 
-        for(Entity e: ast.declaritions()){
-            toplevelScope.declareEntity(e);
+        for(Entity &e: ast.declaritions()){
+            Entity* hasE = toplevelScope.declareEntity(e);
+            if(hasE!= nullptr){
+                error(e.location, "Duplicated define Error for:"+e.name+", last defined:"+hasE->location->toString());
+            }
         }
 
         resoveFunctions(ast.defineFunctions());
@@ -39,10 +42,10 @@ public:
 
     void resoveGloableVarIntializers();
     void resoveConstantValues();
-    void resoveFunctions(list<DefinedFunction> funcs){
+    void resoveFunctions(list<DefinedFunction>& funcs){
         for(DefinedFunction function: funcs){
-            pushScope(function.parameters());
-            resove(function.body());
+            pushScope(function.getParameters());
+            resove(*function.getBody());
             function.setScope(popScope());
         }
     }
@@ -65,8 +68,8 @@ public:
         return scope;
     }
 
-    void error(Location& loc, string message){
-        fprintf(stderr, "error in:%s, %s", loc.toString().c_str(), message.c_str());
+    void error(Location* loc, string message){
+        fprintf(stderr, "error in:%s, %s\n", loc->toString().c_str(), message.c_str());
     }
 
 

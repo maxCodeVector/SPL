@@ -22,7 +22,7 @@ public:
 
     list<Entity> declaritions();
     void setConstant(ConstantTable &constantTable);
-    list<DefinedFunction> defineFunctions();
+    list<DefinedFunction>& defineFunctions();
 
 };
 

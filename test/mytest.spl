@@ -1,6 +1,12 @@
 int a1;
 int a2;
-int a3;
+int a3, a4;
 int main(){
+    return 0;
+}
+int main2(int a, int b, float c){
+    return 0;
+}
+int main2(){
     return 0;
 }

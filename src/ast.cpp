@@ -28,21 +28,26 @@ void AST::convert2AST(AttrNode* root){
 
 list<Entity> AST::declaritions(){
     list<Entity> decaries;
+    for(DefinedVariable var: this->vars){
+        Entity entity(var.name());
+        entity.location = var.location();
+        decaries.push_back(entity);
+    }
+    for(DefinedFunction function: this->functions){
+        Entity entity(function.name());
+        entity.location = function.location();
+        decaries.push_back(entity);
+    }
     return decaries;
 }
 
-list<DefinedFunction> AST::defineFunctions(){
-    list<DefinedFunction> defineFunctionList;
-    return defineFunctionList;
+list<DefinedFunction>& AST::defineFunctions(){
+    return this->functions;
 }
 void AST::setConstant(ConstantTable &constantTable){
 
 
     
-}
-
-list<DefinedVariable> DefinedFunction::parameters(){
-
 }
 
 

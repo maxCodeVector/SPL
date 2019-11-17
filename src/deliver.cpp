@@ -10,7 +10,7 @@ void show_tree_helper(struct AttrNode* node, int indent){
     for(int i=0;i<indent;i++){
         printf("  ");
     }
-    if(node->value==NULL){
+    if(node->value.empty()){
         if (node->isTerminal!=1){
             printf("%s (%d)\n", node->name.c_str(), node->lineNo);
         }else
@@ -20,7 +20,7 @@ void show_tree_helper(struct AttrNode* node, int indent){
         
     }else
     {
-       printf("%s: %s\n", node->name.c_str(), node->value);
+       printf("%s: %s\n", node->name.c_str(), node->value.c_str());
     }
     
     struct AttrNode* child = node->firstChild;

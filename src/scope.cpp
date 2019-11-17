@@ -8,13 +8,15 @@ void ToplevelScope::checkReferences(ErrorHandler &err){
 }
 
 
-bool ToplevelScope::declareEntity(Entity entity){
-    int e = enties.count(entity.name);
-    if(e==1){ // has existed
-        return true;
+Entity* ToplevelScope::declareEntity(Entity entity){
+
+    auto Itor = enties.find(entity.name);
+
+    if(Itor != enties.end()){ // has existed
+        return &Itor->second;
     }
     enties.insert(pair<string, Entity>(entity.name, entity));
-    return false;
+    return nullptr;
 }
 
 bool LocalScope::isDefinedLocally(string& name){
