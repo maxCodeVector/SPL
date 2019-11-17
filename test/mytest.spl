@@ -1,12 +1,7 @@
-int a1;
-int a2;
-int a3, a4;
-int main(){
-    return 0;
-}
-int main2(int a, int b, float c){
-    return 0;
-}
-int main2(){
-    return 0;
+int test_2_r01()
+{
+  int x1 = 5;
+  int x2 = 3;
+  int x4 = x1 + x3;
+  return 0;
 }

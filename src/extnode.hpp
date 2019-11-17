@@ -93,11 +93,12 @@ public:
     list<DefinedVariable> members;
 };
 
+class Exp;
 class DefinedVariable : public BaseNode {
 private:
     VariableType* type{};
     string id;
-    string value;
+    Exp* value;
     list<int > array;
 public:
     DefinedVariable(AttrNode *spec, AttrNode *decList);
@@ -106,6 +107,9 @@ public:
 
     void setType(AttrNode *spec);
     void addDimension(AttrNode *dim);
+    void setExp(AttrNode* exp){
+        this->value = (Exp*)exp->baseNode;
+    }
 
     string &name() {
         return this->id;
@@ -145,29 +149,43 @@ public:
 
 class Statement:public BaseNode{
 protected:
-    Exp exp;
+    Exp *exp;
+public:
+    explicit Statement(AttrNode* exp);
 };
 
 class Body : public BaseNode{
 public:
     list<DefinedVariable> vars;
     list<Statement> statements;
+    Body(AttrNode* defList, AttrNode* stmtList);
 
 };
 
 class IfStatement:public Statement{
 public:
-    Body ifbody;
-    Body elseBody;
+    Statement* ifbody;
+    Statement* elseBody;
+    IfStatement(AttrNode* exp, AttrNode* ifNode, AttrNode* elseNode):Statement(exp){
+        ifbody  = (Statement*)ifNode->baseNode;
+        elseBody = (Statement*)elseNode->baseNode;
+    }
+    IfStatement(AttrNode* exp, AttrNode* ifNode):Statement(exp){
+        ifbody  = (Statement*)ifNode->baseNode;
+    }
 };
 
 class WhileStatement:public Statement{
 public:
-    Body loop;
+    Statement* loop;
+    WhileStatement(AttrNode* exp, AttrNode* loopNode):Statement(exp){
+        loop = (Statement*)loopNode->baseNode;
+    }
 };
 
 class ReturnStatement:public Statement{
-
+public:
+    explicit ReturnStatement(AttrNode* exp):Statement(exp){}
 };
 
 
@@ -176,7 +194,7 @@ private:
     VariableType* returnType;
     string id;
     list<DefinedVariable> parameters;
-    Body functionBody;
+    Body* functionBody;
     void parseParameters(AttrNode* paraList);
 
 public:
@@ -188,6 +206,9 @@ public:
     void setReturnType(AttrNode* type);
 
     AST *getBody();
+    void setBody(AttrNode* body){
+        this->functionBody = (Body*)body->baseNode;
+    }
 
     string &name() {
         return this->id;

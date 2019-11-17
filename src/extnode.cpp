@@ -16,19 +16,28 @@ VariableType* getVariableType(string &name) {
         return new VariableType(STRUCT_TYPE);
 }
 
-void BaseNode::setNext(AttrNode *extDef) {
-    BaseNode *base = extDef->baseNode;
-    if (base == NULL) {
+void setNextNode(BaseNode* pre, BaseNode* next){
+    if(pre->next!= nullptr){
+        setNextNode(pre->next, next);
         return;
     }
-    if (base->flag == VAR) {
-        auto var = (DefinedVariable *) base;
-        next = var;
-    } else if (base->flag == FUNC) {
-        auto *func = (DefinedFunction *) base;
-        next = func;
+    if (next->flag == VAR) {
+        auto var = (DefinedVariable *) next;
+        pre->next = var;
+    } else if (next->flag == FUNC) {
+        auto *func = (DefinedFunction *) next;
+        pre->next = func;
     } else
-        next = base;
+        pre->next = next;
+}
+
+
+void BaseNode::setNext(AttrNode *extDef) {
+    BaseNode *base = extDef->baseNode;
+    if (base == nullptr) {
+        return;
+    }
+    setNextNode(this, base);
 }
 
 DefinedVariable::DefinedVariable(AttrNode *spec, AttrNode *decList) {
@@ -139,4 +148,23 @@ InvokeExp::InvokeExp(AttrNode *invoker, AttrNode *args) {
     this->args = new Args;
     findEntity(this->args, (Exp*)args->baseNode);
     this->loc = this->args->loc;
+}
+
+
+Body::Body(AttrNode *defList, AttrNode *stmtList) {
+    DefinedVariable* variable = (DefinedVariable*)defList->baseNode;
+    while (variable!= nullptr){
+        this->vars.push_back(*variable);
+        variable = (DefinedVariable*)variable->next;
+    }
+    Statement* statement = (Statement*)stmtList->baseNode;
+    while (statement!= nullptr){
+        this->statements.push_back(*statement);
+        statement = (Statement*)statement->next;
+    }
+}
+
+Statement::Statement(AttrNode *exp) {
+    this->exp = (Exp*)exp->baseNode;
+
 }

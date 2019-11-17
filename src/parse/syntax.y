@@ -66,7 +66,7 @@ ExtDef: Specifier ExtDecList SEMI  {
         add_childs($$, $3);
         DefinedVariable* var = (DefinedVariable*)$2->baseNode;
         var->setType($1);
-        $$->baseNode = var;
+        $$->baseNode = var; // variable/function
     }
     | Specifier SEMI {
         $$ = make_parent($1, "ExtDef");
@@ -77,6 +77,7 @@ ExtDef: Specifier ExtDecList SEMI  {
         add_childs($$, $2);
         add_childs($$, $3);
         DefinedFunction* func = (DefinedFunction*)$2->baseNode;
+        func->setBody($3);
         func->setReturnType($1);
         $$->baseNode = func;
     }
@@ -85,7 +86,7 @@ ExtDef: Specifier ExtDecList SEMI  {
     ;
 ExtDecList: VarDec  {
         $$ = make_parent($1, "ExtDecList");
-        $$->baseNode = $1->baseNode;
+        $$->baseNode = $1->baseNode;	//variable
     }
     | VarDec COMMA ExtDecList {
         $$ = make_parent($1, "ExtDecList");
@@ -196,6 +197,8 @@ CompSt: LC DefList StmtList RC {
                 add_childs($$, $2);
                 add_childs($$, $3);
                 add_childs($$, $4);
+                Body* body = new Body($2, $3);
+                $$ -> baseNode = body;
             }
     // | LC DefList StmtList error
     // | error DefList StmtList RC
@@ -203,21 +206,29 @@ CompSt: LC DefList StmtList RC {
 StmtList: Stmt StmtList {
                 $$ = make_parent($1, "StmtList");
                 add_childs($$, $2);
+                BaseNode* stmt = $1->baseNode;
+                stmt->setNext($2);
+                $$-> baseNode = stmt;
             }
     | {$$ = make_node("StmtList");$$->lineNo=-1;}
     ;
 Stmt: Exp SEMI{
                 $$ = make_parent($1, "Stmt");
                 add_childs($$, $2);
+                Statement* stmt = new Statement($1);
+                $$ -> baseNode = stmt;
             }
     // | Exp error
     | CompSt{
                 $$ = make_parent($1, "Stmt");
+                $$-> baseNode = $1->baseNode;
             }
     | RETURN Exp SEMI {
                 $$ = make_parent($1, "Stmt");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                ReturnStatement* stmt = new ReturnStatement($2);
+                $$ -> baseNode = stmt;
             }
     // | RETURN error SEMI
     // | RETURN Exp error
@@ -227,6 +238,8 @@ Stmt: Exp SEMI{
                 add_childs($$, $3);
                 add_childs($$, $4);
                 add_childs($$, $5);
+                IfStatement* stmt = new IfStatement($3, $5);
+                $$ -> baseNode = stmt;
             }
     // | IF error Exp RP Stmt
     // | IF LP Exp error Stmt
@@ -240,6 +253,8 @@ Stmt: Exp SEMI{
                 add_childs($$, $5);
                 add_childs($$, $6);
                 add_childs($$, $7);
+                IfStatement* stmt = new IfStatement($3, $5, $7);
+		$$ -> baseNode = stmt;
             }
     // | IF error Exp RP Stmt ELSE Stmt
     // | IF LP Exp error Stmt ELSE Stmt
@@ -252,6 +267,8 @@ Stmt: Exp SEMI{
                 add_childs($$, $3);
                 add_childs($$, $4);
                 add_childs($$, $5);
+                WhileStatement* stmt = new WhileStatement($3, $5);
+                $$->baseNode = stmt;
             }
     // | WHILE error Exp RP Stmt
     // | WHILE LP Exp error Stmt
@@ -262,6 +279,9 @@ Stmt: Exp SEMI{
 DefList: Def DefList{
                 $$ = make_parent($1, "DefList");
                 add_childs($$, $2);
+                BaseNode* var = $1->baseNode;
+		var -> setNext($2);
+		$$ -> baseNode = var;
             }
     | {$$ = make_node("DefList");$$->lineNo=-1;}
     ;
@@ -269,26 +289,37 @@ Def: Specifier DecList SEMI{
                 $$ = make_parent($1, "Def");
                 add_childs($$, $2);
                 add_childs($$, $3);
+		DefinedVariable* var = (DefinedVariable*)$2->baseNode;
+		var -> setType($1);
+		$$ -> baseNode = var;
             }
     // | Specifier DecList error
     ;
 DecList: Dec{
                 $$ = make_parent($1, "DecList");
+                $$->baseNode = $1->baseNode;
             }
     | Dec COMMA DecList {
                 $$ = make_parent($1, "DecList");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                BaseNode* var = $1->baseNode;
+                var->setNext($3);
+                $$ -> baseNode = var;
             }
     // | Dec error DecList
     ;
 Dec: VarDec{
                 $$ = make_parent($1, "Dec");
+                $$ -> baseNode = $1 -> baseNode;
             }
     | VarDec ASSIGN Exp {
                 $$ = make_parent($1, "Dec");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                DefinedVariable* var = (DefinedVariable*)$1->baseNode;
+                var->setExp($3);
+		$$ -> baseNode = var;
             }
     // | VarDec ASSIGN error
     ;
