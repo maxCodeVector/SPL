@@ -1,9 +1,9 @@
 %{
     #ifndef _SYNTAX
     #define _SYNTAX
-    #include "deliver.h"
-    #include "sematic.h"
-    #include"lex.yy.c"
+    #include "../ast.hpp"
+    #include "../semantic.hpp"
+    #include "lex.yy.c"
     void yyerror(const char*);
     int result;
     static AttrNode* root;
@@ -44,6 +44,8 @@
 Program: ExtDefList {
                 $$ = make_parent($1, "Program");
                 root = $$;
+                AST* ast = new AST($1);
+                root -> baseNode = ast;
                 // if(has_error==0){
                 //     show_sytax_tree($$);
                 // }
@@ -52,6 +54,9 @@ Program: ExtDefList {
 ExtDefList: ExtDef ExtDefList  {
                 $$ = make_parent($1, "ExtDefList");
                 add_childs($$, $2);
+                BaseNode* var = $1->baseNode;
+                var->setNext($2);
+                $$->baseNode = var;
             }
     |   {$$ = make_node("ExtDefList");$$->lineNo=-1;}
     ;
@@ -59,6 +64,9 @@ ExtDef: Specifier ExtDecList SEMI  {
         $$ = make_parent($1, "ExtDef");
         add_childs($$, $2);
         add_childs($$, $3);
+        DefinedVariable* var = (DefinedVariable*)$2->baseNode;
+        var->setType($1);
+        $$->baseNode = var; // variable/function
     }
     | Specifier SEMI {
         $$ = make_parent($1, "ExtDef");
@@ -68,27 +76,38 @@ ExtDef: Specifier ExtDecList SEMI  {
         $$ = make_parent($1, "ExtDef");
         add_childs($$, $2);
         add_childs($$, $3);
+        DefinedFunction* func = (DefinedFunction*)$2->baseNode;
+        func->setBody($3);
+        func->setReturnType($1);
+        $$->baseNode = func;
     }
     // | Specifier ExtDecList error
     // | Specifier error
     ;
 ExtDecList: VarDec  {
         $$ = make_parent($1, "ExtDecList");
-        }
+        $$->baseNode = $1->baseNode;	//variable
+    }
     | VarDec COMMA ExtDecList {
         $$ = make_parent($1, "ExtDecList");
         add_childs($$, $2);
         add_childs($$, $3);
+        BaseNode* var = $1->baseNode;
+        var->setNext($3);
+        $$->baseNode = var;
     }
     // |  VarDec error ExtDecList 
     ;
 
 /* specifier */
 Specifier: TYPE {
-                    $$ = make_parent($1, "Specifier");    
+		    $$ = make_parent($1, "Specifier");
+		    VariableType* var = getVariableType($1->value);
+		    $$ -> baseNode = var;
                 }
     | StructSpecifier {
                     $$ = make_parent($1, "Specifier");
+		    $$ -> baseNode = $1->baseNode;
                 }
     ;
 StructSpecifier: STRUCT ID LC DefList RC {
@@ -111,12 +130,17 @@ StructSpecifier: STRUCT ID LC DefList RC {
 /* declarator */
 VarDec: ID   {
                 $$ = make_parent($1, "VarDec");
+                DefinedVariable* var = new DefinedVariable($1);
+                $$->baseNode = var;
             }
     | VarDec LB INT RB {
                 $$ = make_parent($1, "VarDec");
                 add_childs($$, $2);
                 add_childs($$, $3);
                 add_childs($$, $4);
+	 	DefinedVariable* var = (DefinedVariable*)$1->baseNode;
+	 	var->addDimension($3);
+		$$->baseNode = var;
             }
     | TOKENERROR {
                 $$ = make_parent($1, "VarDec");
@@ -130,11 +154,15 @@ FunDec: ID LP VarList RP {
                 add_childs($$, $2);
                 add_childs($$, $3);
                 add_childs($$, $4);
+		DefinedFunction* func = new DefinedFunction($1, $3);
+		$$->baseNode = func;
             }
     | ID LP RP {
                 $$ = make_parent($1, "FunDec");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                DefinedFunction* func = new DefinedFunction($1);
+		$$->baseNode = func;
             }
     // | ID LP error
     // | ID error RP
@@ -144,15 +172,22 @@ VarList: ParamDec COMMA VarList {
                 $$ = make_parent($1, "VarList");
                 add_childs($$, $2);
                 add_childs($$, $3);
+		BaseNode* var = $1->baseNode;
+		var-> setNext($3);
+		$$->baseNode = var;
             }
     | ParamDec{
                 $$ = make_parent($1, "VarList");
+                $$ -> baseNode = $1->baseNode;
             }
     // | ParamDec COMMA error
     ;
 ParamDec: Specifier VarDec {
                 $$ = make_parent($1, "ParamDec");
                 add_childs($$, $2);
+                DefinedVariable* var = (DefinedVariable*)$2->baseNode;
+                var->setType($1);
+                $$->baseNode = var;
             }
     ;
 
@@ -162,6 +197,8 @@ CompSt: LC DefList StmtList RC {
                 add_childs($$, $2);
                 add_childs($$, $3);
                 add_childs($$, $4);
+                Body* body = new Body($2, $3);
+                $$ -> baseNode = body;
             }
     // | LC DefList StmtList error
     // | error DefList StmtList RC
@@ -169,21 +206,29 @@ CompSt: LC DefList StmtList RC {
 StmtList: Stmt StmtList {
                 $$ = make_parent($1, "StmtList");
                 add_childs($$, $2);
+                BaseNode* stmt = $1->baseNode;
+                stmt->setNext($2);
+                $$-> baseNode = stmt;
             }
     | {$$ = make_node("StmtList");$$->lineNo=-1;}
     ;
 Stmt: Exp SEMI{
                 $$ = make_parent($1, "Stmt");
                 add_childs($$, $2);
+                Statement* stmt = new Statement($1);
+                $$ -> baseNode = stmt;
             }
     // | Exp error
     | CompSt{
                 $$ = make_parent($1, "Stmt");
+                $$-> baseNode = $1->baseNode;
             }
     | RETURN Exp SEMI {
                 $$ = make_parent($1, "Stmt");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                ReturnStatement* stmt = new ReturnStatement($2);
+                $$ -> baseNode = stmt;
             }
     // | RETURN error SEMI
     // | RETURN Exp error
@@ -193,6 +238,8 @@ Stmt: Exp SEMI{
                 add_childs($$, $3);
                 add_childs($$, $4);
                 add_childs($$, $5);
+                IfStatement* stmt = new IfStatement($3, $5);
+                $$ -> baseNode = stmt;
             }
     // | IF error Exp RP Stmt
     // | IF LP Exp error Stmt
@@ -206,6 +253,8 @@ Stmt: Exp SEMI{
                 add_childs($$, $5);
                 add_childs($$, $6);
                 add_childs($$, $7);
+                IfStatement* stmt = new IfStatement($3, $5, $7);
+		$$ -> baseNode = stmt;
             }
     // | IF error Exp RP Stmt ELSE Stmt
     // | IF LP Exp error Stmt ELSE Stmt
@@ -218,6 +267,8 @@ Stmt: Exp SEMI{
                 add_childs($$, $3);
                 add_childs($$, $4);
                 add_childs($$, $5);
+                WhileStatement* stmt = new WhileStatement($3, $5);
+                $$->baseNode = stmt;
             }
     // | WHILE error Exp RP Stmt
     // | WHILE LP Exp error Stmt
@@ -228,6 +279,9 @@ Stmt: Exp SEMI{
 DefList: Def DefList{
                 $$ = make_parent($1, "DefList");
                 add_childs($$, $2);
+                BaseNode* var = $1->baseNode;
+		var -> setNext($2);
+		$$ -> baseNode = var;
             }
     | {$$ = make_node("DefList");$$->lineNo=-1;}
     ;
@@ -235,26 +289,37 @@ Def: Specifier DecList SEMI{
                 $$ = make_parent($1, "Def");
                 add_childs($$, $2);
                 add_childs($$, $3);
+		DefinedVariable* var = (DefinedVariable*)$2->baseNode;
+		var -> setType($1);
+		$$ -> baseNode = var;
             }
     // | Specifier DecList error
     ;
 DecList: Dec{
                 $$ = make_parent($1, "DecList");
+                $$->baseNode = $1->baseNode;
             }
     | Dec COMMA DecList {
                 $$ = make_parent($1, "DecList");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                BaseNode* var = $1->baseNode;
+                var->setNext($3);
+                $$ -> baseNode = var;
             }
     // | Dec error DecList
     ;
 Dec: VarDec{
                 $$ = make_parent($1, "Dec");
+                $$ -> baseNode = $1 -> baseNode;
             }
     | VarDec ASSIGN Exp {
                 $$ = make_parent($1, "Dec");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                DefinedVariable* var = (DefinedVariable*)$1->baseNode;
+                var->setExp($3);
+		$$ -> baseNode = var;
             }
     // | VarDec ASSIGN error
     ;
@@ -264,77 +329,103 @@ Exp: Exp ASSIGN Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                BinaryExp* exp = new BinaryExp($1, $3, ASSIGN_OP);
+		$$ -> baseNode = exp;
             }
     // | Exp ASSIGN error
     | Exp AND Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                BinaryExp* exp = new BinaryExp($1, $3, AND_OP);
+		$$ -> baseNode = exp;
             }
     // | Exp AND error
     | Exp OR Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                BinaryExp* exp = new BinaryExp($1, $3, OR_OP);
+		$$ -> baseNode = exp;
             }
     // | Exp OR error
     | Exp LT Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                BinaryExp* exp = new BinaryExp($1, $3, LT_OP);
+		$$ -> baseNode = exp;
             }
     // | Exp LT error
     | Exp LE Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                BinaryExp* exp = new BinaryExp($1, $3, LE_OP);
+		$$ -> baseNode = exp;
             }
     // | Exp LE error
     | Exp GT Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                BinaryExp* exp = new BinaryExp($1, $3, GT_OP);
+		$$ -> baseNode = exp;
             }
     // | Exp GT error
     | Exp GE Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                BinaryExp* exp = new BinaryExp($1, $3, GE_OP);
+		$$ -> baseNode = exp;
             }
     // | Exp GE error
     | Exp NE Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                BinaryExp* exp = new BinaryExp($1, $3, NE_OP);
+		$$ -> baseNode = exp;
             }
     | Exp EQ Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                BinaryExp* exp = new BinaryExp($1, $3, EQ_OP);
+		$$ -> baseNode = exp;
             }
     // | Exp EQ error
     | Exp PLUS Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                BinaryExp* exp = new BinaryExp($1, $3, ADD_OP);
+		$$ -> baseNode = exp;
             }
     // | Exp PLUS error
     | Exp MINUS Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+		BinaryExp* exp = new BinaryExp($1, $3, SUB_OP);
+		$$ -> baseNode = exp;
             }
     // | Exp MINUS error
     | Exp MUL Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+	 	BinaryExp* exp = new BinaryExp($1, $3, MUL_OP);
+		$$ -> baseNode = exp;
             }
     // | Exp MUL error
     | Exp DIV Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                BinaryExp* exp = new BinaryExp($1, $3, DIV_OP);
+                $$ -> baseNode = exp;
             }
     // | Exp DIV error
     | LP Exp RP{
@@ -347,11 +438,15 @@ Exp: Exp ASSIGN Exp{
     | MINUS Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
+                SingleExp* exp = new SingleExp($2, SUB_OP);
+                $$->baseNode = exp;
             }
     // | MINUS error
     | NOT Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
+                SingleExp* exp = new SingleExp($2, NOT_OP);
+                $$->baseNode = exp;
             }
     // | NOT error
     | ID LP Args RP{
@@ -359,6 +454,8 @@ Exp: Exp ASSIGN Exp{
                 add_childs($$, $2);
                 add_childs($$, $3);
                 add_childs($$, $4);
+		InvokeExp* exp = new InvokeExp($1, $3);
+		$$ -> baseNode = exp;
             }
     // | ID LP Args error
     // | ID error Args RP
@@ -366,6 +463,8 @@ Exp: Exp ASSIGN Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                InvokeExp* exp = new InvokeExp($1);
+                $$ -> baseNode = exp;
             }
     // | Exp error RP
     // | Exp LP error
@@ -384,16 +483,24 @@ Exp: Exp ASSIGN Exp{
             }
     // | Exp DOT error
     | ID   {
-                $$ = make_parent($1, "Exp"); 
+                $$ = make_parent($1, "Exp");
+	 	Exp* exp = new Exp($1, OTHER_TYPE);
+		$$->baseNode = exp;
             }
     | INT{
                 $$ = make_parent($1, "Exp");
+                Exp* exp = new Exp($1, INT_TYPE);
+                $$->baseNode = exp;
             }
     | FLOAT{
                 $$ = make_parent($1, "Exp");
+		Exp* exp = new Exp($1, FLOAT_TYPE);
+		$$->baseNode = exp;
             }
     | CHAR{
                 $$ = make_parent($1, "Exp");
+                Exp* exp = new Exp($1, CHAR_TYPE);
+		$$->baseNode = exp;
             }
     | Exp TOKENERROR Exp {
                 $$ = make_parent($1, "Exp");
@@ -406,9 +513,13 @@ Args: Exp COMMA Args{
                 $$ = make_parent($1, "Args");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                BaseNode* exp = $1->baseNode;
+                exp->setNext($3);
+                $$->baseNode = exp;  // link_list of Exp
             }
     | Exp{
                 $$ = make_parent($1, "Args");
+		$$->baseNode = $1->baseNode;
             }
     // | Exp error Args
     ;
@@ -427,8 +538,9 @@ int main(int argc, char **argv){
     fclose(yyin);
     if(has_error==0){
         show_sytax_tree(root);
-        sematic_analysis(root);
-    }
-   // fprintf(stderr, "total error %d\n", has_error);
+        semantic_analysis(root);
+    }else
+        fprintf(stderr, "total error %d\n", has_error);
+        
 }
 

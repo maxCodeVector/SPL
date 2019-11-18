@@ -2,8 +2,13 @@
 #define __SPLERROR__
 
 class ErrorHandler{
+private:
+    int errorNum = 0;
+
 public:
-    bool errorOccured();
+    bool errorOccured(){
+        return errorNum > 0;
+    }
 };
 
 
