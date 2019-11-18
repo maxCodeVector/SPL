@@ -25,9 +25,9 @@ public:
         errorList.push_back(error);
     }
 
-    void showError(){
+    void showError(ostream &basicOstream) {
         for(Error* error: errorList){
-            std::cerr << "error in:" << error->loc->toString() << ", " << error->message << endl;
+            basicOstream << "error in:" << error->loc->toString() << ", " << error->message << endl;
         }
     }
 

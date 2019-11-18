@@ -539,6 +539,7 @@ int main(int argc, char **argv){
     if(has_error==0){
         show_sytax_tree(root);
         semantic_analysis(root);
+    	free_AttrNode(root);
     }else
         fprintf(stderr, "total error %d\n", has_error);
         

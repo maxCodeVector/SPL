@@ -26,7 +26,7 @@ public:
         delete(toplevelScope);
     }
 
-    bool resolve(AST &ast){
+    bool resolve(AST& ast){
         ToplevelScope* toplevelScope = new ToplevelScope();
         scopeStack.push_back(toplevelScope);
 
@@ -52,6 +52,15 @@ public:
     }
 
     void resolve(Body& body){
+        LocalScope* curr = (LocalScope*)currentScope();
+        for(DefinedVariable* var: body.vars){
+            if(curr->isDefinedLocally(var->getName())){
+                string message = "duplicated variable in scope：" + var->getName();
+                error(var->location(), message);
+            }else{
+                curr->defineVariable(*var);
+            }
+        }
 
     }
 
@@ -104,6 +113,7 @@ int semantic_analysis(AttrNode* root){
     ErrorHandler h = ErrorHandler();
     LocalResolver local(h);
     local.resolve(*ast);
-    h.showError();
+    h.showError(std::cerr);
+    delete(ast);
     return 1;
 }

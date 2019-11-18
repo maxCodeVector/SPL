@@ -1,17 +1,14 @@
 #include "extnode.hpp"
 
 
-static VariableType intType(DataType::INT_TYPE);
-static VariableType floatType(DataType::FLOAT_TYPE);
-static VariableType charType(DataType::CHAR_TYPE);
 VariableType* getVariableType(string &name) {
     DataType type;
     if (name == "int") {
-        return &intType;
+        return new VariableType(INT_TYPE);
     } else if (name == "float") {
-        return &floatType;
+        return new VariableType(FLOAT_TYPE);
     } else if (name == "char") {
-        return &charType;
+        return new VariableType(CHAR_TYPE);
     } else
         return new VariableType(STRUCT_TYPE);
 }
@@ -51,9 +48,10 @@ void DefinedVariable::setType(AttrNode *spec) {
     VariableType* type = (VariableType*)spec->baseNode;
     DefinedVariable* next = this;
     while (next!=nullptr){
-        next->type = type;
+        next->type = new VariableType(*type);
         next = (DefinedVariable*)next->next;
     }
+    delete(type);
 }
 
 void DefinedVariable::addDimension(AttrNode* dim) {
