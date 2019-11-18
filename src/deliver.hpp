@@ -1,6 +1,5 @@
 #ifndef _DELIVER
 #define _DELIVER
-#include <stdlib.h>
 #include <string>
 using namespace std;
 

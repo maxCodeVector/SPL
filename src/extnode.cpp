@@ -40,13 +40,6 @@ void BaseNode::setNext(AttrNode *extDef) {
     setNextNode(this, base);
 }
 
-DefinedVariable::DefinedVariable(AttrNode *spec, AttrNode *decList) {
-    this->type = getVariableType(spec->firstChild->value);
-    this->id = decList->firstChild->firstChild->value;
-    this->loc = new Location(spec->lineNo, 0);
-    this->flag = VAR;
-}
-
 
 DefinedVariable::DefinedVariable(AttrNode *varDec) {
     this->id = varDec->value;
@@ -90,8 +83,8 @@ void DefinedFunction::parseParameters(AttrNode* paraList) {
 }
 
 
-list<DefinedVariable>* DefinedFunction::getParameters() {
-    return &this->parameters;
+list<DefinedVariable>& DefinedFunction::getParameters() {
+    return this->parameters;
 }
 
 Body* DefinedFunction::getBody() {
@@ -132,7 +125,7 @@ InvokeExp::InvokeExp(AttrNode *invoker) {
 void findEntity(Args* args, Exp* exp){
     Exp* next = exp;
     while (next != nullptr){
-        args->args.push_back(*next);
+        args->args.push_back(next);
         next = (Exp*)next->next;
     }
 }
@@ -159,12 +152,11 @@ Body::Body(AttrNode *defList, AttrNode *stmtList) {
     }
     Statement* statement = (Statement*)stmtList->baseNode;
     while (statement!= nullptr){
-        this->statements.push_back(*statement);
+        this->statements.push_back(statement);
         statement = (Statement*)statement->next;
     }
 }
 
 Statement::Statement(AttrNode *exp) {
     this->exp = (Exp*)exp->baseNode;
-
 }

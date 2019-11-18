@@ -2,7 +2,7 @@
     #ifndef _SYNTAX
     #define _SYNTAX
     #include "../ast.hpp"
-    #include "../sematic.hpp"
+    #include "../semantic.hpp"
     #include "lex.yy.c"
     void yyerror(const char*);
     int result;
@@ -538,7 +538,7 @@ int main(int argc, char **argv){
     fclose(yyin);
     if(has_error==0){
         show_sytax_tree(root);
-        sematic_analysis(root);
+        semantic_analysis(root);
     }else
         fprintf(stderr, "total error %d\n", has_error);
         

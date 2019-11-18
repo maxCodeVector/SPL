@@ -1,4 +1,4 @@
-#include "sematic.hpp"
+#include "semantic.hpp"
 #include "scope.hpp"
 #include "error.hpp"
 #include "ast.hpp"
@@ -8,10 +8,10 @@ using namespace std;
 
 class LocalResolver{
 private:
-    list<Scope> scopeStack;
+    list<Scope*> scopeStack;
     ConstantTable constantTable;
     ErrorHandler& errorHandler;
-    Scope& currentScope(){
+    Scope* currentScope(){
         return scopeStack.back();
     }
 
@@ -21,20 +21,22 @@ public:
     }
 
     bool resolve(AST &ast){
-        ToplevelScope toplevelScope;
+        ToplevelScope* toplevelScope = new ToplevelScope();
         scopeStack.push_back(toplevelScope);
 
-        list<Entity> entities;
-        for(Entity &e: ast.declaritions(entities)){
-            Entity* hasE = toplevelScope.declareEntity(e);
+        list<Entity*> entities;
+        for(Entity* e: ast.declaritions(entities)){
+            Entity* hasE = toplevelScope->declareEntity(*e);
             if(hasE!= nullptr){
-                string message = "duplicated define for:"+e.name+", last defined in:"+hasE->location->toString();
-                error(e.location, message);
+                string message = "duplicated define for:"+e->getName()+", last defined in:"+hasE->location()->toString();
+                error(e->location(), message);
             }
         }
 
-        resoveFunctions(*ast.defineFunctions());
-        toplevelScope.checkReferences(this->errorHandler);
+        resolveGloableVarIntializers();
+        resolveConstantValues();
+        resoveFunctions(ast.defineFunctions());
+        toplevelScope->checkReferences(this->errorHandler);
         if(errorHandler.errorOccured()){
             return false;
         }
@@ -47,12 +49,16 @@ public:
 
     }
 
+    void resolveGloableVarIntializers(){
 
-    void resoveGloableVarIntializers();
-    void resoveConstantValues();
+    }
+    void resolveConstantValues(){
+
+    }
+
     void resoveFunctions(list<DefinedFunction>& funcs){
         for(DefinedFunction& function: funcs){
-            pushScope(*function.getParameters());
+            pushScope(function.getParameters());
             resolve(*function.getBody());
             function.setScope(popScope());
         }
@@ -62,18 +68,18 @@ public:
     void pushScope(list<DefinedVariable>& vars){
         LocalScope* scope = new LocalScope(currentScope());
         for(DefinedVariable& var: vars){
-            if(scope->isDefinedLocally(var.name())){
-                string message = "fuck：" + var.name();
+            if(scope->isDefinedLocally(var.getName())){
+                string message = "duplicated variable in scope：" + var.getName();
                 error(var.location(), message);
             }else{
                 scope->defineVariable(var);
             }
         }
-        scopeStack.push_back(*scope);
+        scopeStack.push_back(scope);
     }
 
-    Scope& popScope(){
-        Scope& scope = scopeStack.back();
+    Scope* popScope(){
+        Scope* scope = scopeStack.back();
         scopeStack.pop_back();
         return scope;
     }
@@ -90,7 +96,7 @@ public:
 
 
 
-int sematic_analysis(AttrNode* root){
+int semantic_analysis(AttrNode* root){
     AST* ast =  (AST*)root->baseNode;
     ErrorHandler h = ErrorHandler();
     LocalResolver local(h);

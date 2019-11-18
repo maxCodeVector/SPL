@@ -3,6 +3,6 @@
 #include "deliver.hpp"
 
 
-int sematic_analysis(AttrNode* root);
+int semantic_analysis(AttrNode* root);
 
 #endif

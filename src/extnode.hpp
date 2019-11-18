@@ -20,19 +20,6 @@ public:
     }
 };
 
-
-class Entity {
-public:
-    string name;
-    string type;
-    string value;
-    Location *location;
-
-    Entity(string &name) {
-        this->name = name;
-    }
-};
-
 class ConstantEntry {
     string name;
     string value;
@@ -42,8 +29,6 @@ class ConstantTable {
     list<ConstantEntry> entries;
 };
 
-
-class AST;// defined for program
 class Scope;
 
 enum NodeType {
@@ -63,11 +48,11 @@ enum DataType{
 class BaseNode {
 
 public:
-    enum NodeType flag;
+    enum NodeType flag=OTHER;
     BaseNode *next;
     Location *loc;
 
-    virtual void setScope(Scope &scope) {}
+    virtual void setScope(Scope *scope) {}
 
     virtual Location *location() {
         return loc;
@@ -76,8 +61,21 @@ public:
     virtual void setNext(AttrNode *extDef);
 };
 
+class Entity : public BaseNode{
+public:
+    string type;
+    string value;
+    bool isRefered = false;
+
+    virtual string &getName()=0;
+
+    void refere(){
+        isRefered = true;
+    }
+};
+
 class VariableType : public BaseNode {
-    DataType type;
+    enum DataType type;
 public:
     explicit VariableType(DataType type){
         this->type = type;
@@ -94,14 +92,13 @@ public:
 };
 
 class Exp;
-class DefinedVariable : public BaseNode {
+class DefinedVariable : public Entity {
 private:
     VariableType* type;
     string id;
     Exp* value;
     list<int > array;
 public:
-    DefinedVariable(AttrNode *spec, AttrNode *decList);
 
     explicit DefinedVariable(AttrNode *varDec);
 
@@ -111,7 +108,7 @@ public:
         this->value = (Exp*)exp->baseNode;
     }
 
-    string &name() {
+    string & getName() override {
         return this->id;
     }
 
@@ -139,8 +136,8 @@ enum Operator{
 
 class Exp:public BaseNode{
 protected:
-    Operator operatorType;
-    DataType type;
+    enum Operator operatorType;
+    enum DataType type;
     string value;
 public:
     Exp(AttrNode* terminal, DataType dataType);
@@ -157,7 +154,7 @@ public:
 class Body : public BaseNode{
 public:
     list<DefinedVariable> vars;
-    list<Statement> statements;
+    list<Statement*> statements;
     Body(AttrNode* defList, AttrNode* stmtList);
 
 };
@@ -189,7 +186,7 @@ public:
 };
 
 
-class DefinedFunction : public BaseNode {
+class DefinedFunction : public Entity {
 private:
     VariableType* returnType;
     string id;
@@ -202,7 +199,7 @@ public:
     explicit DefinedFunction(AttrNode *functionID);
 
 
-    list<DefinedVariable>* getParameters();
+    list<DefinedVariable>& getParameters();
     void setReturnType(AttrNode* type);
 
     Body *getBody();
@@ -210,7 +207,7 @@ public:
         this->functionBody = (Body*)body->baseNode;
     }
 
-    string &name() {
+    string &getName() override {
         return this->id;
     }
 
@@ -233,7 +230,7 @@ public:
 
 class Args: public BaseNode{
 public:
-    list<Exp> args;
+    list<Exp*> args;
 };
 
 class InvokeExp:public Exp{
