@@ -61,6 +61,11 @@ void DefinedVariable::addDimension(AttrNode* dim) {
     this->array.push_back(newDim);
 }
 
+DefinedVariable::~DefinedVariable() {
+    delete(type);
+    delete(value);
+}
+
 DefinedFunction::DefinedFunction(AttrNode *functionID, AttrNode *paraList) {
     this->id = functionID->value;
     this->loc = new Location(functionID->lineNo, 0);
@@ -77,13 +82,13 @@ DefinedFunction::DefinedFunction(AttrNode *functionID) {
 void DefinedFunction::parseParameters(AttrNode* paraList) {
     DefinedVariable* var = (DefinedVariable*)paraList->baseNode;
     while (var!= nullptr){
-        this->parameters.push_back(*var);
+        this->parameters.push_back(var);
         var = (DefinedVariable*)var->next;
     }
 }
 
 
-list<DefinedVariable>& DefinedFunction::getParameters() {
+list<DefinedVariable*>& DefinedFunction::getParameters() {
     return this->parameters;
 }
 
@@ -147,7 +152,7 @@ InvokeExp::InvokeExp(AttrNode *invoker, AttrNode *args) {
 Body::Body(AttrNode *defList, AttrNode *stmtList) {
     DefinedVariable* variable = (DefinedVariable*)defList->baseNode;
     while (variable!= nullptr){
-        this->vars.push_back(*variable);
+        this->vars.push_back(variable);
         variable = (DefinedVariable*)variable->next;
     }
     Statement* statement = (Statement*)stmtList->baseNode;
@@ -160,3 +165,8 @@ Body::Body(AttrNode *defList, AttrNode *stmtList) {
 Statement::Statement(AttrNode *exp) {
     this->exp = (Exp*)exp->baseNode;
 }
+
+Struct::~Struct() {
+    free_all(members);
+}
+

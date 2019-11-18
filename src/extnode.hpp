@@ -1,49 +1,10 @@
 #ifndef __EXTNODE__
 #define __EXTNODE__
 
-#include <string>
-#include <list>
+#include "includes.h"
 #include "deliver.hpp"
 
-using namespace std;
-
-class Location {
-private:
-    int lineNo;
-public:
-    Location(int line, int col) {
-        this->lineNo = line;
-    }
-
-    string toString() {
-        return "line " + to_string(lineNo);
-    }
-};
-
-class ConstantEntry {
-    string name;
-    string value;
-};
-
-class ConstantTable {
-    list<ConstantEntry> entries;
-};
-
 class Scope;
-
-enum NodeType {
-    VAR,
-    FUNC,
-    OTHER
-};
-
-enum DataType{
-    INT_TYPE,
-    FLOAT_TYPE,
-    CHAR_TYPE,
-    STRUCT_TYPE,
-    OTHER_TYPE
-};
 
 class BaseNode {
 
@@ -51,14 +12,20 @@ public:
     enum NodeType flag=OTHER;
     BaseNode *next;
     Location *loc;
+    bool loc_alloc = false;// mark is it allocate Location* loc
 
-    virtual void setScope(Scope *scope) {}
+    virtual void setScope(Scope *scope) {};
 
     virtual Location *location() {
         return loc;
     }
 
     virtual void setNext(AttrNode *extDef);
+    ~BaseNode(){
+        if(loc_alloc)
+            delete(loc);
+    }
+
 };
 
 class Entity : public BaseNode{
@@ -88,7 +55,8 @@ class DefinedVariable;
 class Struct: VariableType{
 public:
     string typeName;
-    list<DefinedVariable> members;
+    list<DefinedVariable*> members;
+    ~Struct();
 };
 
 class Exp;
@@ -112,27 +80,10 @@ public:
         return this->id;
     }
 
+    ~DefinedVariable();
 
 };
 
-
-enum Operator{
-    ADD_OP,
-    SUB_OP,
-    MUL_OP,
-    DIV_OP,
-    NOT_OP,
-    INVOKE,
-    ASSIGN_OP,
-    AND_OP,
-    OR_OP,
-    LT_OP,
-    LE_OP,
-    GT_OP,
-    GE_OP,
-    NE_OP,
-    EQ_OP
-};
 
 class Exp:public BaseNode{
 protected:
@@ -149,13 +100,20 @@ protected:
     Exp *exp;
 public:
     explicit Statement(AttrNode* exp);
+    ~Statement(){
+        delete(exp);
+    }
 };
 
 class Body : public BaseNode{
 public:
-    list<DefinedVariable> vars;
+    list<DefinedVariable*> vars;
     list<Statement*> statements;
     Body(AttrNode* defList, AttrNode* stmtList);
+    ~Body(){
+        free_all(vars);
+        free_all(statements);
+    }
 
 };
 
@@ -170,6 +128,10 @@ public:
     IfStatement(AttrNode* exp, AttrNode* ifNode):Statement(exp){
         ifbody  = (Statement*)ifNode->baseNode;
     }
+    ~IfStatement(){
+        delete(ifbody);
+        delete(elseBody);
+    }
 };
 
 class WhileStatement:public Statement{
@@ -177,6 +139,9 @@ public:
     Statement* loop;
     WhileStatement(AttrNode* exp, AttrNode* loopNode):Statement(exp){
         loop = (Statement*)loopNode->baseNode;
+    }
+    ~WhileStatement(){
+        delete(loop);
     }
 };
 
@@ -190,16 +155,21 @@ class DefinedFunction : public Entity {
 private:
     VariableType* returnType;
     string id;
-    list<DefinedVariable> parameters;
+    list<DefinedVariable*> parameters;
     Body* functionBody;
     void parseParameters(AttrNode* paraList);
 
 public:
     DefinedFunction(AttrNode *functionID, AttrNode *paraList);
     explicit DefinedFunction(AttrNode *functionID);
+    ~DefinedFunction(){
+        delete(returnType);
+        delete(functionBody);
+        free_all(parameters);
+    }
 
 
-    list<DefinedVariable>& getParameters();
+    list<DefinedVariable*>& getParameters();
     void setReturnType(AttrNode* type);
 
     Body *getBody();
@@ -211,6 +181,7 @@ public:
         return this->id;
     }
 
+
 };
 
 class BinaryExp:public Exp{
@@ -218,6 +189,10 @@ public:
     Exp* left;
     Exp* right;
     BinaryExp(AttrNode * le, AttrNode * rig, Operator operatorType);
+    ~BinaryExp(){
+        delete(left);
+        delete(right);
+    }
 
 };
 
@@ -225,12 +200,18 @@ class SingleExp:public Exp{
 public:
     Exp* operated;
     SingleExp(AttrNode* operated, Operator operatorType);
+    ~SingleExp(){
+        delete(operated);
+    }
 
 };
 
 class Args: public BaseNode{
 public:
     list<Exp*> args;
+    ~Args(){
+        free_all(args);
+    }
 };
 
 class InvokeExp:public Exp{
@@ -239,6 +220,9 @@ public:
     Args *args;
     explicit InvokeExp(AttrNode* invoker);
     InvokeExp(AttrNode* invoker, AttrNode* args);
+    ~InvokeExp(){
+        delete(args);
+    }
 };
 
 #endif

@@ -28,4 +28,6 @@ void add_childs(struct AttrNode* parent, struct AttrNode* other_child);
 
 void show_sytax_tree(struct AttrNode* root);
 
+void free_AttrNode(AttrNode* root);
+
 #endif

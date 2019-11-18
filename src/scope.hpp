@@ -10,11 +10,12 @@ using namespace std;
 
 class LocalScope;
 class Scope{
-
-protected:
-    list<LocalScope> children; // the actual type is LocalScope, will be type convert
 public:
-    virtual Entity* get(string& name){ return nullptr;};
+    list<LocalScope*> children; // the actual type is LocalScope, will be type convert
+    virtual Entity* get(string& name)=0;
+    ~Scope(){
+        free_all(children);
+    }
 
 };
 
@@ -22,7 +23,7 @@ class ToplevelScope: public Scope{
 
 protected:
     map<string, Entity*> enties;
-    list<DefinedVariable> staticLocalVariables; //cache
+    list<DefinedVariable*> staticLocalVariables; //cache
 public:
     Entity* declareEntity(Entity &entity);
     void checkReferences(ErrorHandler &err);
@@ -34,7 +35,7 @@ class LocalScope: public Scope{
 
 protected:
     Scope* parent;
-    map<string, DefinedVariable> variables;
+    map<string, DefinedVariable*> variables;
 
 public:
     LocalScope(Scope *parent):Scope(){

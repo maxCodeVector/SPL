@@ -36,6 +36,19 @@ void show_tree_helper(struct AttrNode* node, int indent){
     }
 }
 
+void free_AttrNode(AttrNode* root){
+    if(root==nullptr)
+        return;
+    if(root->firstChild!= nullptr){
+        free_AttrNode(root->firstChild);
+    }
+    if(root->nextSibling!= nullptr){
+        free_AttrNode(root->nextSibling);
+    }
+    free(root);
+}
+
+
 void show_sytax_tree(struct AttrNode* root){
     show_tree_helper(root, 0);
 }

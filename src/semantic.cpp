@@ -2,7 +2,6 @@
 #include "scope.hpp"
 #include "error.hpp"
 #include "ast.hpp"
-#include <iostream>
 using namespace std;
 
 
@@ -18,6 +17,13 @@ private:
 public:
     LocalResolver(ErrorHandler &h): errorHandler(h), constantTable(), scopeStack(){
 
+    }
+    ~LocalResolver(){
+        ToplevelScope* toplevelScope = (ToplevelScope*)scopeStack.front();
+        while (!scopeStack.empty()) {
+            scopeStack.pop_front();
+        }
+        delete(toplevelScope);
     }
 
     bool resolve(AST &ast){
@@ -56,23 +62,26 @@ public:
 
     }
 
-    void resoveFunctions(list<DefinedFunction>& funcs){
-        for(DefinedFunction& function: funcs){
-            pushScope(function.getParameters());
-            resolve(*function.getBody());
-            function.setScope(popScope());
+    void resoveFunctions(list<DefinedFunction*>& funcs){
+        for(DefinedFunction* function: funcs){
+            pushScope(function->getParameters());
+            resolve(*function->getBody());
+            function->setScope(popScope());
         }
     }
 
 
-    void pushScope(list<DefinedVariable>& vars){
-        LocalScope* scope = new LocalScope(currentScope());
-        for(DefinedVariable& var: vars){
-            if(scope->isDefinedLocally(var.getName())){
-                string message = "duplicated variable in scope：" + var.getName();
-                error(var.location(), message);
+    void pushScope(list<DefinedVariable*>& vars){
+        Scope* parent = currentScope();
+        LocalScope* scope = new LocalScope(parent);
+        parent->children.emplace_back(scope);
+
+        for(DefinedVariable* var: vars){
+            if(scope->isDefinedLocally(var->getName())){
+                string message = "duplicated variable in scope：" + var->getName();
+                error(var->location(), message);
             }else{
-                scope->defineVariable(var);
+                scope->defineVariable(*var);
             }
         }
         scopeStack.push_back(scope);
@@ -85,21 +94,16 @@ public:
     }
 
     void error(Location* loc, string& message){
-        std::cerr << "error in:" << loc->toString() << ", " << message << endl;
+        this->errorHandler.recordError(loc, message);
     }
 
-
-
 };
-
-
-
-
 
 int semantic_analysis(AttrNode* root){
     AST* ast =  (AST*)root->baseNode;
     ErrorHandler h = ErrorHandler();
     LocalResolver local(h);
     local.resolve(*ast);
+    h.showError();
     return 1;
 }

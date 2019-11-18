@@ -3,6 +3,7 @@ int b;
 
 int add1(int n)
 {
+    int n;
   return n + 1;
 }
 int test_2_r02()
