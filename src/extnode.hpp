@@ -96,7 +96,7 @@ public:
 class Exp;
 class DefinedVariable : public BaseNode {
 private:
-    VariableType* type{};
+    VariableType* type;
     string id;
     Exp* value;
     list<int > array;
@@ -202,10 +202,10 @@ public:
     explicit DefinedFunction(AttrNode *functionID);
 
 
-    list<DefinedVariable>& getParameters();
+    list<DefinedVariable>* getParameters();
     void setReturnType(AttrNode* type);
 
-    AST *getBody();
+    Body *getBody();
     void setBody(AttrNode* body){
         this->functionBody = (Body*)body->baseNode;
     }

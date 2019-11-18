@@ -1,7 +1,13 @@
-int test_2_r01()
+int a, b;
+int b;
+
+int add1(int n)
 {
-  int x1 = 5;
-  int x2 = 3;
-  int x4 = x1 + x3;
-  return 0;
+  return n + 1;
+}
+int test_2_r02()
+{
+  int k = 4;
+  int r = add(k);
+  return r;
 }

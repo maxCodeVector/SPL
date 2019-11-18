@@ -20,9 +20,9 @@ public:
         convert2AST(root);
     }
 
-    list<Entity> declaritions();
+    list<Entity>& declaritions(list<Entity>& res);
     void setConstant(ConstantTable &constantTable);
-    list<DefinedFunction>& defineFunctions();
+    list<DefinedFunction>* defineFunctions();
 
 };
 

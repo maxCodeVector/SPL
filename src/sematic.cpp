@@ -2,6 +2,7 @@
 #include "scope.hpp"
 #include "error.hpp"
 #include "ast.hpp"
+#include <iostream>
 using namespace std;
 
 
@@ -19,18 +20,20 @@ public:
 
     }
 
-    bool resove(AST &ast){
+    bool resolve(AST &ast){
         ToplevelScope toplevelScope;
         scopeStack.push_back(toplevelScope);
 
-        for(Entity &e: ast.declaritions()){
+        list<Entity> entities;
+        for(Entity &e: ast.declaritions(entities)){
             Entity* hasE = toplevelScope.declareEntity(e);
             if(hasE!= nullptr){
-                error(e.location, "Duplicated define Error for:"+e.name+", last defined:"+hasE->location->toString());
+                string message = "duplicated define for:"+e.name+", last defined in:"+hasE->location->toString();
+                error(e.location, message);
             }
         }
 
-        resoveFunctions(ast.defineFunctions());
+        resoveFunctions(*ast.defineFunctions());
         toplevelScope.checkReferences(this->errorHandler);
         if(errorHandler.errorOccured()){
             return false;
@@ -40,26 +43,33 @@ public:
         return true;
     }
 
+    void resolve(Body& body){
+
+    }
+
+
     void resoveGloableVarIntializers();
     void resoveConstantValues();
     void resoveFunctions(list<DefinedFunction>& funcs){
-        for(DefinedFunction function: funcs){
-            pushScope(function.getParameters());
-            resove(*function.getBody());
+        for(DefinedFunction& function: funcs){
+            pushScope(*function.getParameters());
+            resolve(*function.getBody());
             function.setScope(popScope());
         }
     }
 
-    void pushScope(list<DefinedVariable> vars){
-        LocalScope scope = LocalScope(currentScope());
-        for(DefinedVariable var: vars){
-            if(scope.isDefinedLocally(var.name())){
-                error(var.location(), "duplicated variable in scope:"+var.name());
+
+    void pushScope(list<DefinedVariable>& vars){
+        LocalScope* scope = new LocalScope(currentScope());
+        for(DefinedVariable& var: vars){
+            if(scope->isDefinedLocally(var.name())){
+                string message = "fuck：" + var.name();
+                error(var.location(), message);
             }else{
-                scope.defineVariable(var);
+                scope->defineVariable(var);
             }
         }
-        scopeStack.push_back(scope);
+        scopeStack.push_back(*scope);
     }
 
     Scope& popScope(){
@@ -68,8 +78,8 @@ public:
         return scope;
     }
 
-    void error(Location* loc, string message){
-        fprintf(stderr, "error in:%s, %s\n", loc->toString().c_str(), message.c_str());
+    void error(Location* loc, string& message){
+        std::cerr << "error in:" << loc->toString() << ", " << message << endl;
     }
 
 
@@ -84,6 +94,6 @@ int sematic_analysis(AttrNode* root){
     AST* ast =  (AST*)root->baseNode;
     ErrorHandler h = ErrorHandler();
     LocalResolver local(h);
-    local.resove(*ast);
+    local.resolve(*ast);
     return 1;
 }

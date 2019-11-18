@@ -454,7 +454,7 @@ Exp: Exp ASSIGN Exp{
                 add_childs($$, $2);
                 add_childs($$, $3);
                 add_childs($$, $4);
-		InvokeExp* exp = new InvokeExp($1, $2);
+		InvokeExp* exp = new InvokeExp($1, $3);
 		$$ -> baseNode = exp;
             }
     // | ID LP Args error
@@ -513,9 +513,9 @@ Args: Exp COMMA Args{
                 $$ = make_parent($1, "Args");
                 add_childs($$, $2);
                 add_childs($$, $3);
-                BaseNode* var = $1->baseNode;
-                var->setNext($3);
-                $$->baseNode = var;  // link_list of Exp
+                BaseNode* exp = $1->baseNode;
+                exp->setNext($3);
+                $$->baseNode = exp;  // link_list of Exp
             }
     | Exp{
                 $$ = make_parent($1, "Args");

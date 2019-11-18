@@ -90,12 +90,12 @@ void DefinedFunction::parseParameters(AttrNode* paraList) {
 }
 
 
-list<DefinedVariable>& DefinedFunction::getParameters() {
-    this->parameters;
+list<DefinedVariable>* DefinedFunction::getParameters() {
+    return &this->parameters;
 }
 
-AST *DefinedFunction::getBody() {
-    return nullptr;
+Body* DefinedFunction::getBody() {
+    return this->functionBody;
 }
 
 void DefinedFunction::setReturnType(AttrNode *type) {
