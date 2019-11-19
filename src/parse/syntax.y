@@ -1,8 +1,8 @@
 %{
     #ifndef _SYNTAX
     #define _SYNTAX
-    #include "../ast.hpp"
-    #include "../semantic.hpp"
+    #include "../ast.h"
+    #include "../semantic.h"
     #include "lex.yy.c"
     void yyerror(const char*);
     int result;
@@ -438,14 +438,14 @@ Exp: Exp ASSIGN Exp{
     | MINUS Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
-                SingleExp* exp = new SingleExp($2, SUB_OP);
+                UnaryExp* exp = new UnaryExp($2, SUB_OP);
                 $$->baseNode = exp;
             }
     // | MINUS error
     | NOT Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
-                SingleExp* exp = new SingleExp($2, NOT_OP);
+                UnaryExp* exp = new UnaryExp($2, NOT_OP);
                 $$->baseNode = exp;
             }
     // | NOT error
@@ -537,7 +537,7 @@ int main(int argc, char **argv){
     yyparse();
     fclose(yyin);
     if(has_error==0){
-        show_sytax_tree(root);
+        show_syntax_tree(root);
         semantic_analysis(root);
     	free_AttrNode(root);
     }else

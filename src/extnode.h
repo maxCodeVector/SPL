@@ -2,23 +2,33 @@
 #define __EXTNODE__
 
 #include "includes.h"
-#include "deliver.hpp"
+#include "deliver.h"
 
 class Scope;
 
 class BaseNode {
-protected:
+private:
     Location *loc;
+    bool loc_alloc;// mark is it allocate Location* loc
 
 public:
     enum NodeType flag=OTHER;
     BaseNode *next;
-    bool loc_alloc = false;// mark is it allocate Location* loc
 
     virtual void setScope(Scope *scope) {};
 
-    virtual Location *location() {
+    Location *getLocation() {
         return loc;
+    }
+
+    void setLocation(Location* location) {
+        this->loc = location;
+        loc_alloc = false;
+    }
+
+    void setLocation(int lineNo, int colNo) {
+        this->loc = new Location(lineNo, colNo);
+        loc_alloc = true;
     }
 
     virtual void setNext(AttrNode *extDef);
@@ -31,8 +41,6 @@ public:
 
 class Entity : public BaseNode{
 public:
-    string type;
-    string value;
     bool isRefered = false;
 
     virtual string &getName()=0;
@@ -93,7 +101,7 @@ class Exp:public BaseNode{
 protected:
     enum Operator operatorType;
     enum DataType type;
-    string value;
+    string value;//expression value if it is ID or int:float:char
     Entity* referenceVar;
 public:
     Exp(AttrNode* terminal, DataType dataType);
@@ -214,12 +222,12 @@ public:
 
 };
 
-class SingleExp:public Exp{
+class UnaryExp: public Exp{
 public:
-    Exp* operated;
-    SingleExp(AttrNode* operated, Operator operatorType);
-    ~SingleExp(){
-        delete(operated);
+    Exp* operand;
+    UnaryExp(AttrNode* operated, Operator operatorType);
+    ~UnaryExp(){
+        delete(operand);
     }
     Error * checkReference(Scope* scope) override;
 

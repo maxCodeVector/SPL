@@ -1,4 +1,4 @@
-#include "ast.hpp"
+#include "ast.h"
 
 void AST::findEntity(BaseNode* extList){
     BaseNode* next = extList;

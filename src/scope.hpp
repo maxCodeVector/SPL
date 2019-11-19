@@ -4,8 +4,8 @@
 #include <map>
 #include <list>
 #include <string>
-#include "error.hpp"
-#include "extnode.hpp"
+#include "error.h"
+#include "extnode.h"
 using namespace std;
 
 class LocalScope;

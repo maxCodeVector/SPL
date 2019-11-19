@@ -1,4 +1,4 @@
-#include "deliver.hpp"
+#include "deliver.h"
 #include <malloc.h>
 
 void show_tree_helper(struct AttrNode* node, int indent){
@@ -49,7 +49,7 @@ void free_AttrNode(AttrNode* root){
 }
 
 
-void show_sytax_tree(struct AttrNode* root){
+void show_syntax_tree(struct AttrNode* root){
     show_tree_helper(root, 0);
 }
 

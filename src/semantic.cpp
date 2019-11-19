@@ -1,18 +1,9 @@
-#include "semantic.hpp"
+#include "semantic.h"
 #include "scope.hpp"
-#include "error.hpp"
-#include "ast.hpp"
+#include "error.h"
+#include "ast.h"
+#include <fstream>
 using namespace std;
-
-
-class Visitor{
-    virtual void resolve(AST& ast)=0;
-    virtual void resolve(Body& body)=0;
-    virtual void resolve(Statement& statement)=0;
-
-};
-
-
 
 
 class LocalResolver:Visitor{
@@ -46,8 +37,8 @@ public:
         for(Entity* e: ast.declaritions(entities)){
             Entity* hasE = toplevelScope->declareEntity(*e);
             if(hasE!= nullptr){
-                string message = "duplicated define for:"+e->getName()+", last defined in:"+hasE->location()->toString();
-                error(e->location(), message);
+                string message = "duplicated define for:"+e->getName()+", last defined in:"+ hasE->getLocation()->toString();
+                error(e->getLocation(), message);
             }
         }
 
@@ -67,7 +58,7 @@ public:
         for(DefinedVariable* var: body.vars){
             if(curr->isDefinedLocally(var->getName())){
                 string message = "duplicated variable in scope：" + var->getName();
-                error(var->location(), message);
+                error(var->getLocation(), message);
             }else{
                 curr->defineVariable(*var);
             }
@@ -114,7 +105,7 @@ public:
         for(DefinedVariable* var: vars){
             if(scope->isDefinedLocally(var->getName())){
                 string message = "duplicated variable in scope：" + var->getName();
-                error(var->location(), message);
+                error(var->getLocation(), message);
             }else{
                 scope->defineVariable(*var);
             }
@@ -146,6 +137,8 @@ int semantic_analysis(AttrNode* root){
     LocalResolver local(h);
     local.resolve(*ast);
     h.showError(std::cout);
+    ofstream outfile("../src/res.o");
+    h.showError(outfile);
     delete(ast);
     return 1;
 }

@@ -1,4 +1,4 @@
-#include "extnode.hpp"
+#include "extnode.h"
 #include "scope.hpp"
 
 
@@ -41,8 +41,7 @@ void BaseNode::setNext(AttrNode *extDef) {
 
 DefinedVariable::DefinedVariable(AttrNode *varDec) {
     this->id = varDec->value;
-    this->loc = new Location(varDec->lineNo, 0);
-    this->loc_alloc = true;
+    setLocation(new Location(varDec->lineNo, 0));
     this->flag = VAR;
 }
 
@@ -68,16 +67,14 @@ DefinedVariable::~DefinedVariable() {
 
 DefinedFunction::DefinedFunction(AttrNode *functionID, AttrNode *paraList) {
     this->id = functionID->value;
-    this->loc = new Location(functionID->lineNo, 0);
-    this->loc_alloc = true;
+    setLocation(new Location(functionID->lineNo, 0));
     this->flag = FUNC;
     parseParameters(paraList);
 }
 
 DefinedFunction::DefinedFunction(AttrNode *functionID) {
     this->id = functionID->value;
-    this->loc = new Location(functionID->lineNo, 0);
-    this->loc_alloc = true;
+    setLocation(new Location(functionID->lineNo, 0));
     this->flag = FUNC;
 }
 
@@ -104,17 +101,26 @@ void DefinedFunction::setReturnType(AttrNode *type) {
 
 
 Exp::Exp(AttrNode * terminal, DataType dataType) {
-    this->loc = new Location(terminal->lineNo, 0);
-    this->loc_alloc = true;
+    setLocation(new Location(terminal->lineNo, 0));
     this->value = terminal->value;
     this->type = dataType;
+    if(this->value=="break"){
+        this->operatorType = BREAK_OP;
+    } else if(this->value=="continue"){
+        this->operatorType = CONT_OP;
+    }
 }
 
 Error * Exp::checkReference(Scope *scope) {
+    if(this->operatorType==CONT_OP){
+        return new Error{getLocation(), "not support continue now"};
+    } else if(this->operatorType==BREAK_OP){
+        return new Error{getLocation(), "not support break now"};
+    }
     if(this->type==OTHER_TYPE){
         Entity* entity = scope->get(this->getName());
         if(entity== nullptr){
-            return new Error{location(), "can not found defined for:"+getName()};
+            return new Error{getLocation(), "can not found defined for:" + getName()};
         }
         this->setReferenceVar(entity);
     }
@@ -125,7 +131,7 @@ BinaryExp::BinaryExp(AttrNode * le, AttrNode * rig, Operator operatorType) {
     this->left = (Exp*)le->baseNode;
     this->right = (Exp*)rig->baseNode;
     this->operatorType = operatorType;
-    this->loc = left->location();
+    setLocation(left->getLocation());
 }
 
 Error * BinaryExp::checkReference(Scope *scope) {
@@ -136,20 +142,19 @@ Error * BinaryExp::checkReference(Scope *scope) {
     return this->right->checkReference(scope);
 }
 
-SingleExp::SingleExp(AttrNode *operatedNode, Operator operatorType) {
-    this->operated = (Exp*)operatedNode->baseNode;
+UnaryExp::UnaryExp(AttrNode *operatedNode, Operator operatorType) {
+    this->operand = (Exp*)operatedNode->baseNode;
     this->operatorType = operatorType;
-    this->loc = operated->location();
+    setLocation(operand->getLocation());
 }
 
-Error *SingleExp::checkReference(Scope *scope) {
-    return this->operated->checkReference(scope);
+Error *UnaryExp::checkReference(Scope *scope) {
+    return this->operand->checkReference(scope);
 }
 
 InvokeExp::InvokeExp(AttrNode *invoker) {
     this->functionName = invoker->value;
-    this->loc = new Location(invoker->lineNo, 0);
-    this->loc_alloc = true;
+    setLocation(new Location(invoker->lineNo, 0));
     this->operatorType = Operator ::INVOKE;
 }
 
@@ -172,12 +177,20 @@ InvokeExp::InvokeExp(AttrNode *invoker, AttrNode *args) {
     this->functionName = invoker->value;
     this->args = new Args;
     findEntity(this->args, (Exp*)args->baseNode);
-    this->loc = this->args->location();
+    setLocation(invoker->lineNo, 0);
 }
 
 Error *InvokeExp::checkReference(Scope *scope) {
+    Entity* entity = scope->get(this->functionName);
+    if(entity== nullptr){
+        return new Error{getLocation(), "not found this function:" + functionName};
+    } else if(entity->flag!=FUNC){
+        return new Error{getLocation(), "want to invoke non-function:" + functionName};
+    }
     for(Exp* exp:args->args) {
-        return exp->checkReference(scope);
+        Error* error = exp->checkReference(scope);
+        if(error)
+            return error;
     }
     return nullptr;
 }

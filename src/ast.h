@@ -1,7 +1,7 @@
 #ifndef __SPLAST__
 #define __SPLAST__
-#include "deliver.hpp"
-#include "extnode.hpp"
+#include "deliver.h"
+#include "extnode.h"
 #include "list"
 using namespace std;
 
@@ -31,6 +31,11 @@ public:
 
 };
 
+class Visitor{
+    virtual void resolve(AST& ast)=0;
+    virtual void resolve(Body& body)=0;
+    virtual void resolve(Statement& statement)=0;
+};
 
 
 #endif

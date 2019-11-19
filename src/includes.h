@@ -37,9 +37,9 @@ class ConstantTable {
 };
 
 enum NodeType {
+    OTHER,
     VAR,
     FUNC,
-    OTHER
 };
 
 enum DataType{
@@ -68,7 +68,9 @@ enum Operator{
     GT_OP,
     GE_OP,
     NE_OP,
-    EQ_OP
+    EQ_OP,
+    CONT_OP,
+    BREAK_OP
 };
 
 template <typename T>

@@ -47,6 +47,6 @@ test: bin/splc
 .PHONY: clean
 clean:
 	@rm -rf bin/
-	@-cd src && rm *.o
-	@-cd src/parse && rm -f lex.yy.* syntax.tab* *.out *.so syntax.output
+	@-cd src && rm *.o *.out
+	@-cd src/parse && rm -f lex.yy.* syntax.tab* *.so syntax.output
 	@-rm $(TEST_DIR)/*.res

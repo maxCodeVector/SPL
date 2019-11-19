@@ -1,12 +1,19 @@
-float a, b;
-int add1(int n, int b)
+
+int add1(int n)
 {
-    n1 = b1+1;
-  return -n2 + 1;
+  return n + 1;
+  break;
 }
 int test_2_r02()
 {
   int k = 4;
-  int r = add(k1);
+  int r = test_2_r02(k);
+  return r;
+}
+
+int test_2_r02()
+{
+  int k = 4;
+  int r = test_2_r02(k);
   return r;
 }
