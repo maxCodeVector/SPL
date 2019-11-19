@@ -1,6 +1,6 @@
 #ifndef __SPLAST__
 #define __SPLAST__
-#include "deliver.h"
+#include "parse/deliver.h"
 #include "extnode.h"
 #include "list"
 using namespace std;

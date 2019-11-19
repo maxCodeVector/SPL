@@ -2,7 +2,6 @@
     #ifndef _SYNTAX
     #define _SYNTAX
     #include "../ast.h"
-    #include "../semantic.h"
     #include "lex.yy.c"
     void yyerror(const char*);
     int result;
@@ -71,6 +70,8 @@ ExtDef: Specifier ExtDecList SEMI  {
     | Specifier SEMI {
         $$ = make_parent($1, "ExtDef");
         add_childs($$, $2);
+        DeclaredTypeVariable* declare = new DeclaredTypeVariable($1);
+        $$ -> baseNode = declare;
     }
     | Specifier FunDec CompSt {
         $$ = make_parent($1, "ExtDef");
@@ -116,10 +117,14 @@ StructSpecifier: STRUCT ID LC DefList RC {
         add_childs($$, $3);
         add_childs($$, $4);
         add_childs($$, $5);
+	Struct* st = new Struct($2, $4);
+	$$ -> baseNode = st;
     }
     | STRUCT ID {
         $$ = make_parent($1, "StructSpecifier");
         add_childs($$, $2);
+        Struct* st = new Struct($2);
+	$$ -> baseNode = st;
     }
     // | STRUCT error LC DefList RC
     // | STRUCT ID error DefList RC
@@ -144,6 +149,7 @@ VarDec: ID   {
             }
     | TOKENERROR {
                 $$ = make_parent($1, "VarDec");
+                //todo with AST
             }
     // | VarDec error INT RB
     // | VarDec LB INT error
@@ -432,6 +438,7 @@ Exp: Exp ASSIGN Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+                $$->baseNode = $2->baseNode;
             }
     // | error Exp RP
     // | LP Exp error
@@ -473,6 +480,8 @@ Exp: Exp ASSIGN Exp{
                 add_childs($$, $2);
                 add_childs($$, $3);
                 add_childs($$, $4);
+                BinaryExp* exp = new BinaryExp($1, $3, ARRAY_INDEX_OP);
+		$$ -> baseNode = exp;
             }
     // | Exp error Exp RB
     // | Exp LB Exp error
@@ -480,6 +489,8 @@ Exp: Exp ASSIGN Exp{
                 $$ = make_parent($1, "Exp");
                 add_childs($$, $2);
                 add_childs($$, $3);
+    		GetAttributeExp* exp = new GetAttributeExp($1, $3->value);
+		$$->baseNode = exp;
             }
     // | Exp DOT error
     | ID   {
@@ -528,20 +539,19 @@ void yyerror(const char *s){
     has_error ++;
     fprintf(stderr, "Error type B at Line %d: %s\n", yylloc.first_line, s);
 }
-int main(int argc, char **argv){
+
+AttrNode* get_parse_tree(int argc, char **argv){
     yyin = fopen(argv[1], "r");
     if(yyin==0){
        fprintf(stderr, "file not found:%s\n", argv[1]);
-       return 1;
+       return NULL;
     }
     yyparse();
     fclose(yyin);
-    if(has_error==0){
-        show_syntax_tree(root);
-        semantic_analysis(root);
-    	free_AttrNode(root);
-    }else
+    if(has_error!=0){
         fprintf(stderr, "total error %d\n", has_error);
-        
+        return NULL;
+    }
+    return root;
 }
 

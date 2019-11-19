@@ -136,9 +136,9 @@ int semantic_analysis(AttrNode* root){
     ErrorHandler h = ErrorHandler();
     LocalResolver local(h);
     local.resolve(*ast);
-    h.showError(std::cout);
+    h.showError(std::cerr);
     ofstream outfile("../src/res.o");
-    h.showError(outfile);
+//    h.showError(outfile);
     delete(ast);
     return 1;
 }

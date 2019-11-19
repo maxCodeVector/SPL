@@ -5,14 +5,16 @@ BISON=bison
 
 SRC_DIR=src
 OUT_DIR=bin
+BISON_SRC=src/parse
+
 SOURCE=$(wildcard $(SRC_DIR)/*.cpp)
+SOURCE+=$(wildcard $(BISON_SRC)/*.cpp)
 OBJS=$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SOURCE)))
 INCLUDE=$(wildcard $(SRC_DIR)/*.h) $(wildcard $(SRC_DIR)/*.hpp)
 
 TEST_DIR=test
 TEST_SOURCE=$(sort $(wildcard $(TEST_DIR)/*.spl))
 
-BISON_SRC=src/parse
 
 splc:$(BISON_SRC)/syntax.tab.o $(OBJS)
 	test -d bin || mkdir bin
@@ -35,7 +37,7 @@ debug:$(BISON_SRC)/syntax.tab.o $(OBJS)
 
 test: bin/splc
 	@$(foreach var, $(TEST_SOURCE),\
-		$(OUT_DIR)/splc $(var) > $(patsubst %.spl,%.res,$(var)) 2>&1; \
+		$(OUT_DIR)/splc $(var) > $(patsubst %.spl,%.res,$(var)); \
 		test -f $(patsubst %.spl,%.out,$(var)) || echo $(var) "ignore test";\
 		test -f $(patsubst %.spl,%.out,$(var)) && \
 		echo $(var) "test start" && \
@@ -48,5 +50,5 @@ test: bin/splc
 clean:
 	@rm -rf bin/
 	@-cd src && rm *.o *.out
-	@-cd src/parse && rm -f lex.yy.* syntax.tab* *.so syntax.output
+	@-cd src/parse && rm -f lex.yy.* syntax.tab* *.so syntax.output *.o
 	@-rm $(TEST_DIR)/*.res

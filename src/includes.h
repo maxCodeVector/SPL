@@ -40,6 +40,7 @@ enum NodeType {
     OTHER,
     VAR,
     FUNC,
+    DECLARATION
 };
 
 enum DataType{
@@ -70,7 +71,9 @@ enum Operator{
     NE_OP,
     EQ_OP,
     CONT_OP,
-    BREAK_OP
+    BREAK_OP,
+    DOT_OP,
+    ARRAY_INDEX_OP
 };
 
 template <typename T>

@@ -152,10 +152,12 @@ Error *UnaryExp::checkReference(Scope *scope) {
     return this->operand->checkReference(scope);
 }
 
+
 InvokeExp::InvokeExp(AttrNode *invoker) {
     this->functionName = invoker->value;
     setLocation(new Location(invoker->lineNo, 0));
     this->operatorType = Operator ::INVOKE;
+    this->args = new Args;
 }
 
 
@@ -217,3 +219,28 @@ Struct::~Struct() {
     free_all(members);
 }
 
+Struct::Struct(AttrNode *name):VariableType(STRUCT_TYPE){
+    this->typeName = name->value;
+}
+
+Struct::Struct(AttrNode *name, AttrNode *defList):VariableType(STRUCT_TYPE){
+    this->typeName = name->value;
+    DefinedVariable* nextVar = (DefinedVariable*)defList->baseNode;
+    while (nextVar!= nullptr){
+        this->members.push_back(nextVar);
+        nextVar = (DefinedVariable*)nextVar->next;
+    }
+}
+
+DeclaredTypeVariable::DeclaredTypeVariable(AttrNode *spec){
+    this->flag = DECLARATION;
+    VariableType* variableType = (VariableType*)spec->baseNode;
+    this->type = variableType;
+}
+
+GetAttributeExp::GetAttributeExp(AttrNode *operated, string& attributeName) {
+    Exp* exp = (Exp*)operated->baseNode;
+    this->attrName = attributeName;
+    this->operatorType = DOT_OP;
+    this->object = exp;
+}

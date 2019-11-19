@@ -1,19 +1,17 @@
-
-int add1(int n)
+int foo()
 {
-  return n + 1;
-  break;
+  int a = 10;
+  return a;
 }
-int test_2_r02()
+int test_2_o01(int a, int b)
 {
-  int k = 4;
-  int r = test_2_r02(k);
-  return r;
-}
-
-int test_2_r02()
-{
-  int k = 4;
-  int r = test_2_r02(k);
-  return r;
+  int c;
+  c = foo();
+  if (b > 0)
+  {
+    int a = c + 3;
+    b = b - a;
+  }
+  a = a + b;
+  return a;
 }

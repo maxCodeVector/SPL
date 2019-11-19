@@ -2,7 +2,7 @@
 #define __EXTNODE__
 
 #include "includes.h"
-#include "deliver.h"
+#include "parse/deliver.h"
 
 class Scope;
 
@@ -56,17 +56,39 @@ public:
     explicit VariableType(DataType type){
         this->type = type;
     }
+    DataType getType(){
+        return type;
+    }
 };
 VariableType* getVariableType(string &name);
 
 
 class DefinedVariable;
-class Struct: VariableType{
+class Struct: public VariableType{
 public:
     string typeName;
     list<DefinedVariable*> members;
+    explicit Struct(AttrNode* name);
+    Struct(AttrNode* name, AttrNode* defList);
     ~Struct();
+    string& getTypeName(){
+        return typeName;
+    }
 };
+
+class DeclaredTypeVariable:public Entity{
+    VariableType* type;
+    string baseTypeName = "baseType";
+public:
+    DeclaredTypeVariable(AttrNode* spec);
+    string& getName() override {
+        if(type->getType()==DataType::STRUCT_TYPE){
+            return ((Struct*)type)->getTypeName();
+        }
+        return baseTypeName;
+    }
+};
+
 
 class Exp;
 class DefinedVariable : public Entity {
@@ -130,7 +152,16 @@ public:
     }
 };
 
-class Body : public BaseNode{
+class BreakStatement{
+    virtual bool checkBreak() = 0;
+};
+
+class ContinueStatement{
+    virtual bool checkContinue() = 0;
+};
+
+
+class Body : public BaseNode, BreakStatement, ContinueStatement{
 public:
     list<DefinedVariable*> vars;
     list<Statement*> statements;
@@ -139,31 +170,33 @@ public:
         free_all(vars);
         free_all(statements);
     }
+    bool checkContinue() override { return true;};
+    bool checkBreak() override { return true;};
 
 };
 
 class IfStatement:public Statement{
 public:
-    Statement* ifbody;
-    Statement* elseBody;
+    Body* ifBody;
+    Body* elseBody;
     IfStatement(AttrNode* exp, AttrNode* ifNode, AttrNode* elseNode):Statement(exp){
-        ifbody  = (Statement*)ifNode->baseNode;
-        elseBody = (Statement*)elseNode->baseNode;
+        ifBody  = (Body*)ifNode->baseNode;
+        elseBody = (Body*)elseNode->baseNode;
     }
     IfStatement(AttrNode* exp, AttrNode* ifNode):Statement(exp){
-        ifbody  = (Statement*)ifNode->baseNode;
+        ifBody  = (Body*)ifNode->baseNode;
     }
     ~IfStatement(){
-        delete(ifbody);
+        delete(ifBody);
         delete(elseBody);
     }
 };
 
 class WhileStatement:public Statement{
 public:
-    Statement* loop;
+    Body* loop;
     WhileStatement(AttrNode* exp, AttrNode* loopNode):Statement(exp){
-        loop = (Statement*)loopNode->baseNode;
+        loop = (Body*)loopNode->baseNode;
     }
     ~WhileStatement(){
         delete(loop);
@@ -232,6 +265,19 @@ public:
     Error * checkReference(Scope* scope) override;
 
 };
+
+class GetAttributeExp: public Exp{
+    string attrName;
+public:
+    Exp* object;
+    GetAttributeExp(AttrNode* operated, string& attributeName);
+    ~GetAttributeExp(){
+        delete(object);
+    }
+    Error * checkReference(Scope* scope) override{ return nullptr;}
+
+};
+
 
 class Args: public BaseNode{
 public:

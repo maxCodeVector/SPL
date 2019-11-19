@@ -2,7 +2,7 @@
     extern "C" int yylex();
     #define YYSTYPE struct AttrNode*
     #include"syntax.tab.h"
-    #include "../deliver.h"
+    #include "deliver.h"
     int has_error = 0;
     /* library inclusions */
     int yycolno = 1;

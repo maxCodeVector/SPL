@@ -29,5 +29,6 @@ void add_childs(struct AttrNode* parent, struct AttrNode* other_child);
 void show_syntax_tree(struct AttrNode* root);
 
 void free_AttrNode(AttrNode* root);
+AttrNode* get_parse_tree(int argc, char **argv);
 
 #endif
