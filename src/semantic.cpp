@@ -5,7 +5,17 @@
 using namespace std;
 
 
-class LocalResolver{
+class Visitor{
+    virtual void resolve(AST& ast)=0;
+    virtual void resolve(Body& body)=0;
+    virtual void resolve(Statement& statement)=0;
+
+};
+
+
+
+
+class LocalResolver:Visitor{
 private:
     list<Scope*> scopeStack;
     ConstantTable constantTable;
@@ -26,7 +36,9 @@ public:
         delete(toplevelScope);
     }
 
-    bool resolve(AST& ast){
+
+
+    void resolve(AST& ast){
         ToplevelScope* toplevelScope = new ToplevelScope();
         scopeStack.push_back(toplevelScope);
 
@@ -44,11 +56,10 @@ public:
         resoveFunctions(ast.defineFunctions());
         toplevelScope->checkReferences(this->errorHandler);
         if(errorHandler.errorOccured()){
-            return false;
+            return;
         }
         ast.setScope(toplevelScope);
         ast.setConstant(this->constantTable);
-        return true;
     }
 
     void resolve(Body& body){
@@ -61,7 +72,22 @@ public:
                 curr->defineVariable(*var);
             }
         }
+        for(DefinedVariable* var: body.vars){
+            if(var->getValue()){
+                error(var->getValue()->checkReference(currentScope()));
+            }
+        }
+        for (Statement* statement:body.statements){
+            resolve(*statement);
+        }
+    }
 
+    void resolve(Statement& statement){
+        Exp* exp = statement.getExpression();
+        Error* _error = exp->checkReference(currentScope());
+        if(_error){
+            error(_error);
+        }
     }
 
     void resolveGloableVarIntializers(){
@@ -106,6 +132,12 @@ public:
         this->errorHandler.recordError(loc, message);
     }
 
+    void error(Error* err){
+        if(!err)
+            return;
+        this->errorHandler.recordError(err);
+    }
+
 };
 
 int semantic_analysis(AttrNode* root){
@@ -113,7 +145,7 @@ int semantic_analysis(AttrNode* root){
     ErrorHandler h = ErrorHandler();
     LocalResolver local(h);
     local.resolve(*ast);
-    h.showError(std::cerr);
+    h.showError(std::cout);
     delete(ast);
     return 1;
 }

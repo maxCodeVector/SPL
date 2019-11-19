@@ -21,6 +21,12 @@ public:
     }
 };
 
+struct Error{
+    Location* loc;
+    string message;
+};
+
+
 class ConstantEntry {
     string name;
     string value;
@@ -37,6 +43,7 @@ enum NodeType {
 };
 
 enum DataType{
+    DER_TYPE, // means it is derivative type
     INT_TYPE,
     FLOAT_TYPE,
     CHAR_TYPE,
@@ -46,6 +53,7 @@ enum DataType{
 
 
 enum Operator{
+    UNKNOWN_OP,
     ADD_OP,
     SUB_OP,
     MUL_OP,

@@ -1,4 +1,5 @@
 #include "extnode.hpp"
+#include "scope.hpp"
 
 
 VariableType* getVariableType(string &name) {
@@ -41,6 +42,7 @@ void BaseNode::setNext(AttrNode *extDef) {
 DefinedVariable::DefinedVariable(AttrNode *varDec) {
     this->id = varDec->value;
     this->loc = new Location(varDec->lineNo, 0);
+    this->loc_alloc = true;
     this->flag = VAR;
 }
 
@@ -67,6 +69,7 @@ DefinedVariable::~DefinedVariable() {
 DefinedFunction::DefinedFunction(AttrNode *functionID, AttrNode *paraList) {
     this->id = functionID->value;
     this->loc = new Location(functionID->lineNo, 0);
+    this->loc_alloc = true;
     this->flag = FUNC;
     parseParameters(paraList);
 }
@@ -74,6 +77,7 @@ DefinedFunction::DefinedFunction(AttrNode *functionID, AttrNode *paraList) {
 DefinedFunction::DefinedFunction(AttrNode *functionID) {
     this->id = functionID->value;
     this->loc = new Location(functionID->lineNo, 0);
+    this->loc_alloc = true;
     this->flag = FUNC;
 }
 
@@ -101,26 +105,51 @@ void DefinedFunction::setReturnType(AttrNode *type) {
 
 Exp::Exp(AttrNode * terminal, DataType dataType) {
     this->loc = new Location(terminal->lineNo, 0);
+    this->loc_alloc = true;
     this->value = terminal->value;
     this->type = dataType;
+}
+
+Error * Exp::checkReference(Scope *scope) {
+    if(this->type==OTHER_TYPE){
+        Entity* entity = scope->get(this->getName());
+        if(entity== nullptr){
+            return new Error{location(), "can not found defined for:"+getName()};
+        }
+        this->setReferenceVar(entity);
+    }
+    return nullptr;
 }
 
 BinaryExp::BinaryExp(AttrNode * le, AttrNode * rig, Operator operatorType) {
     this->left = (Exp*)le->baseNode;
     this->right = (Exp*)rig->baseNode;
     this->operatorType = operatorType;
-    this->loc = left->loc;
+    this->loc = left->location();
+}
+
+Error * BinaryExp::checkReference(Scope *scope) {
+    Error* error = this->left->checkReference(scope);
+    if(error){
+        return error;
+    }
+    return this->right->checkReference(scope);
 }
 
 SingleExp::SingleExp(AttrNode *operatedNode, Operator operatorType) {
     this->operated = (Exp*)operatedNode->baseNode;
     this->operatorType = operatorType;
-    this->loc = operated->loc;
+    this->loc = operated->location();
+}
+
+Error *SingleExp::checkReference(Scope *scope) {
+    return this->operated->checkReference(scope);
 }
 
 InvokeExp::InvokeExp(AttrNode *invoker) {
     this->functionName = invoker->value;
     this->loc = new Location(invoker->lineNo, 0);
+    this->loc_alloc = true;
     this->operatorType = Operator ::INVOKE;
 }
 
@@ -143,7 +172,14 @@ InvokeExp::InvokeExp(AttrNode *invoker, AttrNode *args) {
     this->functionName = invoker->value;
     this->args = new Args;
     findEntity(this->args, (Exp*)args->baseNode);
-    this->loc = this->args->loc;
+    this->loc = this->args->location();
+}
+
+Error *InvokeExp::checkReference(Scope *scope) {
+    for(Exp* exp:args->args) {
+        return exp->checkReference(scope);
+    }
+    return nullptr;
 }
 
 

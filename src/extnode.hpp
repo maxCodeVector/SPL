@@ -7,11 +7,12 @@
 class Scope;
 
 class BaseNode {
+protected:
+    Location *loc;
 
 public:
     enum NodeType flag=OTHER;
     BaseNode *next;
-    Location *loc;
     bool loc_alloc = false;// mark is it allocate Location* loc
 
     virtual void setScope(Scope *scope) {};
@@ -75,6 +76,9 @@ public:
     void setExp(AttrNode* exp){
         this->value = (Exp*)exp->baseNode;
     }
+    Exp* getValue(){
+        return value;
+    };
 
     string & getName() override {
         return this->id;
@@ -90,9 +94,19 @@ protected:
     enum Operator operatorType;
     enum DataType type;
     string value;
+    Entity* referenceVar;
 public:
     Exp(AttrNode* terminal, DataType dataType);
     Exp(){}
+    string& getName(){
+        return value;
+    }
+    void setReferenceVar(Entity* entity)
+    {
+        referenceVar=entity;
+    }
+    virtual void checkType(){};
+    virtual Error * checkReference(Scope* scope);
 };
 
 class Statement:public BaseNode{
@@ -102,6 +116,9 @@ public:
     explicit Statement(AttrNode* exp);
     ~Statement(){
         delete(exp);
+    }
+    Exp* getExpression(){
+        return exp;
     }
 };
 
@@ -193,6 +210,7 @@ public:
         delete(left);
         delete(right);
     }
+    Error * checkReference(Scope* scope) override;
 
 };
 
@@ -203,6 +221,7 @@ public:
     ~SingleExp(){
         delete(operated);
     }
+    Error * checkReference(Scope* scope) override;
 
 };
 
@@ -223,6 +242,7 @@ public:
     ~InvokeExp(){
         delete(args);
     }
+    Error * checkReference(Scope* scope) override;
 };
 
 #endif
