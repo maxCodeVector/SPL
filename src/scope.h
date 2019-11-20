@@ -5,7 +5,7 @@
 #include <list>
 #include <string>
 #include "error.h"
-#include "extnode.h"
+#include "astnode/extnode.h"
 using namespace std;
 
 class LocalScope;
@@ -16,6 +16,7 @@ public:
     ~Scope(){
         free_all(children);
     }
+
 
 };
 

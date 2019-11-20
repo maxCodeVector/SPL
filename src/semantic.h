@@ -1,8 +1,8 @@
 #ifndef _SEMATIC
 #define _SEMATIC
-#include "parse/deliver.h"
+#include "ast.h"
 
 
-int semantic_analysis(AttrNode* root);
+int semantic_analysis(AST& ast);
 
 #endif

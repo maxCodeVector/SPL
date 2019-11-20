@@ -1,4 +1,4 @@
-#include "scope.hpp"
+#include "scope.h"
 
 void ToplevelScope::checkReferences(ErrorHandler &err){
 

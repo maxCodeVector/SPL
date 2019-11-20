@@ -11,7 +11,9 @@ int main(int argc, char **argv){
         return 1;
     }
     show_syntax_tree(parse_tree_root);
-    semantic_analysis(parse_tree_root);
+    AST* ast = (AST*)parse_tree_root->baseNode;
+    semantic_analysis(*ast);
+    delete(ast);
     free_AttrNode(parse_tree_root);
 }
 

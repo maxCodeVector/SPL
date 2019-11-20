@@ -6,12 +6,13 @@
 #define SPL_TYPE_H
 
 #include "ast.h"
+#include "error.h"
 
-class TypeResolver :Visitor{
+class DereferenceChecker : Visitor{
 public:
-    virtual void resolve(AST& ast)=0;
-    virtual void resolve(Body& body)=0;
-    virtual void resolve(Statement& statement)=0;
+    void resolve(AST& ast) override;
+    void resolve(Body& body) override;
+    explicit DereferenceChecker(ErrorHandler& errorHandle);
 };
 
 

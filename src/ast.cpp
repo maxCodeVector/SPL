@@ -1,3 +1,5 @@
+#include "error.h"
+#include "scope.h"
 #include "ast.h"
 
 void AST::findEntity(BaseNode* extList){

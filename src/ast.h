@@ -1,8 +1,8 @@
 #ifndef __SPLAST__
 #define __SPLAST__
-#include "parse/deliver.h"
-#include "extnode.h"
 #include "list"
+#include "astnode/statement.h"
+#include "astnode/expression.h"
 using namespace std;
 
 
@@ -11,11 +11,11 @@ private:
     void convert2AST(AttrNode* root);
     void findEntity(BaseNode *extList);
     Scope* scope;
+    list<DefinedFunction*> functions;
 
 
 public:
     list<DefinedVariable*> vars;
-    list<DefinedFunction*> functions;
     AST(AttrNode* root){
         convert2AST(root);
     }
@@ -23,6 +23,10 @@ public:
     list<Entity*>& declaritions(list<Entity*>& decaries);
     void setConstant(ConstantTable &constantTable);
     list<DefinedFunction*>& defineFunctions();
+    list<DefinedVariable*>& getDefinedVars(){
+        return vars;
+    }
+
     void setScope(Scope* scope_) override {
         this->scope = scope_;
     }
@@ -34,7 +38,20 @@ public:
 class Visitor{
     virtual void resolve(AST& ast)=0;
     virtual void resolve(Body& body)=0;
-    virtual void resolve(Statement& statement)=0;
+
+protected:
+    ErrorHandler& errorHandler;
+public:
+    explicit Visitor(ErrorHandler& h):errorHandler(h){};
+    void error(Location* loc, string& message){
+        this->errorHandler.recordError(loc, message);
+    }
+
+    void error(Error* err){
+        if(!err)
+            return;
+        this->errorHandler.recordError(err);
+    }
 };
 
 

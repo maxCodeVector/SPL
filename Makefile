@@ -6,11 +6,16 @@ BISON=bison
 SRC_DIR=src
 OUT_DIR=bin
 BISON_SRC=src/parse
+NODE_SRC=src/astnode
 
 SOURCE=$(wildcard $(SRC_DIR)/*.cpp)
 SOURCE+=$(wildcard $(BISON_SRC)/*.cpp)
+SOURCE+=$(wildcard $(NODE_SRC)/*.cpp)
+
 OBJS=$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SOURCE)))
 INCLUDE=$(wildcard $(SRC_DIR)/*.h) $(wildcard $(SRC_DIR)/*.hpp)
+INCLUDE+=$(wildcard $(BISON_SRC)/*.h) $(wildcard $(BISON_SRC)/*.hpp)
+INCLUDE+=$(wildcard $(NODE_SRC)/*.h) $(wildcard $(NODE_SRC)/*.hpp)
 
 TEST_DIR=test
 TEST_SOURCE=$(sort $(wildcard $(TEST_DIR)/*.spl))
@@ -46,9 +51,11 @@ test: bin/splc
 		echo ; \
 	 )
 
+
 .PHONY: clean
 clean:
 	@rm -rf bin/
 	@-cd src && rm *.o *.out
+	@-cd src/astnode && rm *.o *.out
 	@-cd src/parse && rm -f lex.yy.* syntax.tab* *.so syntax.output *.o
 	@-rm $(TEST_DIR)/*.res

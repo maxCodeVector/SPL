@@ -6,6 +6,7 @@
 #define SPL_INCLUDES_H
 #include <list>
 #include <string>
+#include "parse/deliver.h"
 using namespace std;
 
 class Location {
@@ -49,7 +50,7 @@ enum DataType{
     FLOAT_TYPE,
     CHAR_TYPE,
     STRUCT_TYPE,
-    OTHER_TYPE
+    OTHER_TYPE // only ID expression has this type
 };
 
 

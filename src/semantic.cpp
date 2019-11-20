@@ -1,8 +1,10 @@
 #include "semantic.h"
-#include "scope.hpp"
+#include "scope.h"
 #include "error.h"
-#include "ast.h"
 #include <fstream>
+#include "type.h"
+#include "ast.h"
+
 using namespace std;
 
 
@@ -10,14 +12,13 @@ class LocalResolver:Visitor{
 private:
     list<Scope*> scopeStack;
     ConstantTable constantTable;
-    ErrorHandler& errorHandler;
+
     Scope* currentScope(){
         return scopeStack.back();
     }
 
 public:
-    LocalResolver(ErrorHandler &h): errorHandler(h), constantTable(), scopeStack(){
-
+    explicit LocalResolver(ErrorHandler &h): Visitor(h), constantTable(), scopeStack(){
     }
     ~LocalResolver(){
         ToplevelScope* toplevelScope = (ToplevelScope*)scopeStack.front();
@@ -44,7 +45,7 @@ public:
 
         resolveGloableVarIntializers();
         resolveConstantValues();
-        resoveFunctions(ast.defineFunctions());
+        resolveFunctions(ast.defineFunctions());
         toplevelScope->checkReferences(this->errorHandler);
         if(errorHandler.errorOccured()){
             return;
@@ -88,7 +89,7 @@ public:
 
     }
 
-    void resoveFunctions(list<DefinedFunction*>& funcs){
+    void resolveFunctions(list<DefinedFunction*>& funcs){
         for(DefinedFunction* function: funcs){
             pushScope(function->getParameters());
             resolve(*function->getBody());
@@ -119,26 +120,18 @@ public:
         return scope;
     }
 
-    void error(Location* loc, string& message){
-        this->errorHandler.recordError(loc, message);
-    }
-
-    void error(Error* err){
-        if(!err)
-            return;
-        this->errorHandler.recordError(err);
-    }
-
 };
 
-int semantic_analysis(AttrNode* root){
-    AST* ast =  (AST*)root->baseNode;
+
+int semantic_analysis(AST &ast) {
     ErrorHandler h = ErrorHandler();
     LocalResolver local(h);
-    local.resolve(*ast);
+    local.resolve(ast);
+    DereferenceChecker typeResolver(h);
+    typeResolver.resolve(ast);
+
     h.showError(std::cerr);
     ofstream outfile("../src/res.o");
 //    h.showError(outfile);
-    delete(ast);
     return 1;
 }

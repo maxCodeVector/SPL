@@ -1,17 +1,12 @@
-int foo()
+struct Apple
 {
-  int a = 10;
-  return a;
-}
-int test_2_o01(int a, int b)
+  int weight;
+  float round;
+};
+int test_2_r07()
 {
-  int c;
-  c = foo();
-  if (b > 0)
-  {
-    int a = c + 3;
-    b = b - a;
-  }
-  a = a + b;
-  return a;
+  struct Apple aa;
+  float weight_test = 1.0;
+  aa.weight = aa + 2;
+  return 0;
 }
