@@ -15,4 +15,4 @@ syntax.output
 *.o
 .idea/
 cmake-build-debug/
-mytest.sql
+mytest.spl

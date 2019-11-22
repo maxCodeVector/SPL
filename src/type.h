@@ -5,13 +5,15 @@
 #ifndef SPL_TYPE_H
 #define SPL_TYPE_H
 
-#include <map>
+#include <set>
 #include "ast.h"
 #include "error.h"
 
 
 class TypeTable{
     map<string, VariableType*> declaredTypes;
+    bool hasLoop(set<string >& mark, Struct* type);
+
 public:
     void checkRecursiveDefinition(ErrorHandler& errorHandler);
 

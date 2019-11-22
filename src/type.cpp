@@ -1,13 +1,42 @@
 //
 // Created by hya on 11/19/19.
 //
-
 #include "type.h"
 #include "astnode/statement.h"
 #include "scope.h"
 
+bool TypeTable::hasLoop(set<string>& mark, Struct* type){
+    for(DefinedVariable* var :type->getMemberList()){
+        VariableType* member_type = var->getType();
+        if(member_type->getType()!=STRUCT_TYPE)
+            continue;
+        string& type_name = member_type->getTypeName();
+        auto item = mark.find(type_name);
+        if(item!=mark.end()){
+            return true;
+        }
+        mark.insert(type_name);
+        bool loop = hasLoop(mark, (Struct*)member_type->getActualType());
+        if(loop)
+            return true;
+    }
+    return false;
+}
 
 void TypeTable::checkRecursiveDefinition(ErrorHandler &errorHandler) {
+    auto itor = this->declaredTypes.begin();
+    while (itor!=declaredTypes.end()){
+        set<string> mark;
+        string& type_name = itor->second->getTypeName();
+        mark.insert(type_name);
+        bool loop = hasLoop(mark, (Struct*)itor->second);
+        if(loop){
+            errorHandler.recordError(new Error{itor->second->getLocation(),
+                                               "Recursive Definition for:"+type_name});
+//            return;
+        }
+        itor ++;
+    }
 
 }
 

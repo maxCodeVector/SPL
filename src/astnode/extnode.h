@@ -1,6 +1,7 @@
 #ifndef __EXTNODE__
 #define __EXTNODE__
 
+#include <map>
 #include "../includes.h"
 
 class Scope;
@@ -69,6 +70,9 @@ public:
         return true;
     }
     virtual void setActualType(VariableType* type){}
+    virtual VariableType* getActualType(){
+        return this;
+    }
 };
 VariableType* getVariableType(string &name);
 
@@ -78,9 +82,10 @@ class Struct: public VariableType{
     string typeName;
     bool is_complete;
     VariableType* actualType;
+    list<DefinedVariable*> members;
+    map<string, DefinedVariable*> memberMap;
 
 public:
-    list<DefinedVariable*> members;
     explicit Struct(AttrNode* name);
     Struct(AttrNode* name, AttrNode* defList);
     ~Struct();
@@ -93,6 +98,18 @@ public:
     void setActualType(VariableType* type)override {
         actualType = type;
     }
+    VariableType* getActualType() override {
+        if(is_complete || actualType== nullptr)
+            return this;
+        return actualType;
+    }
+    list<DefinedVariable*>& getMemberList(){
+        return members;
+    };
+    DefinedVariable* getMember(string& name);
+    Error* checkMembers();
+
+
 };
 
 class DeclaredTypeVariable:public Entity{
@@ -122,7 +139,7 @@ public:
 
     void setType(AttrNode *spec);
     VariableType* getType(){
-        return type;
+        return type->getActualType();
     }
     void addDimension(AttrNode *dim);
     void setExp(AttrNode* exp){
