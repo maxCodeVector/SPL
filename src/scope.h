@@ -6,6 +6,7 @@
 #include <string>
 #include "error.h"
 #include "astnode/extnode.h"
+#include "type.h"
 using namespace std;
 
 class LocalScope;
@@ -13,7 +14,7 @@ class Scope{
 public:
     list<LocalScope*> children; // the actual type is LocalScope, will be type convert
     virtual Entity* get(string& name)=0;
-    ~Scope(){
+    virtual ~Scope(){
         free_all(children);
     }
 
@@ -24,11 +25,18 @@ class ToplevelScope: public Scope{
 
 protected:
     map<string, Entity*> enties;
+    TypeTable typeTable;
     list<DefinedVariable*> staticLocalVariables; //cache
 public:
     Entity* declareEntity(Entity &entity);
+    void  declareVariableType(VariableType* variableType, ErrorHandler &err){
+        typeTable.declareVariableType(variableType, err);
+    }
     void checkReferences(ErrorHandler &err);
-    Entity* get(string& name);
+    Entity* get(string& name) override ;
+    VariableType* queryType(string& name){
+        typeTable.queryType(name);
+    }
 
 };
 

@@ -1,34 +1,40 @@
 #ifndef __SPLAST__
 #define __SPLAST__
-#include "list"
+#include <list>
 #include "astnode/statement.h"
 #include "astnode/expression.h"
 using namespace std;
 
-
+class ToplevelScope;
 class AST: public BaseNode{
 private:
     void convert2AST(AttrNode* root);
     void findEntity(BaseNode *extList);
-    Scope* scope;
+    ToplevelScope* toplevelScope;
     list<DefinedFunction*> functions;
-
+    list<DefinedVariable*> vars;
+    list<VariableType*> declaredTypes;
 
 public:
-    list<DefinedVariable*> vars;
     AST(AttrNode* root){
         convert2AST(root);
     }
-
+    int showSize();
     list<Entity*>& declaritions(list<Entity*>& decaries);
     void setConstant(ConstantTable &constantTable);
     list<DefinedFunction*>& defineFunctions();
     list<DefinedVariable*>& getDefinedVars(){
         return vars;
     }
+    list<VariableType*>& getDeclaredTypes(){
+        return declaredTypes;
+    }
+    ToplevelScope* getScope(){
+        return toplevelScope;
+    }
 
     void setScope(Scope* scope_) override {
-        this->scope = scope_;
+        this->toplevelScope = (ToplevelScope*)scope_;
     }
 
     ~AST();

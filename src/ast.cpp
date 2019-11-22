@@ -11,6 +11,12 @@ void AST::findEntity(BaseNode* extList){
         } else if(next->flag == VAR){
             auto var = (DefinedVariable*)next;
             this->vars.push_back(var);
+        } else if(next->flag==DECLARATION){
+            auto  dec = (DeclaredTypeVariable*)next;
+            string& decName = dec->getName();
+            if("baseType"!=decName) {
+                this->declaredTypes.push_back(dec->getType());
+            }
         }
         next = next->next;
     }
@@ -43,6 +49,12 @@ void AST::setConstant(ConstantTable &constantTable){
 AST::~AST() {
     free_all(vars);
     free_all(functions);
+    free_all(declaredTypes);
+    delete(toplevelScope);
+}
+
+int AST::showSize() {
+    return declaredTypes.size();
 }
 
 

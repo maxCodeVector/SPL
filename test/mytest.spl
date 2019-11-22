@@ -1,9 +1,19 @@
+struct Apple;
+
 struct Apple
 {
   int weight;
   float round;
 };
-int test_2_r07()
+
+struct Apple hh, jj;
+struct Apple
+{
+  int weight;
+  float round;
+};
+
+int test_2_r07(struct Apple ma)
 {
   struct Apple aa;
   float weight_test = 1.0;

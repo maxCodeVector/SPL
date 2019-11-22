@@ -49,11 +49,12 @@ DefinedVariable::DefinedVariable(AttrNode *varDec) {
 void DefinedVariable::setType(AttrNode *spec) {
     VariableType* type = (VariableType*)spec->baseNode;
     DefinedVariable* next = this;
+    this->is_type_allocated = true;
     while (next!=nullptr){
-        next->type = new VariableType(*type);
+        next->type = type;
         next = (DefinedVariable*)next->next;
     }
-    delete(type);
+//    delete(type);
 }
 
 void DefinedVariable::addDimension(AttrNode* dim) {
@@ -62,7 +63,8 @@ void DefinedVariable::addDimension(AttrNode* dim) {
 }
 
 DefinedVariable::~DefinedVariable() {
-    delete(type);
+    if(is_type_allocated)
+        delete(type);
     delete(value);
 }
 
@@ -113,6 +115,8 @@ Struct::~Struct() {
 
 Struct::Struct(AttrNode *name):VariableType(STRUCT_TYPE){
     this->typeName = name->value;
+    this->setLocation(name->lineNo, 0);
+    is_complete = false;
 }
 
 Struct::Struct(AttrNode *name, AttrNode *defList):VariableType(STRUCT_TYPE){
@@ -122,7 +126,10 @@ Struct::Struct(AttrNode *name, AttrNode *defList):VariableType(STRUCT_TYPE){
         this->members.push_back(nextVar);
         nextVar = (DefinedVariable*)nextVar->next;
     }
+    this->setLocation(name->lineNo, 0);
+    is_complete = true;
 }
+
 
 DeclaredTypeVariable::DeclaredTypeVariable(AttrNode *spec){
     this->flag = DECLARATION;

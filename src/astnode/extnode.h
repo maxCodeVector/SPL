@@ -17,6 +17,9 @@ public:
     virtual void setScope(Scope *scope) {};
 
     Location *getLocation() {
+        if(loc== nullptr){
+            exit(21);
+        }
         return loc;
     }
 
@@ -51,6 +54,7 @@ public:
 
 class VariableType : public BaseNode {
     enum DataType type;
+    string baseTypeName = "baseType";
 public:
     explicit VariableType(DataType type){
         this->type = type;
@@ -58,33 +62,43 @@ public:
     DataType getType(){
         return type;
     }
+    virtual string& getTypeName(){
+        return baseTypeName;
+    }
+    virtual bool isComplete(){
+        return true;
+    }
 };
 VariableType* getVariableType(string &name);
 
 
 class DefinedVariable;
 class Struct: public VariableType{
-public:
     string typeName;
+    bool is_complete;
+
+public:
     list<DefinedVariable*> members;
     explicit Struct(AttrNode* name);
     Struct(AttrNode* name, AttrNode* defList);
     ~Struct();
-    string& getTypeName(){
+    string& getTypeName()override {
         return typeName;
+    }
+    bool isComplete()override {
+        return is_complete;
     }
 };
 
 class DeclaredTypeVariable:public Entity{
     VariableType* type;
-    string baseTypeName = "baseType";
 public:
     explicit DeclaredTypeVariable(AttrNode* spec);
     string& getName() override {
-        if(type->getType()==DataType::STRUCT_TYPE){
-            return ((Struct*)type)->getTypeName();
-        }
-        return baseTypeName;
+        return type->getTypeName();
+    }
+    VariableType* getType(){
+        return type;
     }
 };
 
@@ -93,6 +107,8 @@ class Exp;
 class DefinedVariable : public Entity {
 private:
     VariableType* type;
+    VariableType* actualType;
+    bool is_type_allocated= false;
     string id;
     Exp* value;
     list<int > array;
@@ -101,6 +117,13 @@ public:
     explicit DefinedVariable(AttrNode *varDec);
 
     void setType(AttrNode *spec);
+    VariableType* getType(){
+        return type;
+    }
+
+    void setActualType(VariableType* type){
+        this->actualType = type;
+    }
     void addDimension(AttrNode *dim);
     void setExp(AttrNode* exp){
         this->value = (Exp*)exp->baseNode;

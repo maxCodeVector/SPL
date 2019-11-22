@@ -22,7 +22,7 @@ struct AttrNode{
 
 struct AttrNode* make_node(string name);
 struct AttrNode* make_parent(struct AttrNode* child, string name);
-struct AttrNode* get_child(struct AttrNode* parent, int index);
+//struct AttrNode* get_child(struct AttrNode* parent, int index);
 void add_childs(struct AttrNode* parent, struct AttrNode* other_child);
 
 

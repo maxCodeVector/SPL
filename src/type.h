@@ -5,14 +5,37 @@
 #ifndef SPL_TYPE_H
 #define SPL_TYPE_H
 
+#include <map>
 #include "ast.h"
 #include "error.h"
+
+
+class TypeTable{
+    map<string, VariableType*> declaredTypes;
+public:
+    void checkRecursiveDefinition(ErrorHandler& errorHandler);
+
+    void declareVariableType(VariableType *variableType, ErrorHandler &err);
+
+    VariableType * queryType(string &name);
+
+};
+
 
 class DereferenceChecker : Visitor{
 public:
     void resolve(AST& ast) override;
     void resolve(Body& body) override;
     explicit DereferenceChecker(ErrorHandler& errorHandle);
+};
+
+
+class TypeChecker: Visitor{
+public:
+    void resolve(AST& ast) override;
+    void resolve(Body& body) override;
+    explicit TypeChecker(ErrorHandler& errorHandle);
+
 };
 
 

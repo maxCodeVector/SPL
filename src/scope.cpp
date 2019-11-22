@@ -1,7 +1,7 @@
 #include "scope.h"
 
 void ToplevelScope::checkReferences(ErrorHandler &err){
-
+    this->typeTable.checkRecursiveDefinition(err);
 }
 
 
