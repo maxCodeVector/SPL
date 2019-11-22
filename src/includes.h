@@ -41,7 +41,8 @@ enum NodeType {
     OTHER,
     VAR,
     FUNC,
-    DECLARATION
+    DECLARATION,
+    BODY
 };
 
 enum DataType{

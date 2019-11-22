@@ -21,7 +21,7 @@ void LocalResolver::resolve(AST &ast) {
     resolveConstantValues();
     resolveDeclaredType(toplevelScope, ast.getDeclaredTypes());
     resolveFunctions(ast.defineFunctions());
-    toplevelScope->checkReferences(this->errorHandler);
+//    toplevelScope->checkReferences(this->errorHandler);
 //        if(errorHandler.errorOccured()){
 //            return;
 //        }
@@ -87,28 +87,61 @@ void LocalResolver::resolveFunctions(list<DefinedFunction *> &funcs){
     }
 }
 
-
-void TypeResolver::resolve(AST &ast) {
-    ToplevelScope* toplevelScope = ast.getScope();
-    for(DefinedVariable* var: ast.getDefinedVars()){
-        VariableType* variableType = var->getType();
-        if(variableType->getType()==STRUCT_TYPE){
-            VariableType* realType = toplevelScope->queryType(variableType->getTypeName());
-            if(realType== nullptr){
-                this->error(new Error{variableType->getLocation(),
-                                      "can not found complete definition for:"+variableType->getTypeName()});
-            } else{
-                var->setActualType(realType);
-            }
+Error* resolveVariableType( ToplevelScope* toplevelScope,  VariableType* variableType ){
+    if(variableType->getType()==STRUCT_TYPE){
+        VariableType* realType = toplevelScope->queryType(variableType->getTypeName());
+        if(realType== nullptr){
+            return new Error{variableType->getLocation(),
+                                  "can not found complete definition for:"+variableType->getTypeName()};
+        } else{
+            variableType->setActualType(realType);
         }
     }
+    return nullptr;
+}
+
+void TypeResolver::resolve(AST &ast) {
+   this->toplevelScope = ast.getScope();
+    for(DefinedVariable* var: ast.getDefinedVars()){
+        Error* _error = resolveVariableType(toplevelScope, var->getType());
+        this->error(_error);
+    }
+    resolveFunctions(ast.defineFunctions());
+
 
 }
 
+void TypeResolver::resolveFunctions(list<DefinedFunction*> funs) {
+    for(DefinedFunction* fun: funs){
+        for(DefinedVariable* para: fun->getParameters()){
+            Error* err = resolveVariableType(this->toplevelScope, para->getType());
+            error(err);
+        }
+        Error* err = resolveVariableType(this->toplevelScope, fun->getReturnType());
+        error(err);
+        resolve(*fun->getBody());
+    }
+}
+
 void TypeResolver::resolve(Body &body) {
+    for(DefinedVariable* var:body.vars){
+        Error* err = resolveVariableType(this->toplevelScope, var->getType());
+        error(err);
+    }
+    for(Statement* statement:body.statements){
+        resolveStatement(statement);
+    }
 
 }
 
 TypeResolver::TypeResolver(ErrorHandler &errorHandle) : Visitor(errorHandle) {
 
 }
+
+void TypeResolver::resolveStatement(Statement *statement) {
+    if(statement->flag==BODY){
+        resolve(*(Body*)statement);
+    }
+}
+
+

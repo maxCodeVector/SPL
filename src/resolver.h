@@ -55,9 +55,13 @@ public:
 };
 
 class TypeResolver : Visitor{
+private:
+    ToplevelScope* toplevelScope;
+    void resolveFunctions(list<DefinedFunction*> funs);
+    void resolve(Body& body) override;
+    void resolveStatement(Statement* statement);
 public:
     void resolve(AST& ast) override;
-    void resolve(Body& body);
     explicit TypeResolver(ErrorHandler& errorHandle);
 };
 

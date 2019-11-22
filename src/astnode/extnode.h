@@ -68,6 +68,7 @@ public:
     virtual bool isComplete(){
         return true;
     }
+    virtual void setActualType(VariableType* type){}
 };
 VariableType* getVariableType(string &name);
 
@@ -76,6 +77,7 @@ class DefinedVariable;
 class Struct: public VariableType{
     string typeName;
     bool is_complete;
+    VariableType* actualType;
 
 public:
     list<DefinedVariable*> members;
@@ -87,6 +89,9 @@ public:
     }
     bool isComplete()override {
         return is_complete;
+    }
+    void setActualType(VariableType* type)override {
+        actualType = type;
     }
 };
 
@@ -107,7 +112,6 @@ class Exp;
 class DefinedVariable : public Entity {
 private:
     VariableType* type;
-    VariableType* actualType;
     bool is_type_allocated= false;
     string id;
     Exp* value;
@@ -119,10 +123,6 @@ public:
     void setType(AttrNode *spec);
     VariableType* getType(){
         return type;
-    }
-
-    void setActualType(VariableType* type){
-        this->actualType = type;
     }
     void addDimension(AttrNode *dim);
     void setExp(AttrNode* exp){
@@ -157,6 +157,9 @@ public:
 
     list<DefinedVariable*>& getParameters();
     void setReturnType(AttrNode* type);
+    VariableType* getReturnType(){
+        return returnType;
+    }
 
     Body *getBody();
     void setBody(AttrNode* body){

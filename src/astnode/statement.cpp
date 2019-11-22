@@ -7,6 +7,7 @@
 
 Body::Body(AttrNode *defList, AttrNode *stmtList) {
     exp = nullptr;
+    this->flag = BODY;
     DefinedVariable* variable = (DefinedVariable*)defList->baseNode;
     while (variable!= nullptr){
         this->vars.push_back(variable);
