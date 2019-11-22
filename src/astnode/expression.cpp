@@ -41,8 +41,12 @@ bool Exp::isArray() {
     return this->type->isArray(dimension);
 }
 
+Exp::Exp(DataType dataType) {
+    this->type = new VariableType(dataType);
+}
 
-BinaryExp::BinaryExp(AttrNode *le, AttrNode *rig, Operator operatorType) {
+
+BinaryExp::BinaryExp(AttrNode *le, AttrNode *rig, Operator operatorType):Exp(DataType::DER_TYPE) {
     this->left = (Exp *) le->baseNode;
     this->right = (Exp *) rig->baseNode;
     this->operatorType = operatorType;
@@ -87,7 +91,7 @@ void BinaryExp::acceptDereferenceCheck(DereferenceChecker *checker) {
     }
 }
 
-UnaryExp::UnaryExp(AttrNode *operatedNode, Operator operatorType) {
+UnaryExp::UnaryExp(AttrNode *operatedNode, Operator operatorType) :Exp(DataType::DER_TYPE) {
     this->operand = (Exp *) operatedNode->baseNode;
     this->operatorType = operatorType;
     setLocation(operand->getLocation());
@@ -98,7 +102,7 @@ Error *UnaryExp::checkReference(Scope *scope) {
 }
 
 
-InvokeExp::InvokeExp(AttrNode *invoker) {
+InvokeExp::InvokeExp(AttrNode *invoker):Exp(DataType::DER_TYPE) {
     this->functionName = invoker->value;
     setLocation(new Location(invoker->lineNo, 0));
     this->operatorType = Operator::INVOKE;
@@ -119,7 +123,7 @@ void findEntity(Args *args, Exp *exp) {
  * @param invoker
  * @param args its baseNode is link list of Exp
  */
-InvokeExp::InvokeExp(AttrNode *invoker, AttrNode *args) {
+InvokeExp::InvokeExp(AttrNode *invoker, AttrNode *args) :Exp(DataType::DER_TYPE) {
     this->operatorType = Operator::INVOKE;
     this->functionName = invoker->value;
     this->args = new Args;
@@ -146,7 +150,7 @@ void InvokeExp::acceptDereferenceCheck(DereferenceChecker *checker) {
     Exp::acceptDereferenceCheck(checker);
 }
 
-GetAttributeExp::GetAttributeExp(AttrNode *operated, string &attributeName) {
+GetAttributeExp::GetAttributeExp(AttrNode *operated, string &attributeName) :Exp(DataType::DER_TYPE) {
     Exp *exp = (Exp *) operated->baseNode;
     this->attrName = attributeName;
     this->operatorType = DOT_OP;

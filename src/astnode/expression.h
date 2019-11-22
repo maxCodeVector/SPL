@@ -17,7 +17,7 @@ protected:
     int dimension;// used for array, means which dimension current is in
 public:
     Exp(AttrNode* terminal, DataType dataType);
-    Exp(){}
+    Exp(DataType dataType);
     virtual ~Exp(){
         delete(type);
     }
