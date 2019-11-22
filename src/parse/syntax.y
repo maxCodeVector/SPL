@@ -495,7 +495,7 @@ Exp: Exp ASSIGN Exp{
     // | Exp DOT error
     | ID   {
                 $$ = make_parent($1, "Exp");
-	 	Exp* exp = new Exp($1, OTHER_TYPE);
+	 	Exp* exp = new Exp($1, REF_TYPE);
 		$$->baseNode = exp;
             }
     | INT{

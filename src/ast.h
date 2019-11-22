@@ -41,14 +41,19 @@ public:
 
 };
 
+class TypeTable;
 class Visitor{
     virtual void resolve(AST& ast)=0;
     virtual void resolve(Body& body)=0;
 
 protected:
     ErrorHandler& errorHandler;
+    TypeTable* typeTable;
+
 public:
-    explicit Visitor(ErrorHandler& h):errorHandler(h){};
+    explicit Visitor(ErrorHandler& h, TypeTable* type_table):errorHandler(h){
+        this->typeTable = type_table;
+    };
     void error(Location* loc, string& message){
         this->errorHandler.recordError(loc, message);
     }

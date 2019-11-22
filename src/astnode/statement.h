@@ -7,6 +7,8 @@
 #include "../error.h"
 #include "extnode.h"
 
+class DereferenceChecker;
+class LocalResolver;
 class Statement:public BaseNode{
 protected:
     Exp *exp;
@@ -18,6 +20,8 @@ public:
         return exp;
     }
     virtual void checkMembersType(ErrorHandler& handler);
+    virtual void acceptDereferenceCheck(DereferenceChecker* checker);
+    virtual void checkReference(LocalResolver* resolver, Scope* scope);
 };
 
 class BreakStatement{
@@ -42,7 +46,8 @@ public:
     bool checkBreak() override { return true;};
 
     void checkMembersType(ErrorHandler& handler) override;
-
+    void acceptDereferenceCheck(DereferenceChecker* checker) override;
+    void checkReference(LocalResolver* resolver, Scope* scope) override;
 };
 
 class IfStatement:public Statement{
@@ -61,6 +66,8 @@ public:
         delete(elseBody);
     }
     void checkMembersType(ErrorHandler& handler) override;
+    void acceptDereferenceCheck(DereferenceChecker* checker) override;
+    void checkReference(LocalResolver* resolver, Scope* scope) override;
 
 };
 
@@ -73,6 +80,9 @@ public:
     ~WhileStatement(){
         delete(loop);
     }
+    void acceptDereferenceCheck(DereferenceChecker* checker) override;
+    void checkReference(LocalResolver* resolver, Scope* scope) override;
+
 };
 
 class ReturnStatement:public Statement{

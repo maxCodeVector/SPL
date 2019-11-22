@@ -25,18 +25,11 @@ class ToplevelScope: public Scope{
 
 protected:
     map<string, Entity*> enties;
-    TypeTable typeTable;
     list<DefinedVariable*> staticLocalVariables; //cache
 public:
     Entity* declareEntity(Entity &entity);
-    void  declareVariableType(VariableType* variableType, ErrorHandler &err){
-        typeTable.declareVariableType(variableType, err);
-    }
     void checkReferences(ErrorHandler &err);
     Entity* get(string& name) override ;
-    VariableType* queryType(string& name){
-        typeTable.queryType(name);
-    }
 
 };
 

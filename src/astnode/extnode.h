@@ -56,6 +56,7 @@ public:
 class VariableType : public BaseNode {
     enum DataType type;
     string baseTypeName = "baseType";
+    list<int > array;
 public:
     explicit VariableType(DataType type){
         this->type = type;
@@ -73,6 +74,8 @@ public:
     virtual VariableType* getActualType(){
         return this;
     }
+    bool isArray(int dimension);
+    void addDimension(int num);
 };
 VariableType* getVariableType(string &name);
 
@@ -88,6 +91,7 @@ class Struct: public VariableType{
 public:
     explicit Struct(AttrNode* name);
     Struct(AttrNode* name, AttrNode* defList);
+    explicit Struct(const Struct& aStruct);
     ~Struct();
     string& getTypeName()override {
         return typeName;
@@ -129,10 +133,9 @@ class Exp;
 class DefinedVariable : public Entity {
 private:
     VariableType* type;
-    bool is_type_allocated= false;
+    list<int > tempDimension;
     string id;
     Exp* value;
-    list<int > array;
 public:
 
     explicit DefinedVariable(AttrNode *varDec);

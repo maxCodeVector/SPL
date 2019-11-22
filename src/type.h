@@ -24,19 +24,21 @@ public:
 };
 
 
-class DereferenceChecker : Visitor{
+class DereferenceChecker : public Visitor{
+    void checkStatement(Statement* statement);
 public:
     void resolve(AST& ast) override;
     void resolve(Body& body) override;
-    explicit DereferenceChecker(ErrorHandler& errorHandle);
+    explicit DereferenceChecker(ErrorHandler& errorHandle, TypeTable* type_table);
 };
 
 
 class TypeChecker: Visitor{
+    bool checkTypeEqual(VariableType* src, VariableType* target);
 public:
     void resolve(AST& ast) override;
     void resolve(Body& body) override;
-    explicit TypeChecker(ErrorHandler& errorHandle);
+    explicit TypeChecker(ErrorHandler& errorHandle, TypeTable* type_table);
 
 };
 

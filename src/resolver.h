@@ -8,7 +8,7 @@
 #include "scope.h"
 #include "ast.h"
 
-class LocalResolver:Visitor{
+class LocalResolver:public Visitor{
 private:
     list<Scope*> scopeStack;
     ConstantTable constantTable;
@@ -18,7 +18,7 @@ private:
     }
 
 public:
-    explicit LocalResolver(ErrorHandler &h): Visitor(h), constantTable(), scopeStack(){
+    explicit LocalResolver(ErrorHandler &h, TypeTable* type_table): Visitor(h, type_table){
     }
     ~LocalResolver(){
         while (!scopeStack.empty()) {
@@ -27,7 +27,7 @@ public:
     }
 
 
-    void resolveDeclaredType(ToplevelScope* toplevel, list<VariableType*> & declared);
+    void resolveDeclaredType(list<VariableType*> & declared);
 
     void resolve(AST& ast) override;
 
@@ -56,13 +56,12 @@ public:
 
 class TypeResolver : Visitor{
 private:
-    ToplevelScope* toplevelScope;
     void resolveFunctions(list<DefinedFunction*> funs);
     void resolve(Body& body) override;
     void resolveStatement(Statement* statement);
 public:
+    explicit TypeResolver(ErrorHandler& errorHandle, TypeTable* type_table);
     void resolve(AST& ast) override;
-    explicit TypeResolver(ErrorHandler& errorHandle);
 };
 
 #endif //SPL_RESOLVER_H

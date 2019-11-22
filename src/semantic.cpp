@@ -8,20 +8,22 @@ using namespace std;
 
 int semantic_analysis(AST &ast) {
     ErrorHandler h = ErrorHandler();
+    TypeTable *typeTable = new TypeTable;
 
-    LocalResolver local(h);
-    TypeResolver typeResolver(h);
-    DereferenceChecker dereferenceChecker(h);
-    TypeChecker typeChecker(h);
+    LocalResolver local(h, typeTable);
+    TypeResolver typeResolver(h, typeTable);
+    DereferenceChecker dereferenceChecker(h, typeTable);
+    TypeChecker typeChecker(h, typeTable);
 
     local.resolve(ast);
     typeResolver.resolve(ast);
     //check recursive definition
-    ast.getScope()->checkReferences(h);
+    typeTable->checkRecursiveDefinition(h);
     dereferenceChecker.resolve(ast);
-    typeChecker.resolve(ast);
+//    typeChecker.resolve(ast);
 
-    h.showError(std::cout);
+    h.showError(std::cerr);
+    delete(typeTable);
 //    ofstream outfile("../src/res.o");
 //    h.showError(outfile);
     return 1;

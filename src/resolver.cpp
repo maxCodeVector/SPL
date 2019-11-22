@@ -21,7 +21,7 @@ void LocalResolver::resolve(AST &ast) {
 
     resolveGloableVarIntializers();
     resolveConstantValues();
-    resolveDeclaredType(toplevelScope, ast.getDeclaredTypes());
+    resolveDeclaredType(ast.getDeclaredTypes());
     resolveFunctions(ast.defineFunctions());
 //    toplevelScope->checkReferences(this->errorHandler);
 //        if(errorHandler.errorOccured()){
@@ -67,22 +67,18 @@ void LocalResolver::pushScope(list<DefinedVariable *> &vars) {
     scopeStack.push_back(scope);
 }
 
-void LocalResolver::resolveDeclaredType(ToplevelScope *toplevel, list<VariableType *> &declared) {
+void LocalResolver::resolveDeclaredType(list<VariableType *> &declared) {
     for (VariableType *variableType: declared) {
         if(variableType->getType()!=STRUCT_TYPE)
             continue;
         // unique member
 
-        toplevel->declareVariableType(variableType, errorHandler);
+        typeTable->declareVariableType(variableType, errorHandler);
     }
 }
 
 void LocalResolver::resolve(Statement &statement) {
-    Exp *exp = statement.getExpression();
-    Error *_error = exp->checkReference(currentScope());
-    if (_error) {
-        error(_error);
-    }
+    statement.checkReference(this, currentScope());
 }
 
 void LocalResolver::resolveFunctions(list<DefinedFunction *> &funcs) {
@@ -93,9 +89,9 @@ void LocalResolver::resolveFunctions(list<DefinedFunction *> &funcs) {
     }
 }
 
-Error *resolveVariableType(ToplevelScope *toplevelScope, VariableType *variableType) {
+Error *resolveVariableType(TypeTable* typeTable, VariableType *variableType) {
     if (variableType->getType() == STRUCT_TYPE) {
-        VariableType *realType = toplevelScope->queryType(variableType->getTypeName());
+        VariableType *realType = typeTable->queryType(variableType->getTypeName());
         if (realType == nullptr) {
             return new Error{variableType->getLocation(),
                              "can not found complete definition for:" + variableType->getTypeName()};
@@ -108,9 +104,8 @@ Error *resolveVariableType(ToplevelScope *toplevelScope, VariableType *variableT
 
 
 void TypeResolver::resolve(AST &ast) {
-    this->toplevelScope = ast.getScope();
     for (DefinedVariable *var: ast.getDefinedVars()) {
-        Error *_error = resolveVariableType(toplevelScope, var->getType());
+        Error *_error = resolveVariableType(typeTable, var->getType());
         this->error(_error);
     }
     for(VariableType* declared: ast.getDeclaredTypes()){
@@ -119,7 +114,7 @@ void TypeResolver::resolve(AST &ast) {
         Struct* aStruct = (Struct*)declared;
         error(aStruct->checkMembers());
         for(DefinedVariable* member: aStruct->getMemberList()){
-            Error *_error = resolveVariableType(toplevelScope, member->getType());
+            Error *_error = resolveVariableType(typeTable, member->getType());
             this->error(_error);
         }
     }
@@ -129,10 +124,10 @@ void TypeResolver::resolve(AST &ast) {
 void TypeResolver::resolveFunctions(list<DefinedFunction *> funs) {
     for (DefinedFunction *fun: funs) {
         for (DefinedVariable *para: fun->getParameters()) {
-            Error *err = resolveVariableType(this->toplevelScope, para->getType());
+            Error *err = resolveVariableType(typeTable, para->getType());
             error(err);
         }
-        Error *err = resolveVariableType(this->toplevelScope, fun->getReturnType());
+        Error *err = resolveVariableType(typeTable, fun->getReturnType());
         error(err);
         resolve(*fun->getBody());
     }
@@ -140,7 +135,7 @@ void TypeResolver::resolveFunctions(list<DefinedFunction *> funs) {
 
 void TypeResolver::resolve(Body &body) {
     for (DefinedVariable *var:body.vars) {
-        Error *err = resolveVariableType(this->toplevelScope, var->getType());
+        Error *err = resolveVariableType(typeTable, var->getType());
         error(err);
     }
     for (Statement *statement:body.statements) {
@@ -149,8 +144,8 @@ void TypeResolver::resolve(Body &body) {
 
 }
 
-TypeResolver::TypeResolver(ErrorHandler &errorHandle) : Visitor(errorHandle) {
-    toplevelScope = nullptr;
+TypeResolver::TypeResolver(ErrorHandler& errorHandle, TypeTable* type_table): Visitor(errorHandle, type_table) {
+
 }
 
 void TypeResolver::resolveStatement(Statement *statement) {
