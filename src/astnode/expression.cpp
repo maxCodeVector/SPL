@@ -247,16 +247,26 @@ bool checkEqualExp(Exp *exp1, Exp *exp2) {
     int dim1 = exp1->getCurrentDimension();
     DefinedVariable *var2 = exp2->getReferenceValue();
     int dim2 = exp2->getCurrentDimension();
-
-    if (var1->getType()->getType() != var2->getType()->getType()) {
-        return false;
-    } else if (var1->getType()->getType() == STRUCT_TYPE) {
-        if (var1->getType()->getTypeName() != var2->getType()->getTypeName()) {
+    if (var1 != nullptr && var2 != nullptr) {
+        if (var1->getType()->getType() != var2->getType()->getType()) {
+            return false;
+        } else if (var1->getType()->getType() == STRUCT_TYPE) {
+            if (var1->getType()->getTypeName() != var2->getType()->getTypeName()) {
+                return false;
+            }
+        }
+        return checkArray(var1, var2, dim1, dim2);
+    }
+    if (var1 == nullptr) {
+        if (exp1->getType()->getType() != exp2->getType()->getType()) {
             return false;
         }
+        return !exp2->isArray();
     }
-    // array check
-    return checkArray(var1, var2, dim1, dim2);
+    if (exp1->getType()->getType() != exp2->getType()->getType()) {
+        return false;
+    }
+    return !exp1->isArray();
 }
 
 
@@ -267,20 +277,28 @@ bool checkArgument(list<struct DefinedVariable *> paras, Args *pArgs) {
     auto paraItor = paras.begin();
     auto argItor = args.begin();
     while (paraItor != paras.end()) {
+        DefinedVariable *para = *paraItor;
+
         DefinedVariable *arg = (*argItor)->getReferenceValue();
         int currDimension = (*argItor)->getCurrentDimension();
-
-        DefinedVariable *para = *paraItor;
-        if (arg->getType()->getType() != para->getType()->getType()) {
-            return false;
-        } else if (arg->getType()->getType() == STRUCT_TYPE) {
-            if (para->getType()->getTypeName() != para->getType()->getTypeName()) {
+        if (arg == nullptr) {
+            // it may be a value
+            if (para->isArray(0))// a value can not be a array
                 return false;
+            if (para->getType()->getType() != (*argItor)->getType()->getType())
+                return false;
+        } else {
+            if (arg->getType()->getType() != para->getType()->getType()) {
+                return false;
+            } else if (arg->getType()->getType() == STRUCT_TYPE) {
+                if (para->getType()->getTypeName() != para->getType()->getTypeName()) {
+                    return false;
+                }
             }
+            // array check
+            if (!checkArray(para, arg, 0, currDimension))
+                return false;
         }
-        // array check
-        if (!checkArray(para, arg, 0, currDimension))
-            return false;
         argItor++;
         paraItor++;
     }
