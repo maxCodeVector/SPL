@@ -31,24 +31,24 @@ bool checkTypeEqual(VariableType *src, VariableType *target) {
     return true;
 }
 
-void Body::checkMembersType(ErrorHandler& handler) {
+void Body::checkMembersType(TypeChecker *checker) {
     for (DefinedVariable *var: this->vars) {
         Exp *value = var->getValue();
         if (value) {
-            Error *err = value->checkType();
+            Error *err = value->checkType(nullptr);
             if (err) {
-                handler.recordError(err);
+                checker->error(err);
                 continue;
             }
             bool equal = checkTypeEqual(var->getType(), value->getType());
             if(!equal){
-                handler.recordError(new Error{value->getLocation(), "the two value type not the same"});
+                checker->error(new Error{value->getLocation(), "the two value type not the same"});
                 continue;
             }
         }
     }
     for(Statement* statement: this->statements){
-        statement->checkMembersType(handler);
+        statement->checkMembersType(checker);
     }
 }
 
@@ -79,10 +79,9 @@ Statement::Statement(AttrNode *exp) {
     this->exp = (Exp*)exp->baseNode;
 }
 
-void Statement::checkMembersType(ErrorHandler& handler) {
-    Error* error =  exp->checkType();
-    if(error!= nullptr)
-        handler.recordError(error);
+void Statement::checkMembersType(TypeChecker* checker) {
+    checker->error(exp->checkType(checker->getTopLevelScope()));
+
 }
 
 Statement::~Statement() {
@@ -96,17 +95,16 @@ void Statement::acceptDereferenceCheck(DereferenceChecker *checker) {
 }
 
 void Statement::checkReference(LocalResolver *resolver, Scope *scope) {
-    Error *_error = exp->checkReference(scope);
-    resolver->error(_error);
+    resolver->error(exp->checkReference(scope));
 }
 
 
-void IfStatement::checkMembersType(ErrorHandler &handler) {
-    Statement::checkMembersType(handler);
+void IfStatement::checkMembersType(TypeChecker *checker) {
+    Statement::checkMembersType(checker);
     if(ifBody)
-        ifBody->checkMembersType(handler);
+        ifBody->checkMembersType(checker);
     if(elseBody)
-        elseBody->checkMembersType(handler);
+        elseBody->checkMembersType(checker);
 }
 
 void IfStatement::acceptDereferenceCheck(DereferenceChecker *checker) {
@@ -139,8 +137,8 @@ void WhileStatement::checkReference(LocalResolver *resolver, Scope *scope) {
         loop->checkReference(resolver, scope);
 }
 
-void WhileStatement::checkMembersType(ErrorHandler &handler) {
-    Statement::checkMembersType(handler);
+void WhileStatement::checkMembersType(TypeChecker *checker) {
+    Statement::checkMembersType(checker);
     if(loop)
-        loop->checkMembersType(handler);
+        loop->checkMembersType(checker);
 }

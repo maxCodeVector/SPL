@@ -94,6 +94,7 @@ void DereferenceChecker::checkStatement(Statement *statement) {
 
 
 void TypeChecker::resolve(AST &ast) {
+    toplevelScope = ast.getScope();
     for (DefinedFunction *function: ast.defineFunctions()) {
         checkReturnType(function->getReturnType());
         resolve(*function->getBody());
@@ -101,7 +102,7 @@ void TypeChecker::resolve(AST &ast) {
 }
 
 void TypeChecker::resolve(Body &body) {
-    body.checkMembersType(this->errorHandler);
+    body.checkMembersType(this);
 }
 
 

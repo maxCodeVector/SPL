@@ -112,15 +112,15 @@ void BinaryExp::acceptDereferenceCheck(DereferenceChecker *checker) {
 
 
 
-Error *BinaryExp::inferType() {
-    Error* err =  Exp::inferType();
+Error *BinaryExp::inferType(ToplevelScope* toplevelScope) {
+    Error* err = Exp::inferType(toplevelScope);
     if(err) {
         delete(err);
         err = nullptr;
-        err = left->inferType();
+        err = left->inferType(toplevelScope);
         if(err)
             return err;
-        err = right->inferType();
+        err = right->inferType(toplevelScope);
         if(err)
             return err;
         if (this->operatorType==ARRAY_INDEX_OP){
@@ -159,11 +159,11 @@ Error *UnaryExp::checkReference(Scope *scope) {
     return this->operand->checkReference(scope);
 }
 
-Error *UnaryExp::inferType() {
-    Error* err =  Exp::inferType();
+Error *UnaryExp::inferType(ToplevelScope* toplevelScope) {
+    Error* err = Exp::inferType(nullptr);
     if(err) {
         delete(err);
-        err =  this->operand->inferType();
+        err = this->operand->inferType(nullptr);
         if(err) {
             return err;
         }
@@ -229,9 +229,22 @@ void InvokeExp::acceptDereferenceCheck(DereferenceChecker *checker) {
     Exp::acceptDereferenceCheck(checker);
 }
 
-Error *InvokeExp::inferType() {
 
-    return Exp::inferType();
+bool checkArgument(list<struct DefinedVariable *> list, Args *pArgs) {
+
+
+    return true;
+}
+
+Error *InvokeExp::inferType(ToplevelScope* toplevelScope) {
+    DefinedFunction* function = (DefinedFunction*)toplevelScope->get(this->functionName);
+    VariableType* returnType = function->getReturnType();
+    this->type = returnType;
+    bool checkRes = checkArgument(function->getParameters(), this->args);
+    if(!checkRes){
+        return new Error{getLocation(), "function argument error"+functionName};
+    }
+    return nullptr;
 }
 
 GetAttributeExp::GetAttributeExp(AttrNode *operated, string &attributeName) :Exp(DataType::INFER_TYPE) {
@@ -253,8 +266,8 @@ void GetAttributeExp::acceptDereferenceCheck(DereferenceChecker *checker) {
 
 }
 
-Error *GetAttributeExp::inferType() {
-    Error* err = object->inferType();
+Error *GetAttributeExp::inferType(ToplevelScope* toplevelScope) {
+    Error* err = object->inferType(nullptr);
     if(err)
         return err;
     VariableType* father_type = object->getType();

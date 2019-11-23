@@ -34,12 +34,15 @@ public:
 
 
 class TypeChecker: public Visitor{
+    ToplevelScope* toplevelScope;
+    void checkReturnType(VariableType *type);
 public:
     void resolve(AST& ast) override;
     void resolve(Body& body) override;
     explicit TypeChecker(ErrorHandler& errorHandle, TypeTable* type_table);
-
-    void checkReturnType(VariableType *type);
+    ToplevelScope* getTopLevelScope(){
+        return toplevelScope;
+    }
 };
 
 

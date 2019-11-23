@@ -7,6 +7,7 @@
 
 #include "extnode.h"
 
+class ToplevelScope;
 class DereferenceChecker;
 class Exp:public BaseNode{
 protected:
@@ -44,12 +45,12 @@ public:
     {
         referenceVar=entity;
     }
-    virtual Error* checkType(){ return inferType();}
+    virtual Error *checkType(ToplevelScope *topLevel) { return inferType(topLevel);}
     virtual Error * checkReference(Scope* scope);
     virtual bool isLeftValue();
     virtual bool isArray();
     virtual void acceptDereferenceCheck(DereferenceChecker* checker){}
-    virtual Error* inferType(){
+    virtual Error *inferType(ToplevelScope *topLevel) {
         if(type->getType() == INFER_TYPE)
             return new Error{getLocation(), "type need to be inferred"};
         return nullptr;
@@ -68,7 +69,7 @@ public:
     }
     Error * checkReference(Scope* scope) override;
     void acceptDereferenceCheck(DereferenceChecker *checker) override;
-    Error* inferType() override;
+    Error* inferType(ToplevelScope* toplevelScope) override;
 
 };
 
@@ -80,7 +81,7 @@ public:
         delete(operand);
     }
     Error * checkReference(Scope* scope) override;
-    Error* inferType() override;
+    Error* inferType(ToplevelScope* toplevelScope) override;
 
 };
 
@@ -94,7 +95,7 @@ public:
     }
     Error * checkReference(Scope* scope) override;
     void acceptDereferenceCheck(DereferenceChecker *checker) override;
-    Error* inferType() override;
+    Error* inferType(ToplevelScope* toplevelScope) override;
 
 };
 
@@ -109,7 +110,7 @@ public:
     }
     Error * checkReference(Scope* scope) override;
     void acceptDereferenceCheck(DereferenceChecker* checker) override;
-    Error* inferType() override;
+    Error* inferType(ToplevelScope* toplevelScope) override;
 
 };
 

@@ -10,7 +10,7 @@ int main(int argc, char **argv){
     if(parse_tree_root== nullptr){
         return 1;
     }
-    show_syntax_tree(parse_tree_root);
+//    show_syntax_tree(parse_tree_root);
     AST* ast = (AST*)parse_tree_root->baseNode;
     semantic_analysis(*ast);
     delete(ast);
