@@ -50,17 +50,18 @@ void DefinedVariable::setType(AttrNode *spec) {
     VariableType *type = (VariableType *) spec->baseNode;
     DefinedVariable *next = this;
     while (next != nullptr) {
-        if(type->getType()==STRUCT_TYPE){
-            next ->type = new Struct(*(Struct*)type);
-        } else
-            next->type = new VariableType(*type);
+        next->type = type;
+//        if(type->getType()==STRUCT_TYPE){
+//            next ->type = new Struct(*(Struct*)type);
+//        } else
+//            next->type = new VariableType(*type);
 //        while (!next->array.empty()){
 //            next->type->addDimension(next->array.front());
 //            next->array.pop_front();
 //        }
         next = (DefinedVariable *) next->next;
     }
-    delete(type);
+//    delete(type);
 }
 
 void DefinedVariable::addDimension(AttrNode *dim) {

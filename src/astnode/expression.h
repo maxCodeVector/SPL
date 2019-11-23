@@ -114,5 +114,7 @@ public:
 
 };
 
+bool checkEqualExp(Exp* exp1, Exp* exp2);
+
 
 #endif //SPL_EXPRESSION_H

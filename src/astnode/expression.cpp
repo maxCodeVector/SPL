@@ -40,15 +40,15 @@ bool Exp::isLeftValue() {
              || this->type->getType() == FLOAT_TYPE);
 }
 
-bool Exp::isArray(){
-    if(this->type->getType() == INT_TYPE
+bool Exp::isArray() {
+    if (this->type->getType() == INT_TYPE
         || this->type->getType() == CHAR_TYPE
         || this->type->getType() == FLOAT_TYPE
-        || this->type->getType() == STRUCT_TYPE){
+        || this->type->getType() == STRUCT_TYPE) {
         return false;
     }
-    DefinedVariable* var = (DefinedVariable*)this->referenceVar;
-    if(var) {
+    DefinedVariable *var = (DefinedVariable *) this->referenceVar;
+    if (var) {
         return var->isArray(this->dimension);
     }
     return true;
@@ -59,13 +59,13 @@ Exp::Exp(DataType dataType) {
 }
 
 VariableType *Exp::getType() {
-    if(type->getType()==REF_TYPE && referenceVar!= nullptr)
-        return ((DefinedVariable*)referenceVar)->getType()->getActualType();
+    if (type->getType() == REF_TYPE && referenceVar != nullptr)
+        return ((DefinedVariable *) referenceVar)->getType()->getActualType();
     return type;
 }
 
 
-BinaryExp::BinaryExp(AttrNode *le, AttrNode *rig, Operator operatorType):Exp(DataType::INFER_TYPE) {
+BinaryExp::BinaryExp(AttrNode *le, AttrNode *rig, Operator operatorType) : Exp(DataType::INFER_TYPE) {
     this->left = (Exp *) le->baseNode;
     this->right = (Exp *) rig->baseNode;
     this->operatorType = operatorType;
@@ -80,20 +80,6 @@ Error *BinaryExp::checkReference(Scope *scope) {
     return this->right->checkReference(scope);
 }
 
-//Error *BinaryExp::inferType(){
-//    if (this->operatorType == ASSIGN_OP) {
-//        if (!left->isLeftValue())
-//            return new Error{getLocation(), "can not assign to this type:" + getValue()};
-//    }
-//    //todo
-//    if (left->getType() != right->getType()) {
-//        return new Error{getLocation(),
-//                         "can not resolve two different data type var:" + left->getName() + ", " + right->getValue()};
-//
-//    }
-//    return nullptr;
-//}
-
 void BinaryExp::acceptDereferenceCheck(DereferenceChecker *checker) {
     if (operatorType == ASSIGN_OP) {
         if (!left->isLeftValue()) {
@@ -102,54 +88,43 @@ void BinaryExp::acceptDereferenceCheck(DereferenceChecker *checker) {
             return;
         }
     }
-    if (operatorType == ARRAY_INDEX_OP) {
-        if(!left->isArray()){
-            checker->error(new Error{getLocation(),
-                                     "not a array:"+ left->getValue()});
-        }
-    }
 }
 
 
-
-Error *BinaryExp::inferType(ToplevelScope* toplevelScope) {
-    Error* err = Exp::inferType(toplevelScope);
-    if(err) {
-        delete(err);
-        err = nullptr;
+Error *BinaryExp::inferType(ToplevelScope *toplevelScope) {
+    Error *err = Exp::inferType(toplevelScope);
+    if (err) {
+        delete (err);
         err = left->inferType(toplevelScope);
-        if(err)
+        if (err)
             return err;
         err = right->inferType(toplevelScope);
-        if(err)
+        if (err)
             return err;
-        if (this->operatorType==ARRAY_INDEX_OP){
-            if(!left->isArray()){
-                return new Error{getLocation(), "non array but index:"+ right->getValue()};
+        if (this->operatorType == ARRAY_INDEX_OP) {
+            if (!left->isArray()) {
+                return new Error{getLocation(), "non array but index:" + right->getValue()};
             }
-            if(right->getType()->getType()!=INT_TYPE){
-                return new Error{getLocation(), "non integer index:"+ right->getValue()};
+            if (right->getType()->getType() != INT_TYPE) {
+                return new Error{getLocation(), "non integer index:" + right->getValue()};
             }
-            if(this->type->getType()==INFER_TYPE){
-                delete(this->type);
+            if (this->type->getType() == INFER_TYPE) {
+                delete (this->type);
                 this->type = new VariableType(REF_TYPE);
             }
             this->setReferenceVar(left->getReferenceValue());
             this->indexOneDimension(this->left->getCurrentDimension());
             return nullptr;
         }
-        if(this->operatorType==ASSIGN_OP){
-//            return new Error{getLocation(), "assign expression do not have type"};
-        }
-        if(left->getType()->getType()!=right->getType()->getType())
-            return new Error{getLocation(), "type need to same"};
+        if (!checkEqualExp(left, right))
+            return new Error{getLocation(), "two expression type need to same"};
         this->type = left->getType();
         return nullptr;
     }
     return nullptr;
 }
 
-UnaryExp::UnaryExp(AttrNode *operatedNode, Operator operatorType) :Exp(DataType::INFER_TYPE) {
+UnaryExp::UnaryExp(AttrNode *operatedNode, Operator operatorType) : Exp(DataType::INFER_TYPE) {
     this->operand = (Exp *) operatedNode->baseNode;
     this->operatorType = operatorType;
     setLocation(operand->getLocation());
@@ -159,19 +134,23 @@ Error *UnaryExp::checkReference(Scope *scope) {
     return this->operand->checkReference(scope);
 }
 
-Error *UnaryExp::inferType(ToplevelScope* toplevelScope) {
-    Error* err = Exp::inferType(nullptr);
-    if(err) {
-        delete(err);
-        err = this->operand->inferType(nullptr);
-        if(err) {
+Error *UnaryExp::inferType(ToplevelScope *toplevelScope) {
+    Error *err = Exp::inferType(toplevelScope);
+    if (err) {
+        delete (err);
+        err = this->operand->inferType(toplevelScope);
+        if (err) {
             return err;
         }
-        if(operatorType==SUB_OP){
+        if (operatorType == SUB_OP) {
+            DataType operand_type = operand->getType()->getType();
+            if (operand_type != INT_TYPE && operand_type != FLOAT_TYPE)
+                return new Error{getLocation(), "can only solve negative of number:" + operand->getValue()};
 
         }
-        if(operatorType==NOT_OP) {
-            if (operand->getType()->getType() != BOOL_TYPE) {
+        if (operatorType == NOT_OP) {
+            if (operand->getType()->getType() != BOOL_TYPE
+                || operand->getType()->getType() != INT_TYPE) {
                 return new Error{getLocation(), "apply not to non bool type"};
             }
         }
@@ -181,7 +160,7 @@ Error *UnaryExp::inferType(ToplevelScope* toplevelScope) {
 }
 
 
-InvokeExp::InvokeExp(AttrNode *invoker):Exp(DataType::INFER_TYPE) {
+InvokeExp::InvokeExp(AttrNode *invoker) : Exp(DataType::INFER_TYPE) {
     this->functionName = invoker->value;
     setLocation(new Location(invoker->lineNo, 0));
     this->operatorType = Operator::INVOKE;
@@ -202,7 +181,7 @@ void findEntity(Args *args, Exp *exp) {
  * @param invoker
  * @param args its baseNode is link list of Exp
  */
-InvokeExp::InvokeExp(AttrNode *invoker, AttrNode *args) :Exp(DataType::INFER_TYPE) {
+InvokeExp::InvokeExp(AttrNode *invoker, AttrNode *args) : Exp(DataType::INFER_TYPE) {
     this->operatorType = Operator::INVOKE;
     this->functionName = invoker->value;
     this->args = new Args;
@@ -226,28 +205,103 @@ Error *InvokeExp::checkReference(Scope *scope) {
 }
 
 void InvokeExp::acceptDereferenceCheck(DereferenceChecker *checker) {
-    Exp::acceptDereferenceCheck(checker);
+    for (Exp *arg: args->getArguments())
+        arg->acceptDereferenceCheck(checker);
 }
 
 
-bool checkArgument(list<struct DefinedVariable *> list, Args *pArgs) {
-
-
+bool checkArray(DefinedVariable *var1, DefinedVariable *var2, int dim1, int dim2) {
+    list<int> var1Arr = var1->getArrayDimension();
+    list<int> var2Arr = var2->getArrayDimension();
+    while (!var1Arr.empty()) {
+        if (dim1 <= 0) {
+            break;
+        }
+        dim1--;
+        var1Arr.pop_front();
+    }
+    while (!var2Arr.empty()) {
+        if (dim2 <= 0) {
+            break;
+        }
+        dim2--;
+        var2Arr.pop_front();
+    }
+    if (var1Arr.size() != var2Arr.size())
+        return false;
+    auto varItor1 = var1Arr.begin();
+    auto varItor2 = var2Arr.begin();
+    while (varItor1 != var1Arr.end()) {
+        if (*varItor1 != *varItor2) {
+            return false;
+        }
+        varItor1++;
+        varItor2++;
+    }
     return true;
 }
 
-Error *InvokeExp::inferType(ToplevelScope* toplevelScope) {
-    DefinedFunction* function = (DefinedFunction*)toplevelScope->get(this->functionName);
-    VariableType* returnType = function->getReturnType();
+
+bool checkEqualExp(Exp *exp1, Exp *exp2) {
+    DefinedVariable *var1 = exp1->getReferenceValue();
+    int dim1 = exp1->getCurrentDimension();
+    DefinedVariable *var2 = exp2->getReferenceValue();
+    int dim2 = exp2->getCurrentDimension();
+
+    if (var1->getType()->getType() != var2->getType()->getType()) {
+        return false;
+    } else if (var1->getType()->getType() == STRUCT_TYPE) {
+        if (var1->getType()->getTypeName() != var2->getType()->getTypeName()) {
+            return false;
+        }
+    }
+    // array check
+    return checkArray(var1, var2, dim1, dim2);
+}
+
+
+bool checkArgument(list<struct DefinedVariable *> paras, Args *pArgs) {
+    list<Exp *> &args = pArgs->getArguments();
+    if (paras.size() != args.size())
+        return false;
+    auto paraItor = paras.begin();
+    auto argItor = args.begin();
+    while (paraItor != paras.end()) {
+        DefinedVariable *arg = (*argItor)->getReferenceValue();
+        int currDimension = (*argItor)->getCurrentDimension();
+
+        DefinedVariable *para = *paraItor;
+        if (arg->getType()->getType() != para->getType()->getType()) {
+            return false;
+        } else if (arg->getType()->getType() == STRUCT_TYPE) {
+            if (para->getType()->getTypeName() != para->getType()->getTypeName()) {
+                return false;
+            }
+        }
+        // array check
+        if (!checkArray(para, arg, 0, currDimension))
+            return false;
+        argItor++;
+        paraItor++;
+    }
+    return true;
+}
+
+Error *InvokeExp::inferType(ToplevelScope *toplevelScope) {
+    for (Exp *arg: args->getArguments()) {
+        arg->inferType(toplevelScope);
+    }
+    DefinedFunction *function = (DefinedFunction *) toplevelScope->get(this->functionName);
+    VariableType *returnType = function->getReturnType();
     this->type = returnType;
     bool checkRes = checkArgument(function->getParameters(), this->args);
-    if(!checkRes){
-        return new Error{getLocation(), "function argument error"+functionName};
+    if (!checkRes) {
+        return new Error{getLocation(), "function argument error:" + functionName};
     }
     return nullptr;
 }
 
-GetAttributeExp::GetAttributeExp(AttrNode *operated, string &attributeName) :Exp(DataType::INFER_TYPE) {
+GetAttributeExp::GetAttributeExp(AttrNode *operated, string &attributeName) : Exp(DataType::INFER_TYPE) {
     Exp *exp = (Exp *) operated->baseNode;
     this->attrName = attributeName;
     this->operatorType = DOT_OP;
@@ -266,20 +320,20 @@ void GetAttributeExp::acceptDereferenceCheck(DereferenceChecker *checker) {
 
 }
 
-Error *GetAttributeExp::inferType(ToplevelScope* toplevelScope) {
-    Error* err = object->inferType(nullptr);
-    if(err)
+Error *GetAttributeExp::inferType(ToplevelScope *toplevelScope) {
+    Error *err = object->inferType(nullptr);
+    if (err)
         return err;
-    VariableType* father_type = object->getType();
-    if(father_type->getType()!=STRUCT_TYPE){
-        return new Error{getLocation(), "want to get attribute from none struct type var:"+this->attrName};
+    VariableType *father_type = object->getType();
+    if (father_type->getType() != STRUCT_TYPE) {
+        return new Error{getLocation(), "want to get attribute from none struct type var:" + this->attrName};
     }
-    DefinedVariable* member = ((Struct*)father_type)->getMember(attrName);
-    if(member== nullptr){
-        return new Error{getLocation(), "want to visit a non existed member:"+attrName};
+    DefinedVariable *member = ((Struct *) father_type)->getMember(attrName);
+    if (member == nullptr) {
+        return new Error{getLocation(), "want to visit a non existed member:" + attrName};
     }
-    if(this->type->getType()==INFER_TYPE){
-        delete(this->type);
+    if (this->type->getType() == INFER_TYPE) {
+        delete (this->type);
         this->type = new VariableType(REF_TYPE);
     }
     setReferenceVar(member);
@@ -287,6 +341,6 @@ Error *GetAttributeExp::inferType(ToplevelScope* toplevelScope) {
 }
 
 Error *GetAttributeExp::checkReference(Scope *scope) {
-    this->object->checkReference(scope);
+    return this->object->checkReference(scope);
 }
 

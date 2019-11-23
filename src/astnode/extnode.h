@@ -82,7 +82,7 @@ class DefinedVariable;
 class Struct: public VariableType{
     string typeName;
     bool is_complete;
-    VariableType* actualType;
+    VariableType* actualType; // used for if type is not complete
     list<DefinedVariable*> members;
     map<string, DefinedVariable*> memberMap;
 
@@ -148,6 +148,10 @@ public:
     Exp* getValue(){
         return value;
     };
+    list<int >& getArrayDimension(){
+        return array;
+    };
+
 
     /**
      * indicate if it is array when I am in this dimension
@@ -202,6 +206,9 @@ class Args: public BaseNode{
 public:
     list<Exp*> args;
     ~Args();
+    list<Exp*>& getArguments(){
+        return args;
+    }
 };
 
 
