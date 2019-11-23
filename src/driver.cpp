@@ -3,7 +3,7 @@
 //
 #include "parse/deliver.h"
 #include "semantic.h"
-
+#include <fstream>
 
 int main(int argc, char **argv){
     AttrNode* parse_tree_root = get_parse_tree(argc, argv);
@@ -12,7 +12,14 @@ int main(int argc, char **argv){
     }
 //    show_syntax_tree(parse_tree_root);
     AST* ast = (AST*)parse_tree_root->baseNode;
-    semantic_analysis(*ast);
+    ErrorHandler* handler = semantic_analysis(*ast);
+
+    string out_file_name = argv[1];
+    out_file_name = out_file_name.substr(0, out_file_name.size()-3)+"out";
+//    ofstream outfile(out_file_name);
+//    handler->showError(outfile);
+    handler->showError(std::cerr);
+
     delete(ast);
     free_AttrNode(parse_tree_root);
 }

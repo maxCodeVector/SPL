@@ -3,6 +3,6 @@
 #include "ast.h"
 
 
-int semantic_analysis(AST& ast);
+ErrorHandler* semantic_analysis(AST& ast);
 
 #endif

@@ -314,7 +314,7 @@ bool checkEqualVariable(DefinedVariable *var1, DefinedVariable *var2) {
         return false;
     } else if (var2->getType()->getType() == STRUCT_TYPE) {
         if (var1->getType()->getTypeName() != var1->getType()->getTypeName()
-        || !checkStructEquivalence((Struct*)var1->getType(), (Struct*)var2->getType())) {
+            || !checkStructEquivalence((Struct *) var1->getType(), (Struct *) var2->getType())) {
             return false;
         }
     }
@@ -332,7 +332,7 @@ bool checkStructEquivalence(Struct *st1, Struct *st2) {
     auto var1 = members1.begin();
     auto var2 = members2.begin();
     while (var1 != members1.end()) {
-        if(!checkEqualVariable(*var1, *var2)){
+        if (!checkEqualVariable(*var1, *var2)) {
             return false;
         }
         var1++;
@@ -351,7 +351,8 @@ bool checkEqualExp(Exp *exp1, Exp *exp2) {
         if (var1->getType()->getType() != var2->getType()->getType()) {
             return false;
         } else if (var1->getType()->getType() == STRUCT_TYPE) {
-            if (!checkStructEquivalence((Struct*)var1->getType(), (Struct*)var2->getType()))  {
+            if (var1->getType()->getTypeName() != var1->getType()->getTypeName()
+                || !checkStructEquivalence((Struct *) var1->getType(), (Struct *) var2->getType())) {
                 return false;
             }
         }
@@ -383,7 +384,8 @@ bool CheckEqualVariableAndExp(DefinedVariable *var, Exp *exp) {
         if (expRefVar->getType()->getType() != var->getType()->getType()) {
             return false;
         } else if (expRefVar->getType()->getType() == STRUCT_TYPE) {
-            if (var->getType()->getTypeName() != var->getType()->getTypeName()) {
+            if (var->getType()->getTypeName() != expRefVar->getType()->getTypeName()
+                || !checkStructEquivalence((Struct *) var->getType(), (Struct *) expRefVar->getType())) {
                 return false;
             }
         }
