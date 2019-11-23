@@ -21,7 +21,32 @@ Body::Body(AttrNode *defList, AttrNode *stmtList) {
     }
 }
 
+bool checkTypeEqual(VariableType *src, VariableType *target) {
+    if(src->getType()!=target->getType()){
+        return false;
+    }
+    if(src->getType()==STRUCT_TYPE){
+
+    }
+    return true;
+}
+
 void Body::checkMembersType(ErrorHandler& handler) {
+    for (DefinedVariable *var: this->vars) {
+        Exp *value = var->getValue();
+        if (value) {
+            Error *err = value->checkType();
+            if (err) {
+                handler.recordError(err);
+                continue;
+            }
+            bool equal = checkTypeEqual(var->getType(), value->getType());
+            if(!equal){
+                handler.recordError(new Error{value->getLocation(), "the two value type not the same"});
+                continue;
+            }
+        }
+    }
     for(Statement* statement: this->statements){
         statement->checkMembersType(handler);
     }
@@ -112,4 +137,10 @@ void WhileStatement::checkReference(LocalResolver *resolver, Scope *scope) {
     Statement::checkReference(resolver, scope);
     if(loop)
         loop->checkReference(resolver, scope);
+}
+
+void WhileStatement::checkMembersType(ErrorHandler &handler) {
+    Statement::checkMembersType(handler);
+    if(loop)
+        loop->checkMembersType(handler);
 }

@@ -33,13 +33,13 @@ public:
 };
 
 
-class TypeChecker: Visitor{
-    bool checkTypeEqual(VariableType* src, VariableType* target);
+class TypeChecker: public Visitor{
 public:
     void resolve(AST& ast) override;
     void resolve(Body& body) override;
     explicit TypeChecker(ErrorHandler& errorHandle, TypeTable* type_table);
 
+    void checkReturnType(VariableType *type);
 };
 
 

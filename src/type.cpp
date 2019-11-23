@@ -95,43 +95,26 @@ void DereferenceChecker::checkStatement(Statement *statement) {
 
 void TypeChecker::resolve(AST &ast) {
     for (DefinedFunction *function: ast.defineFunctions()) {
+        checkReturnType(function->getReturnType());
         resolve(*function->getBody());
     }
 }
 
 void TypeChecker::resolve(Body &body) {
-    for (DefinedVariable *var: body.vars) {
-        Exp *value = var->getValue();
-        if (value) {
-            Error *err = value->checkType();
-            if (err) {
-                error(err);
-                continue;
-            }
-            bool equal = checkTypeEqual(var->getType(), value->getType());
-            if(!equal){
-                error(new Error{value->getLocation(), "the two value type not the same"});
-                continue;
-            }
-        }
-    }
-    for (Statement *statement:body.statements) {
-        statement->checkMembersType(errorHandler);
-    }
+    body.checkMembersType(this->errorHandler);
 }
 
-bool TypeChecker::checkTypeEqual(VariableType *src, VariableType *target) {
-    if(src->getType()!=target->getType()){
-        return false;
-    }
-    if(src->getType()==STRUCT_TYPE){
-
-    }
-    return true;
-}
 
 TypeChecker::TypeChecker(ErrorHandler &errorHandle, TypeTable *type_table) : Visitor(errorHandle, type_table) {
 
+}
+
+void TypeChecker::checkReturnType(VariableType *returnType) {
+    if(returnType->getType()!=INT_TYPE
+    && returnType->getType()!=CHAR_TYPE
+    && returnType->getType()!=FLOAT_TYPE){
+        error(new Error{returnType->getLocation(), "only support return int/char/float"});
+    }
 }
 
 

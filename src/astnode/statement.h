@@ -82,6 +82,7 @@ public:
     }
     void acceptDereferenceCheck(DereferenceChecker* checker) override;
     void checkReference(LocalResolver* resolver, Scope* scope) override;
+    void checkMembersType(ErrorHandler& handler) override ;
 
 };
 

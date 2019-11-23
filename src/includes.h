@@ -46,12 +46,14 @@ enum NodeType {
 };
 
 enum DataType{
-    DER_TYPE, // means it is derivative type, need to be inferred from other expressions
+    INFER_TYPE, // means it is derivative type, need to be inferred from other expressions
     INT_TYPE,
     FLOAT_TYPE,
     CHAR_TYPE,
     STRUCT_TYPE,
-    REF_TYPE // only ID expression has this type
+    REF_TYPE, //  ID expression has this type or other expression that can inferred to this type,
+    // if inferred, type is REF_TYPE, before inferred, it is INFER_TYPE.
+    BOOL_TYPE
 };
 
 

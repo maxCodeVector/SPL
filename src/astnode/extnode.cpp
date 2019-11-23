@@ -54,10 +54,10 @@ void DefinedVariable::setType(AttrNode *spec) {
             next ->type = new Struct(*(Struct*)type);
         } else
             next->type = new VariableType(*type);
-        while (!next->tempDimension.empty()){
-            next->type->addDimension(next->tempDimension.front());
-            next->tempDimension.pop_front();
-        }
+//        while (!next->array.empty()){
+//            next->type->addDimension(next->array.front());
+//            next->array.pop_front();
+//        }
         next = (DefinedVariable *) next->next;
     }
     delete(type);
@@ -65,7 +65,7 @@ void DefinedVariable::setType(AttrNode *spec) {
 
 void DefinedVariable::addDimension(AttrNode *dim) {
     int newDim = stoi(dim->value);
-    this->tempDimension.push_back(newDim);
+    this->array.push_back(newDim);
 }
 
 DefinedVariable::~DefinedVariable() {
@@ -153,15 +153,6 @@ DefinedVariable *Struct::getMember(string &name) {
     return itor->second;
 }
 
-Struct::Struct(const Struct &aStruct): VariableType(STRUCT_TYPE) {
-    for(DefinedVariable* variable:aStruct.members){
-        this->members.push_back(new DefinedVariable(*variable));
-    }
-    this->is_complete = aStruct.is_complete;
-    this->typeName = aStruct.typeName;
-    this->flag = aStruct.flag;
-}
-
 
 DeclaredTypeVariable::DeclaredTypeVariable(AttrNode *spec) {
     this->flag = DECLARATION;
@@ -171,12 +162,4 @@ DeclaredTypeVariable::DeclaredTypeVariable(AttrNode *spec) {
 
 Args::~Args() {
     free_all(args);
-}
-
-bool VariableType::isArray(int dim) {
-    return this->array.size() >= dim;
-}
-
-void VariableType::addDimension(int size) {
-    this->array.push_back(size);
 }

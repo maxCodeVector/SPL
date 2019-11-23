@@ -19,23 +19,41 @@ public:
     Exp(AttrNode* terminal, DataType dataType);
     Exp(DataType dataType);
     virtual ~Exp(){
-        delete(type);
+//        delete(type);
     }
-    string& getName(){
+    string& getValue(){
         return value;
     }
-    VariableType* getType(){
-        return type;
-    };
+    int indexOneDimension(int curr){
+        this->dimension = curr + 1;
+        return dimension;
+    }
+    int getCurrentDimension(){
+        return dimension;
+    }
+    /**
+     * if this exp type is a reference type, then it will try to return its actual type
+     * if its referenceVar is not NULL
+     * @return
+     */
+    VariableType* getType();
+    DefinedVariable* getReferenceValue(){
+        return (DefinedVariable*)referenceVar;
+    }
     void setReferenceVar(Entity* entity)
     {
         referenceVar=entity;
     }
-    virtual Error* checkType(){ return nullptr;}
+    virtual Error* checkType(){ return inferType();}
     virtual Error * checkReference(Scope* scope);
     virtual bool isLeftValue();
     virtual bool isArray();
     virtual void acceptDereferenceCheck(DereferenceChecker* checker){}
+    virtual Error* inferType(){
+        if(type->getType() == INFER_TYPE)
+            return new Error{getLocation(), "type need to be inferred"};
+        return nullptr;
+    }
 };
 
 
@@ -49,8 +67,8 @@ public:
         delete(right);
     }
     Error * checkReference(Scope* scope) override;
-    Error* checkType() override ;
     void acceptDereferenceCheck(DereferenceChecker *checker) override;
+    Error* inferType() override;
 
 };
 
@@ -62,6 +80,7 @@ public:
         delete(operand);
     }
     Error * checkReference(Scope* scope) override;
+    Error* inferType() override;
 
 };
 
@@ -73,8 +92,9 @@ public:
     ~GetAttributeExp() override{
         delete(object);
     }
-    Error * checkReference(Scope* scope) override{ return nullptr;}
+    Error * checkReference(Scope* scope) override;
     void acceptDereferenceCheck(DereferenceChecker *checker) override;
+    Error* inferType() override;
 
 };
 
@@ -88,7 +108,9 @@ public:
         delete(args);
     }
     Error * checkReference(Scope* scope) override;
-    void acceptDereferenceCheck(DereferenceChecker* checker) override ;
+    void acceptDereferenceCheck(DereferenceChecker* checker) override;
+    Error* inferType() override;
+
 };
 
 
