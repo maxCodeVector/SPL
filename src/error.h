@@ -15,8 +15,8 @@ public:
         return !errorList.empty();
     }
 
-    void recordError(Location* loc, string& message){
-        Error* error = new Error{loc, message};
+    void recordError(Location* loc, ErrorType  type, string& message){
+        Error* error = new Error{loc, type, message};
         errorList.push_back(error);
     }
 
@@ -26,7 +26,7 @@ public:
 
     void showError(ostream &basicOstream) {
         for(Error* error: errorList){
-            basicOstream << "error in:" << error->loc->toString() << ", " << error->message << endl;
+            basicOstream << "Error type " << error->errorType <<" at Line " << error->loc->toString() << ": " << error->message << endl;
         }
     }
 

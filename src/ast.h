@@ -51,8 +51,8 @@ public:
     explicit Visitor(ErrorHandler& h, TypeTable* type_table):errorHandler(h){
         this->typeTable = type_table;
     };
-    void error(Location* loc, string& message){
-        this->errorHandler.recordError(loc, message);
+    void error(Location* loc, ErrorType errorType, string& message){
+        this->errorHandler.recordError(loc, errorType, message);
     }
 
     void error(Error* err){

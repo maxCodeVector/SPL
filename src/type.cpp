@@ -31,8 +31,9 @@ void TypeTable::checkRecursiveDefinition(ErrorHandler &errorHandler) {
         mark.insert(type_name);
         bool loop = hasLoop(mark, (Struct *) itor->second);
         if (loop) {
-            errorHandler.recordError(new Error{itor->second->getLocation(),
-                                               "Recursive Definition for:" + type_name});
+            errorHandler.recordError(new Error{
+                itor->second->getLocation(),ErrorType ::RECURSIVE_DEFINE,
+                "Recursive Definition for:" + type_name});
         }
         itor++;
     }
@@ -47,7 +48,8 @@ void TypeTable::declareVariableType(VariableType *variableType, ErrorHandler &er
             this->declaredTypes.erase(name);
             this->declaredTypes.insert(pair<string, VariableType *>(name, variableType));
         } else {
-            Error *error = new Error{variableType->getLocation(), "redefine variable type multi times:" + name};
+            Error *error = new Error{variableType->getLocation(), REDEFINED_STRUCT,
+                                     "redefine Struct multi times:" + name};
             err.recordError(error);
         }
     }
@@ -93,7 +95,7 @@ void TypeChecker::checkReturnType(VariableType *returnType) {
     if(returnType->getType()!=INT_TYPE
     && returnType->getType()!=CHAR_TYPE
     && returnType->getType()!=FLOAT_TYPE){
-        error(new Error{returnType->getLocation(), "only support return int/char/float"});
+        error(new Error{returnType->getLocation(), OTHER_ERROR, "only support return int/char/float"});
     }
 }
 

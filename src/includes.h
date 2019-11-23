@@ -18,12 +18,35 @@ public:
     }
 
     string toString() {
-        return "line " + to_string(lineNo);
+        return to_string(lineNo);
     }
 };
 
+enum ErrorType{
+    UNDEFINED_VAR=1,
+    UNDEFINED_FUN,
+    REDEFINED_VAR,
+    REDEFINED_FUN,
+    ASSIGN_DIFF_TYPE,
+    ASSIGN_LEFT_VALUE,
+    UNMATCHED_OPERATE,
+    MIS_RETURN_TYPE,
+    MIS_ARGUMENT,
+    NON_ARRAY,
+    NON_FUNC,
+    NON_INT_INDEX,
+    NON_STRUCT,
+    UNDEFINED_MEMBER,
+    REDEFINED_STRUCT,
+    INCOMPLETE_STRUCT,
+    RECURSIVE_DEFINE,
+    OTHER_ERROR
+};
+
+
 struct Error{
     Location* loc;
+    ErrorType errorType;
     string message;
 };
 

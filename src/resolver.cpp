@@ -14,7 +14,8 @@ void LocalResolver::resolve(AST &ast) {
         if (hasE != nullptr) {
             string message =
                     "duplicated define for:" + e->getName() + ", last defined in:" + hasE->getLocation()->toString();
-            error(e->getLocation(), message);
+            ErrorType errorType = e->flag==FUNC? REDEFINED_FUN:REDEFINED_VAR;
+            error(e->getLocation(),errorType, message);
         }
     }
     resolveDeclaredType(ast.getDeclaredTypes());
@@ -47,7 +48,7 @@ void LocalResolver::resolve(Body &body) {
     for (DefinedVariable *var: body.vars) {
         if (curr->isDefinedLocally(var->getName())) {
             string message = "duplicated variable in scope：" + var->getName();
-            error(var->getLocation(), message);
+            error(var->getLocation(), REDEFINED_VAR, message);
         } else {
             curr->defineVariable(*var);
         }
@@ -71,7 +72,7 @@ void LocalResolver::pushScope(list<DefinedVariable *> &vars) {
     for (DefinedVariable *var: vars) {
         if (scope->isDefinedLocally(var->getName())) {
             string message = "duplicated variable in scope：" + var->getName();
-            error(var->getLocation(), message);
+            error(var->getLocation(), REDEFINED_VAR,  message);
         } else {
             scope->defineVariable(*var);
         }
@@ -93,7 +94,7 @@ Error *resolveVariableType(TypeTable* typeTable, VariableType *variableType) {
     if (variableType->getType() == STRUCT_TYPE) {
         VariableType *realType = typeTable->queryType(variableType->getTypeName());
         if (realType == nullptr) {
-            return new Error{variableType->getLocation(),
+            return new Error{variableType->getLocation(), ErrorType ::INCOMPLETE_STRUCT,
                              "can not found complete definition for:" + variableType->getTypeName()};
         } else {
             variableType->setActualType(realType);

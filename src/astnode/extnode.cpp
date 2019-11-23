@@ -140,7 +140,7 @@ Error *Struct::checkDuplicatedNameMember() {
         string &name = var->getName();
         auto itor = memberMap.find(name);
         if (itor != memberMap.end()) {
-            return new Error{var->getLocation(), "struct type members should have different name"};
+            return new Error{var->getLocation(), REDEFINED_STRUCT, "struct type members should have different name"};
         }
         memberMap.insert(pair<string, DefinedVariable *>(name, var));
     }
