@@ -16,6 +16,7 @@ private:
     Scope* currentScope(){
         return scopeStack.back();
     }
+    void resolve(Body& body);
 
 public:
     explicit LocalResolver(ErrorHandler &h, TypeTable* type_table): Visitor(h, type_table){
@@ -31,16 +32,7 @@ public:
 
     void resolve(AST& ast) override;
 
-    void resolve(Body& body) override;
-
     void resolve(Statement& statement);
-
-    void resolveGloableVarIntializers(){
-
-    }
-    void resolveConstantValues(){
-
-    }
 
     void resolveFunctions(list<DefinedFunction*>& funcs);
 
@@ -57,7 +49,7 @@ public:
 class TypeResolver : Visitor{
 private:
     void resolveFunctions(list<DefinedFunction*> funs);
-    void resolve(Body& body) override;
+    void resolve(Body& body);
     void resolveStatement(Statement* statement);
 public:
     explicit TypeResolver(ErrorHandler& errorHandle, TypeTable* type_table);

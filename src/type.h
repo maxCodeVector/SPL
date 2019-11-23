@@ -26,19 +26,21 @@ public:
 
 class DereferenceChecker : public Visitor{
     void checkStatement(Statement* statement);
+    void resolve(Body& body);
+
 public:
     void resolve(AST& ast) override;
-    void resolve(Body& body) override;
     explicit DereferenceChecker(ErrorHandler& errorHandle, TypeTable* type_table);
 };
 
 
 class TypeChecker: public Visitor{
     ToplevelScope* toplevelScope;
-    void checkReturnType(VariableType *type);
+    void checkReturnType(VariableType* type);
+    void checkFunction(DefinedFunction* function);
+
 public:
     void resolve(AST& ast) override;
-    void resolve(Body& body) override;
     explicit TypeChecker(ErrorHandler& errorHandle, TypeTable* type_table);
     ToplevelScope* getTopLevelScope(){
         return toplevelScope;

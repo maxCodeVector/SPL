@@ -92,22 +92,15 @@ void DereferenceChecker::checkStatement(Statement *statement) {
     }
 }
 
+TypeChecker::TypeChecker(ErrorHandler &errorHandle, TypeTable *type_table) : Visitor(errorHandle, type_table) {
+}
 
 void TypeChecker::resolve(AST &ast) {
     toplevelScope = ast.getScope();
     for (DefinedFunction *function: ast.defineFunctions()) {
+        checkFunction(function);
         checkReturnType(function->getReturnType());
-        resolve(*function->getBody());
     }
-}
-
-void TypeChecker::resolve(Body &body) {
-    body.checkMembersType(this);
-}
-
-
-TypeChecker::TypeChecker(ErrorHandler &errorHandle, TypeTable *type_table) : Visitor(errorHandle, type_table) {
-
 }
 
 void TypeChecker::checkReturnType(VariableType *returnType) {
@@ -116,6 +109,10 @@ void TypeChecker::checkReturnType(VariableType *returnType) {
     && returnType->getType()!=FLOAT_TYPE){
         error(new Error{returnType->getLocation(), "only support return int/char/float"});
     }
+}
+
+void TypeChecker::checkFunction(DefinedFunction *function) {
+    function->getBody()->checkMembersType(this, function);
 }
 
 

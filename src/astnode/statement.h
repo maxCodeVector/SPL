@@ -20,7 +20,7 @@ public:
     Exp* getExpression(){
         return exp;
     }
-    virtual void checkMembersType(TypeChecker *checker);
+    virtual void checkMembersType(TypeChecker *checker, DefinedFunction *function);
     virtual void acceptDereferenceCheck(DereferenceChecker* checker);
     virtual void checkReference(LocalResolver* resolver, Scope* scope);
 };
@@ -46,7 +46,7 @@ public:
     bool checkContinue() override { return true;};
     bool checkBreak() override { return true;};
 
-    void checkMembersType(TypeChecker *checker) override;
+    void checkMembersType(TypeChecker *checker, DefinedFunction *function) override;
     void acceptDereferenceCheck(DereferenceChecker* checker) override;
     void checkReference(LocalResolver* resolver, Scope* scope) override;
 };
@@ -66,7 +66,7 @@ public:
         delete(ifBody);
         delete(elseBody);
     }
-    void checkMembersType(TypeChecker *checker) override;
+    void checkMembersType(TypeChecker *checker, DefinedFunction *function) override;
     void acceptDereferenceCheck(DereferenceChecker* checker) override;
     void checkReference(LocalResolver* resolver, Scope* scope) override;
 
@@ -83,13 +83,13 @@ public:
     }
     void acceptDereferenceCheck(DereferenceChecker* checker) override;
     void checkReference(LocalResolver* resolver, Scope* scope) override;
-    void checkMembersType(TypeChecker *checker) override ;
-
+    void checkMembersType(TypeChecker *checker, DefinedFunction *function) override ;
 };
 
 class ReturnStatement:public Statement{
 public:
     explicit ReturnStatement(AttrNode* exp):Statement(exp){}
+    void checkMembersType(TypeChecker *checker, DefinedFunction *function) override;
 };
 
 

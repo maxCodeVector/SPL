@@ -44,7 +44,6 @@ public:
 class TypeTable;
 class Visitor{
     virtual void resolve(AST& ast)=0;
-    virtual void resolve(Body& body)=0;
 
 protected:
     ErrorHandler& errorHandler;

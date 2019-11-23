@@ -19,6 +19,7 @@ Body::Body(AttrNode *defList, AttrNode *stmtList) {
         this->statements.push_back(statement);
         statement = (Statement*)statement->next;
     }
+    setLocation(defList->lineNo, 0);
 }
 
 bool checkTypeEqual(VariableType *src, VariableType *target) {
@@ -31,11 +32,11 @@ bool checkTypeEqual(VariableType *src, VariableType *target) {
     return true;
 }
 
-void Body::checkMembersType(TypeChecker *checker) {
+void Body::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
     for (DefinedVariable *var: this->vars) {
         Exp *value = var->getValue();
         if (value) {
-            Error *err = value->checkType(nullptr);
+            Error *err = value->checkType(checker->getTopLevelScope());
             if (err) {
                 checker->error(err);
                 continue;
@@ -48,7 +49,7 @@ void Body::checkMembersType(TypeChecker *checker) {
         }
     }
     for(Statement* statement: this->statements){
-        statement->checkMembersType(checker);
+        statement->checkMembersType(checker, function);
     }
 }
 
@@ -77,9 +78,10 @@ void Body::checkReference(LocalResolver *resolver, Scope *scope) {
 
 Statement::Statement(AttrNode *exp) {
     this->exp = (Exp*)exp->baseNode;
+    setLocation(exp->lineNo, 0);
 }
 
-void Statement::checkMembersType(TypeChecker* checker) {
+void Statement::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
     checker->error(exp->checkType(checker->getTopLevelScope()));
 
 }
@@ -99,12 +101,12 @@ void Statement::checkReference(LocalResolver *resolver, Scope *scope) {
 }
 
 
-void IfStatement::checkMembersType(TypeChecker *checker) {
-    Statement::checkMembersType(checker);
+void IfStatement::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
+    Statement::checkMembersType(checker, function);
     if(ifBody)
-        ifBody->checkMembersType(checker);
+        ifBody->checkMembersType(checker, function);
     if(elseBody)
-        elseBody->checkMembersType(checker);
+        elseBody->checkMembersType(checker, function);
 }
 
 void IfStatement::acceptDereferenceCheck(DereferenceChecker *checker) {
@@ -137,8 +139,16 @@ void WhileStatement::checkReference(LocalResolver *resolver, Scope *scope) {
         loop->checkReference(resolver, scope);
 }
 
-void WhileStatement::checkMembersType(TypeChecker *checker) {
-    Statement::checkMembersType(checker);
+void WhileStatement::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
+    Statement::checkMembersType(checker, function);
     if(loop)
-        loop->checkMembersType(checker);
+        loop->checkMembersType(checker, function);
+}
+
+void ReturnStatement::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
+    Statement::checkMembersType(checker, function);
+    if(this->exp->getType()->getType()!=function->getReturnType()->getType()){
+        Error* err = new Error{getLocation(), "return type is not the same as declared："+function->getName()};
+        checker->error(err);
+    }
 }

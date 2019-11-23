@@ -18,9 +18,6 @@ void LocalResolver::resolve(AST &ast) {
             error(e->getLocation(), message);
         }
     }
-
-    resolveGloableVarIntializers();
-    resolveConstantValues();
     resolveDeclaredType(ast.getDeclaredTypes());
     resolveFunctions(ast.defineFunctions());
 //    toplevelScope->checkReferences(this->errorHandler);
@@ -72,7 +69,6 @@ void LocalResolver::resolveDeclaredType(list<VariableType *> &declared) {
         if(variableType->getType()!=STRUCT_TYPE)
             continue;
         // unique member
-
         typeTable->declareVariableType(variableType, errorHandler);
     }
 }

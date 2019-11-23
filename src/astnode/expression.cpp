@@ -154,6 +154,7 @@ Error *UnaryExp::inferType(ToplevelScope *toplevelScope) {
                 return new Error{getLocation(), "apply not to non bool type"};
             }
         }
+        this->type = operand->getType();
         return nullptr;
     }
     return nullptr;

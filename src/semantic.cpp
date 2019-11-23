@@ -19,11 +19,12 @@ int semantic_analysis(AST &ast) {
     typeResolver.resolve(ast);
     //check recursive definition
     typeTable->checkRecursiveDefinition(h);
-//    dereferenceChecker.resolve(ast);
-    typeChecker.resolve(ast);
-
+    if (!h.errorOccured()) {
+        dereferenceChecker.resolve(ast);
+        typeChecker.resolve(ast);
+    }
     h.showError(std::cerr);
-    delete(typeTable);
+    delete (typeTable);
 //    ofstream outfile("../src/res.o");
 //    h.showError(outfile);
     return 1;
