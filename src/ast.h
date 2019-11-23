@@ -33,9 +33,7 @@ public:
         return toplevelScope;
     }
 
-    void setScope(Scope* scope_) override {
-        this->toplevelScope = (ToplevelScope*)scope_;
-    }
+    void setScope(Scope* scope_) override;
 
     ~AST();
 

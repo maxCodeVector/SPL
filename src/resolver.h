@@ -16,7 +16,6 @@ private:
     Scope* currentScope(){
         return scopeStack.back();
     }
-    void resolve(Body& body);
 
 public:
     explicit LocalResolver(ErrorHandler &h, TypeTable* type_table): Visitor(h, type_table){
@@ -26,29 +25,18 @@ public:
             scopeStack.pop_front();
         }
     }
-
-
-    void resolveDeclaredType(list<VariableType*> & declared);
-
+    void resolve(Body& body);
     void resolve(AST& ast) override;
-
-    void resolve(Statement& statement);
-
+    void resolveDeclaredType(list<VariableType*> & declared);
     void resolveFunctions(list<DefinedFunction*>& funcs);
-
-
     void pushScope(list<DefinedVariable*>& vars);
-    Scope* popScope(){
-        Scope* scope = scopeStack.back();
-        scopeStack.pop_back();
-        return scope;
-    }
+    Scope* popScope();
 
 };
 
 class TypeResolver : Visitor{
 private:
-    void resolveFunctions(list<DefinedFunction*> funs);
+    void resolveFunctions(list<DefinedFunction*>& funs);
     void resolve(Body& body);
     void resolveStatement(Statement* statement);
 public:

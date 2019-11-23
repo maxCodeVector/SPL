@@ -12,7 +12,6 @@
 
 class TypeTable{
     map<string, VariableType*> declaredTypes;
-    bool hasLoop(set<string >& mark, Struct* type);
 
 public:
     void checkRecursiveDefinition(ErrorHandler& errorHandler);
@@ -24,6 +23,9 @@ public:
 };
 
 
+/**
+ * to check if there are expression assign a value to non left value type variable or get a member to a non-struct
+ */
 class DereferenceChecker : public Visitor{
     void checkStatement(Statement* statement);
     void resolve(Body& body);

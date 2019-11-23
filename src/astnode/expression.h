@@ -45,16 +45,12 @@ public:
     {
         referenceVar=entity;
     }
-    virtual Error *checkType(ToplevelScope *topLevel) { return inferType(topLevel);}
+    Error *checkType(ToplevelScope *topLevel) { return inferType(topLevel);}
+    bool isLeftValue();
+    bool isArray();
     virtual Error * checkReference(Scope* scope);
-    virtual bool isLeftValue();
-    virtual bool isArray();
     virtual void acceptDereferenceCheck(DereferenceChecker* checker){}
-    virtual Error *inferType(ToplevelScope *topLevel) {
-        if(type->getType() == INFER_TYPE)
-            return new Error{getLocation(), "type need to be inferred"};
-        return nullptr;
-    }
+    virtual Error *inferType(ToplevelScope *topLevel);
 };
 
 
@@ -115,6 +111,7 @@ public:
 };
 
 bool checkEqualExp(Exp* exp1, Exp* exp2);
+bool CheckEqualVariableAndExp(DefinedVariable* var, Exp* exp);
 
 
 #endif //SPL_EXPRESSION_H

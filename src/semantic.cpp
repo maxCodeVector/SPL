@@ -20,7 +20,7 @@ int semantic_analysis(AST &ast) {
     //check recursive definition
     typeTable->checkRecursiveDefinition(h);
     if (!h.errorOccured()) {
-        dereferenceChecker.resolve(ast);
+//        dereferenceChecker.resolve(ast);
         typeChecker.resolve(ast);
     }
     h.showError(std::cerr);

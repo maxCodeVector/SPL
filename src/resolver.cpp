@@ -4,7 +4,6 @@
 
 #include "resolver.h"
 
-
 void LocalResolver::resolve(AST &ast) {
     ToplevelScope *toplevelScope = new ToplevelScope();
     scopeStack.push_back(toplevelScope);
@@ -20,12 +19,27 @@ void LocalResolver::resolve(AST &ast) {
     }
     resolveDeclaredType(ast.getDeclaredTypes());
     resolveFunctions(ast.defineFunctions());
-//    toplevelScope->checkReferences(this->errorHandler);
-//        if(errorHandler.errorOccured()){
-//            return;
-//        }
     ast.setScope(toplevelScope);
     ast.setConstant(this->constantTable);
+}
+
+
+void LocalResolver::resolveDeclaredType(list<VariableType *> &declared) {
+    for (VariableType *variableType: declared) {
+        if(variableType->getType()!=STRUCT_TYPE)
+            continue;
+        // unique member
+        typeTable->declareVariableType(variableType, errorHandler);
+    }
+}
+
+
+void LocalResolver::resolveFunctions(list<DefinedFunction *> &funcs) {
+    for (DefinedFunction *function: funcs) {
+        pushScope(function->getParameters());
+        resolve(*function->getBody());
+        function->setScope(popScope());
+    }
 }
 
 void LocalResolver::resolve(Body &body) {
@@ -40,11 +54,12 @@ void LocalResolver::resolve(Body &body) {
     }
     for (DefinedVariable *var: body.vars) {
         if (var->getValue()) {
+            // check defined variables' initial expression
             error(var->getValue()->checkReference(currentScope()));
         }
     }
     for (Statement *statement:body.statements) {
-        resolve(*statement);
+        statement->checkReference(this, currentScope());
     }
 }
 
@@ -64,25 +79,14 @@ void LocalResolver::pushScope(list<DefinedVariable *> &vars) {
     scopeStack.push_back(scope);
 }
 
-void LocalResolver::resolveDeclaredType(list<VariableType *> &declared) {
-    for (VariableType *variableType: declared) {
-        if(variableType->getType()!=STRUCT_TYPE)
-            continue;
-        // unique member
-        typeTable->declareVariableType(variableType, errorHandler);
-    }
+Scope *LocalResolver::popScope() {
+    Scope* scope = scopeStack.back();
+    scopeStack.pop_back();
+    return scope;
 }
 
-void LocalResolver::resolve(Statement &statement) {
-    statement.checkReference(this, currentScope());
-}
 
-void LocalResolver::resolveFunctions(list<DefinedFunction *> &funcs) {
-    for (DefinedFunction *function: funcs) {
-        pushScope(function->getParameters());
-        resolve(*function->getBody());
-        function->setScope(popScope());
-    }
+TypeResolver::TypeResolver(ErrorHandler& errorHandle, TypeTable* type_table): Visitor(errorHandle, type_table) {
 }
 
 Error *resolveVariableType(TypeTable* typeTable, VariableType *variableType) {
@@ -98,8 +102,9 @@ Error *resolveVariableType(TypeTable* typeTable, VariableType *variableType) {
     return nullptr;
 }
 
-
 void TypeResolver::resolve(AST &ast) {
+    // non-struct type already has its actual type, so only deal with struct type
+    // by query it from type table, set referenced type's actual type
     for (DefinedVariable *var: ast.getDefinedVars()) {
         Error *_error = resolveVariableType(typeTable, var->getType());
         this->error(_error);
@@ -108,8 +113,10 @@ void TypeResolver::resolve(AST &ast) {
         if(declared->getType()!=STRUCT_TYPE)
             continue;
         Struct* aStruct = (Struct*)declared;
-        error(aStruct->checkMembers());
+        // check if struct has duplicated name members
+        error(aStruct->checkDuplicatedNameMember());
         for(DefinedVariable* member: aStruct->getMemberList()){
+            // set each member's referenced type to its actual type
             Error *_error = resolveVariableType(typeTable, member->getType());
             this->error(_error);
         }
@@ -117,7 +124,7 @@ void TypeResolver::resolve(AST &ast) {
     resolveFunctions(ast.defineFunctions());
 }
 
-void TypeResolver::resolveFunctions(list<DefinedFunction *> funs) {
+void TypeResolver::resolveFunctions(list<DefinedFunction *>& funs) {
     for (DefinedFunction *fun: funs) {
         for (DefinedVariable *para: fun->getParameters()) {
             Error *err = resolveVariableType(typeTable, para->getType());
@@ -137,14 +144,10 @@ void TypeResolver::resolve(Body &body) {
     for (Statement *statement:body.statements) {
         resolveStatement(statement);
     }
-
-}
-
-TypeResolver::TypeResolver(ErrorHandler& errorHandle, TypeTable* type_table): Visitor(errorHandle, type_table) {
-
 }
 
 void TypeResolver::resolveStatement(Statement *statement) {
+    // only need to check body statement, because other statement do not have variable declarations.
     if (statement->flag == BODY) {
         resolve(*(Body *) statement);
     }

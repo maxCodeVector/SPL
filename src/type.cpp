@@ -5,7 +5,7 @@
 #include "astnode/statement.h"
 #include "scope.h"
 
-bool TypeTable::hasLoop(set<string> &mark, Struct *type) {
+bool hasLoop(set<string> &mark, Struct *type) {
     for (DefinedVariable *var :type->getMemberList()) {
         VariableType *member_type = var->getType();
         if (member_type->getType() != STRUCT_TYPE)
@@ -33,7 +33,6 @@ void TypeTable::checkRecursiveDefinition(ErrorHandler &errorHandler) {
         if (loop) {
             errorHandler.recordError(new Error{itor->second->getLocation(),
                                                "Recursive Definition for:" + type_name});
-//            return;
         }
         itor++;
     }
@@ -63,36 +62,23 @@ VariableType *TypeTable::queryType(string &name) {
 }
 
 
+DereferenceChecker::DereferenceChecker(ErrorHandler &errorHandle, TypeTable *type_table) :
+        Visitor(errorHandle, type_table) {
+}
+
+
 void DereferenceChecker::resolve(AST &ast) {
     for (DefinedFunction *function: ast.defineFunctions()) {
         resolve(*function->getBody());
     }
 }
 
-
-
 void DereferenceChecker::resolve(Body &body) {
     body.acceptDereferenceCheck(this);
 }
 
-
-
-DereferenceChecker::DereferenceChecker(ErrorHandler &errorHandle, TypeTable *type_table) :
-        Visitor(errorHandle, type_table) {
-
-}
-
-void DereferenceChecker::checkStatement(Statement *statement) {
-    Exp* exp = statement->getExpression();
-    if(exp){
-        exp->acceptDereferenceCheck(this);
-    }
-    if(statement->flag==BODY){
-        resolve(*(Body*)statement);
-    }
-}
-
 TypeChecker::TypeChecker(ErrorHandler &errorHandle, TypeTable *type_table) : Visitor(errorHandle, type_table) {
+    toplevelScope = nullptr;
 }
 
 void TypeChecker::resolve(AST &ast) {

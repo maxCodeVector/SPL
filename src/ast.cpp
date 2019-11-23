@@ -57,4 +57,8 @@ int AST::showSize() {
     return declaredTypes.size();
 }
 
+void AST::setScope(Scope *scope_) {
+    this->toplevelScope = (ToplevelScope*)scope_;
+}
+
 

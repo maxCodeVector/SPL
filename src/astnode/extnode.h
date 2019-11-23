@@ -108,7 +108,7 @@ public:
         return members;
     };
     DefinedVariable* getMember(string& name);
-    Error* checkMembers();
+    Error* checkDuplicatedNameMember();
 
 
 };
@@ -205,6 +205,9 @@ public:
 class Args: public BaseNode{
 public:
     list<Exp*> args;
+    Args(Location* loc){
+        setLocation(loc);
+    }
     ~Args();
     list<Exp*>& getArguments(){
         return args;

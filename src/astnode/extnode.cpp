@@ -135,7 +135,7 @@ Struct::Struct(AttrNode *name, AttrNode *defList) : VariableType(STRUCT_TYPE) {
     is_complete = true;
 }
 
-Error *Struct::checkMembers() {
+Error *Struct::checkDuplicatedNameMember() {
     for (DefinedVariable *var: members) {
         string &name = var->getName();
         auto itor = memberMap.find(name);
