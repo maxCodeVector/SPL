@@ -23,6 +23,6 @@ ErrorHandler* semantic_analysis(AST &ast) {
 //        dereferenceChecker.resolve(ast);
         typeChecker.resolve(ast);
     }
-    delete (typeTable);
+    ast.setTypeTable(typeTable);
     return h;
 }

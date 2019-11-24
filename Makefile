@@ -49,7 +49,14 @@ test: bin/splc
 		diff $(patsubst %.spl,%.res,$(var)) $(patsubst %.spl,%.out,$(var)) && \
 		echo $(var) success; \
 		echo ; \
-	 )
+	)
+
+
+wc:
+	find . -name "*.cpp" |xargs cat|wc -l
+	find . -name "*.h" |xargs cat|wc -l
+	find . -name "*.l" |xargs cat|wc -l
+	find . -name "*.y" |xargs cat|wc -l
 
 
 .PHONY: clean

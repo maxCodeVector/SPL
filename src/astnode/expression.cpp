@@ -324,8 +324,8 @@ bool checkEqualVariable(DefinedVariable *var1, DefinedVariable *var2) {
 
 
 bool checkStructEquivalence(Struct *st1, Struct *st2) {
-    list<DefinedVariable *> members1 = st1->getMemberList();
-    list<DefinedVariable *> members2 = st2->getMemberList();
+    list<DefinedVariable *>& members1 = st1->getMemberList();
+    list<DefinedVariable *>& members2 = st2->getMemberList();
     if (members1.size() != members2.size()) {
         return false;
     }

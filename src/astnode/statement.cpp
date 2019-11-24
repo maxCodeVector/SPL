@@ -79,7 +79,7 @@ void Body::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
             }
             bool equal = CheckEqualVariableAndExp(var, value);
             if (!equal) {
-                checker->error(new Error{value->getLocation(),ASSIGN_DIFF_TYPE,
+                checker->error(new Error{value->getLocation(), ASSIGN_DIFF_TYPE,
                                          "initial variable using a different type value" + var->getName()});
                 continue;
             }
@@ -110,7 +110,7 @@ void IfStatement::acceptDereferenceCheck(DereferenceChecker *checker) {
 
 void IfStatement::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
     Statement::checkMembersType(checker, function);
-    if(exp->getType()->getType()!=BOOL_TYPE){
+    if (exp->getType()->getType() != BOOL_TYPE) {
         checker->error(new Error{exp->getLocation(), OTHER_ERROR, "condition of if should be a bool type"});
     }
     if (ifBody)
@@ -136,7 +136,7 @@ void WhileStatement::acceptDereferenceCheck(DereferenceChecker *checker) {
 
 void WhileStatement::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
     Statement::checkMembersType(checker, function);
-    if(exp->getType()->getType()!=BOOL_TYPE){
+    if (exp->getType()->getType() != BOOL_TYPE) {
         checker->error(new Error{exp->getLocation(), OTHER_ERROR, "condition of while should be a bool type"});
     }
     if (loop)
@@ -145,7 +145,8 @@ void WhileStatement::checkMembersType(TypeChecker *checker, DefinedFunction *fun
 
 void ReturnStatement::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
     Statement::checkMembersType(checker, function);
-    if (this->exp->getType()->getType() != function->getReturnType()->getType()) {
+    if (this->exp->getType()->getType() != INFER_TYPE
+        && this->exp->getType()->getType() != function->getReturnType()->getType()) {
         Error *err = new Error{getLocation(), MIS_RETURN_TYPE,
                                "return type is not the same as declared：" + function->getName()};
         checker->error(err);

@@ -14,13 +14,14 @@ int main(int argc, char **argv){
     AST* ast = (AST*)parse_tree_root->baseNode;
     ErrorHandler* handler = semantic_analysis(*ast);
 
-    string out_file_name = argv[1];
-    out_file_name = out_file_name.substr(0, out_file_name.size()-3)+"out";
+//    string out_file_name = argv[1];
+//    out_file_name = out_file_name.substr(0, out_file_name.size()-3)+"out";
 //    ofstream outfile(out_file_name);
 //    handler->showError(outfile);
     handler->showError(std::cerr);
 
     delete(ast);
+    delete(handler);
     free_AttrNode(parse_tree_root);
 }
 

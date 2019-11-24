@@ -26,8 +26,17 @@ void AST::convert2AST(AttrNode* root){
     findEntity(root->baseNode);
 }
 
+int AST::showSize() {
+    return declaredTypes.size();
+}
 
+void AST::setScope(Scope *scope_) {
+    this->toplevelScope = (ToplevelScope*)scope_;
+}
 
+void AST::setTypeTable(TypeTable *table) {
+    typeTable = table;
+}
 
 list<Entity*>& AST::declaritions(list<Entity*>& decaries){
     for(DefinedVariable *var: this->vars){
@@ -51,14 +60,8 @@ AST::~AST() {
     free_all(functions);
     free_all(declaredTypes);
     delete(toplevelScope);
+    delete (typeTable);
 }
 
-int AST::showSize() {
-    return declaredTypes.size();
-}
-
-void AST::setScope(Scope *scope_) {
-    this->toplevelScope = (ToplevelScope*)scope_;
-}
 
 

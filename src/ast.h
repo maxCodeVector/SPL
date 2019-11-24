@@ -6,11 +6,13 @@
 using namespace std;
 
 class ToplevelScope;
+class TypeTable;
 class AST: public BaseNode{
 private:
     void convert2AST(AttrNode* root);
     void findEntity(BaseNode *extList);
     ToplevelScope* toplevelScope;
+    TypeTable* typeTable;
     list<DefinedFunction*> functions;
     list<DefinedVariable*> vars;
     list<VariableType*> declaredTypes;
@@ -34,12 +36,12 @@ public:
     }
 
     void setScope(Scope* scope_) override;
+    void setTypeTable(TypeTable* table);
 
     ~AST();
 
 };
 
-class TypeTable;
 class Visitor{
     virtual void resolve(AST& ast)=0;
 
