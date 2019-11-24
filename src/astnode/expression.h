@@ -25,6 +25,9 @@ public:
     string& getValue(){
         return value;
     }
+    void setType(VariableType* type){
+        this->type = type;
+    }
     int indexOneDimension(int curr){
         this->dimension = curr + 1;
         return dimension;

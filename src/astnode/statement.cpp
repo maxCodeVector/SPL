@@ -145,10 +145,15 @@ void WhileStatement::checkMembersType(TypeChecker *checker, DefinedFunction *fun
 
 void ReturnStatement::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
     Statement::checkMembersType(checker, function);
-    if (this->exp->getType()->getType() != INFER_TYPE
-        && this->exp->getType()->getType() != function->getReturnType()->getType()) {
-        Error *err = new Error{getLocation(), MIS_RETURN_TYPE,
-                               "return type is not the same as declared：" + function->getName()};
-        checker->error(err);
+    // no repeat report expression error
+    if (this->exp->getType()->getType() != INFER_TYPE) {
+        if (exp->isArray()
+            || (this->exp->getType()->getType() != function->getReturnType()->getType()
+            && function->getReturnType()->getType() != FLOAT_TYPE
+            && this->exp->getType()->getType() != INT_TYPE)) {
+            Error *err = new Error{getLocation(), MIS_RETURN_TYPE,
+                                   "return type is not the same as declared：" + function->getName()};
+            checker->error(err);
+        }
     }
 }

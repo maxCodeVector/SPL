@@ -2,49 +2,224 @@
 
 11610303 黄玉安
 
+### Introduction
 
+Base on Project 1, I add more code to do the semantic analysis, for project 1, I only get a parse tree, so in this project, I need to convert it to a abstract syntax tree. The process is also included in the bison part.
 
+For example, generate a function node for AST.
 
+```c++
+FunDec: ID LP VarList RP {
+                $$ = make_parent($1, "FunDec");
+                add_childs($$, $2);
+                add_childs($$, $3);
+                add_childs($$, $4);
+		DefinedFunction* func = new DefinedFunction($1, $3);
+		$$->baseNode = func;
+         
+```
 
+```c++
+DefinedFunction::DefinedFunction(AttrNode *functionID, AttrNode *paraList) {
+    this->id = functionID->value;
+    setLocation(new Location(functionID->lineNo, 0));
+    this->flag = FUNC;
+    parseParameters(paraList);
+}
+```
 
+After parsing, I will analyze this AST, the scope checking and type checking will be followed.
+
+### Analysis Flow
+
+The entrance for my program is in the driver.cpp, it will invoke function`semantic_analysis` to do the following action.
+
+```c++
+int main(int argc, char **argv){
+    AttrNode* parse_tree_root = get_parse_tree(argc, argv);
+    if(parse_tree_root== nullptr){
+        return 1;
+    }
+    show_syntax_tree(parse_tree_root);
+    AST* ast = (AST*)parse_tree_root->baseNode;
+    ErrorHandler* handler = semantic_analysis(*ast);
+
+    handler->showError(std::cerr);
+
+    delete(ast);
+    delete(handler);
+    free_AttrNode(parse_tree_root);
+}
+```
+
+Here is how I analyze it.
+
+```c++
+ErrorHandler* semantic_analysis(AST &ast) {
+    ErrorHandler* h = new ErrorHandler();
+    TypeTable *typeTable = new TypeTable;
+
+    LocalResolver local(*h, typeTable);
+    TypeResolver typeResolver(*h, typeTable);
+    TypeChecker typeChecker(*h, typeTable);
+
+    local.resolve(ast);
+    typeResolver.resolve(ast);
+    //check recursive definition
+    typeTable->checkRecursiveDefinition(*h);
+    if (!h->errorOccured()) {
+        typeChecker.resolve(ast);
+    }
+    ast.setTypeTable(typeTable);
+    return h;
+}
+```
+
+- First, it will check the scope, find the reference variable for all the statement, `LocalResolver` is for doing this job.
+
+- Second, `TypeResolver` will found the reference type for each variable type, it is mainly for struct, some times, it is not complete, for example, `struct A a`, no one knows what A has, so `TypeResolver` will found its complete definition.
+
+- Third, after doing above two job, the `TypeTable` need to check is there exist some recursive definition such as:
+
+    ```c
+    struct A{
+        struct B b;
+    }; 
+    struct B{
+        struct A a;
+    };
+    ```
+
+- Last thing is type checking.
+
+Only the above test was passed, the program will do the following type checking. So the is the reason why my program usually will **ignore the follow error** when I found one error in one expression. Because if there are some error occurred, following check may be dangerous, compiler may be crash.
+
+For example, if there are recursive definition for `STRUCT`, when I check **struct equavalence**, it may enter infinite loop.
+
+Another reason is that multiple error message for one expression may be ambiguous for user since in most case, there are only one error occurred.
+
+Finally, I pass all the test and I also implement some bonus features.
 
 ### Optional Features
 
 #### 1. Could have any scope, shadow previous scope variable definition
 
-#### 2. Since declared  `Struct` type are unique, using name equivalence
+It is done by the symbol table, my symbol table is a tree structure, see `src/scope.h`, so it could handle any scope, shadow previous scope variable definition
 
+#### 2. Structure equivalence
 
+I could deal with structure equivalence. The process is very complex.
+
+```c++
+bool checkStructEquivalence(Struct *st1, Struct *st2) {
+    list<DefinedVariable *>& members1 = st1->getMemberList();
+    list<DefinedVariable *>& members2 = st2->getMemberList();
+    if (members1.size() != members2.size()) {
+        return false;
+    }
+    auto var1 = members1.begin();
+    auto var2 = members2.begin();
+    while (var1 != members1.end()) {
+        if (!checkEqualVariable(*var1, *var2)) {
+            return false;
+        }
+        var1++;
+        var2++;
+    }
+    return true;
+}
+```
+
+When invoke function `checkEqualVariable`, if there members contains struct type, it may invoke `bool checkStructEquivalence(Struct *st1, Struct *st2)` again, it is a recursive checking process.
+
+ 
 
 ### Bonus Features:
 
+There are several features I implement, also  you can use `make test` to check all of these test.
+
 #### 1. Detect recursive definition for multiple `struct` type
 
+I could detect if there exist recursive definition for struct type, like the following example
 
+```c
+struct A
+{
+  int name;
+  struct B b;
+};
+
+struct B
+{
+  int name;
+  struct A a;
+};
+
+struct Person
+{
+  int name;
+  struct Person p;
+  int friends[10];
+};
+```
+
+the test is in: `b_recursive_struct_member.spl`
 
 #### 2. Could detect overlapped field in a `struct`
 
+```c
+struct Person
+{
+  int name;
+  float name;
+  int friends[10];
+};
+```
 
+The test is in: `b_overlapped_fields.spl`
 
 #### 3. Arithmetic, comparing and assign support between float and int
 
+Can do arithmetic and comparing between float and int.
 
+Can assign int to float type variable, but can not assign float to int type variable.
+
+see test: `b_float_and_int.spl`
 
 #### 4. Set only `bool` type can be condition of if and while statement
 
-
+can not use a int or float to be if and while condition, comparing result of expression will be change to bool type.
 
 #### 5. Could detect  Arithmetic operation between non-float or non-int
 
+Only number(float and int) could do Arithmetic operation 
 
+see `b_non_number_arithmetic.spl`
 
 #### 6. Support multi dimension array
 
+The array's dimension could more than 1, there will be type checking for operation of them.
 
+see test `b_multi_array.spl`
 
 #### 7. Support incomplete `struct`
 
+It can deal with use the struct type before define the struct as long as it defined this structure finnly
 
+```c
+struct A
+{
+  int name;
+  struct B b;
+};
+
+struct B
+{
+  int name;
+};
+```
+
+The test is in: `b_incomplete_struct.spl`
 
 
 

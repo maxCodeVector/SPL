@@ -1,0 +1,12 @@
+
+float test_2_r10()
+{
+  int a=1;
+  float b=2.9;
+  float c= a+b;
+  float d= a;
+  if(a>b){
+    return 7;
+  }
+  return a;
+}

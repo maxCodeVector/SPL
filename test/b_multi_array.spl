@@ -1,0 +1,14 @@
+struct A{
+int a[2][3];
+};
+
+
+int test_2_r08(int i, int m, int n)
+{
+  struct A a;
+  int b = a.a[1][2][2];
+  if(i<0){
+    return a.a[1];
+  }
+  return a.a[1][2];
+}

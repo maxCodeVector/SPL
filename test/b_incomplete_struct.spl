@@ -1,0 +1,16 @@
+struct A
+{
+  int name;
+  struct B b;
+};
+
+struct B
+{
+  int name;
+};
+
+int test_2_r10()
+{
+  struct A a;
+  return a.name;
+}

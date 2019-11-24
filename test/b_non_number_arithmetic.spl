@@ -1,0 +1,11 @@
+struct A{
+};
+
+
+int test_2_r08(int i, int m, int n)
+{
+  struct A a;
+  struct A b;
+  struct A c = a+b;
+  return i;
+}

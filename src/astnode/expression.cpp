@@ -138,8 +138,9 @@ Error *BinaryExp::inferType(ToplevelScope *toplevelScope) {
             || this->operatorType == Operator::GE_OP
             || this->operatorType == Operator::GT_OP
             || this->operatorType == Operator::NE_OP) {
-            if ((left->getType()->getType() != INT_TYPE
-                 && left->getType()->getType() != FLOAT_TYPE)
+            if (left->isArray() || right->isArray()
+                || (left->getType()->getType() != INT_TYPE
+                    && left->getType()->getType() != FLOAT_TYPE)
                 || (right->getType()->getType() != INT_TYPE
                     && right->getType()->getType() != FLOAT_TYPE)
                     ) {
@@ -154,8 +155,9 @@ Error *BinaryExp::inferType(ToplevelScope *toplevelScope) {
             || this->operatorType == Operator::SUB_OP
             || this->operatorType == Operator::MUL_OP
             || this->operatorType == Operator::DIV_OP) {
-            if ((left->getType()->getType() != INT_TYPE
-                 && left->getType()->getType() != FLOAT_TYPE)
+            if (left->isArray() || right->isArray()
+                || (left->getType()->getType() != INT_TYPE
+                    && left->getType()->getType() != FLOAT_TYPE)
                 || (right->getType()->getType() != INT_TYPE
                     && right->getType()->getType() != FLOAT_TYPE)
                     ) {
@@ -165,8 +167,8 @@ Error *BinaryExp::inferType(ToplevelScope *toplevelScope) {
             if (left->getType()->getType() == FLOAT_TYPE
                 || right->getType()->getType() == FLOAT_TYPE) {
                 this->type = new VariableType(FLOAT_TYPE);
-            }
-            this->type = left->getType();
+            } else
+                this->type = left->getType();
             return nullptr;
         }
 
@@ -178,6 +180,7 @@ Error *BinaryExp::inferType(ToplevelScope *toplevelScope) {
             if (!checkEqualExp(left, right))
                 return new Error{getLocation(), ASSIGN_DIFF_TYPE,
                                  "assign value between different type expression"};
+            return nullptr;
         }
 
         if (!checkEqualExp(left, right))
@@ -324,8 +327,8 @@ bool checkEqualVariable(DefinedVariable *var1, DefinedVariable *var2) {
 
 
 bool checkStructEquivalence(Struct *st1, Struct *st2) {
-    list<DefinedVariable *>& members1 = st1->getMemberList();
-    list<DefinedVariable *>& members2 = st2->getMemberList();
+    list<DefinedVariable *> &members1 = st1->getMemberList();
+    list<DefinedVariable *> &members2 = st2->getMemberList();
     if (members1.size() != members2.size()) {
         return false;
     }
@@ -378,10 +381,19 @@ bool CheckEqualVariableAndExp(DefinedVariable *var, Exp *exp) {
         // it may be a value
         if (var->isArray(0))// a value can not be a array
             return false;
-        if (var->getType()->getType() != exp->getType()->getType())
+        if(var->getType()->getType() == FLOAT_TYPE){
+            if (exp->getType()->getType() != INT_TYPE
+                && exp->getType()->getType() != FLOAT_TYPE)
+                return false;
+        } else if (exp->getType()->getType() != var->getType()->getType()) {
             return false;
+        }
     } else {
-        if (expRefVar->getType()->getType() != var->getType()->getType()) {
+        if(var->getType()->getType() == FLOAT_TYPE){
+            if (exp->getType()->getType() != INT_TYPE
+            && exp->getType()->getType() != FLOAT_TYPE)
+                return false;
+        } else if (expRefVar->getType()->getType() != var->getType()->getType()){
             return false;
         } else if (expRefVar->getType()->getType() == STRUCT_TYPE) {
             if (var->getType()->getTypeName() != expRefVar->getType()->getTypeName()

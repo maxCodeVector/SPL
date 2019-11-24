@@ -1,0 +1,33 @@
+struct A
+{
+  int name;
+  struct B b;
+};
+
+struct B
+{
+  int name;
+  struct A a;
+};
+
+struct Person
+{
+  int name;
+  struct Person p;
+  int friends[10];
+};
+
+int test_2_r10()
+{
+  struct Person tom;
+  struct Person people[10];
+  int i = 0;
+  while (i < 10)
+  {
+    people[i].name = i;
+    tom.friends[i] = i;
+    tom.friends[i] = i;
+    i = i + 1;
+  }
+  return tom.name;
+}
