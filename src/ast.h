@@ -13,19 +13,19 @@ private:
     void findEntity(BaseNode *extList);
     ToplevelScope* toplevelScope;
     TypeTable* typeTable;
-    list<DefinedFunction*> functions;
-    list<DefinedVariable*> vars;
+    list<Function*> functions;
+    list<Variable*> vars;
     list<VariableType*> declaredTypes;
 
 public:
     AST(AttrNode* root){
         convert2AST(root);
     }
-    int showSize();
+
     list<Entity*>& declaritions(list<Entity*>& decaries);
     void setConstant(ConstantTable &constantTable);
-    list<DefinedFunction*>& defineFunctions();
-    list<DefinedVariable*>& getDefinedVars(){
+    list<Function*>& defineFunctions();
+    list<Variable*>& getDefinedVars(){
         return vars;
     }
     list<VariableType*>& getDeclaredTypes(){

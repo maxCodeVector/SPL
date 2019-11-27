@@ -22,7 +22,7 @@ void Statement::acceptDereferenceCheck(DereferenceChecker *checker) {
     }
 }
 
-void Statement::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
+void Statement::checkMembersType(TypeChecker *checker, Function *function) {
     checker->error(exp->checkType(checker->getTopLevelScope()));
 
 }
@@ -35,10 +35,10 @@ Statement::~Statement() {
 Body::Body(AttrNode *defList, AttrNode *stmtList) {
     exp = nullptr;
     this->flag = BODY;
-    DefinedVariable *variable = (DefinedVariable *) defList->baseNode;
+    Variable *variable = (Variable *) defList->baseNode;
     while (variable != nullptr) {
         this->vars.push_back(variable);
-        variable = (DefinedVariable *) variable->next;
+        variable = (Variable *) variable->next;
     }
     Statement *statement = (Statement *) stmtList->baseNode;
     while (statement != nullptr) {
@@ -50,14 +50,14 @@ Body::Body(AttrNode *defList, AttrNode *stmtList) {
 
 
 void Body::checkReference(LocalResolver *resolver, Scope *scope) {
-    list<DefinedVariable *> emptyParaList;
+    list<Variable *> emptyParaList;
     resolver->pushScope(emptyParaList);
     resolver->resolve(*this);
     resolver->popScope();
 }
 
 void Body::acceptDereferenceCheck(DereferenceChecker *checker) {
-    for (DefinedVariable *var: vars) {
+    for (Variable *var: vars) {
         Exp *value = var->getValue();
         if (value != nullptr) {
             value->acceptDereferenceCheck(checker);
@@ -68,8 +68,8 @@ void Body::acceptDereferenceCheck(DereferenceChecker *checker) {
     }
 }
 
-void Body::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
-    for (DefinedVariable *var: this->vars) {
+void Body::checkMembersType(TypeChecker *checker, Function *function) {
+    for (Variable *var: this->vars) {
         Exp *value = var->getValue();
         if (value) {
             Error *err = value->checkType(checker->getTopLevelScope());
@@ -80,7 +80,7 @@ void Body::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
             bool equal = CheckEqualVariableAndExp(var, value);
             if (!equal) {
                 checker->error(new Error{value->getLocation(), ASSIGN_DIFF_TYPE,
-                                         "initial variable using a different type value" + var->getName()});
+                                         "initial variable using a different elementType value" + var->getName()});
                 continue;
             }
         }
@@ -108,10 +108,10 @@ void IfStatement::acceptDereferenceCheck(DereferenceChecker *checker) {
     }
 }
 
-void IfStatement::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
+void IfStatement::checkMembersType(TypeChecker *checker, Function *function) {
     Statement::checkMembersType(checker, function);
-    if (exp->getType()->getType() != BOOL_TYPE) {
-        checker->error(new Error{exp->getLocation(), OTHER_ERROR, "condition of if should be a bool type"});
+    if (exp->getType()->getElementType() != BOOL_TYPE) {
+        checker->error(new Error{exp->getLocation(), OTHER_ERROR, "condition of if should be a bool elementType"});
     }
     if (ifBody)
         ifBody->checkMembersType(checker, function);
@@ -134,25 +134,25 @@ void WhileStatement::acceptDereferenceCheck(DereferenceChecker *checker) {
 }
 
 
-void WhileStatement::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
+void WhileStatement::checkMembersType(TypeChecker *checker, Function *function) {
     Statement::checkMembersType(checker, function);
-    if (exp->getType()->getType() != BOOL_TYPE) {
-        checker->error(new Error{exp->getLocation(), OTHER_ERROR, "condition of while should be a bool type"});
+    if (exp->getType()->getElementType() != BOOL_TYPE) {
+        checker->error(new Error{exp->getLocation(), OTHER_ERROR, "condition of while should be a bool elementType"});
     }
     if (loop)
         loop->checkMembersType(checker, function);
 }
 
-void ReturnStatement::checkMembersType(TypeChecker *checker, DefinedFunction *function) {
+void ReturnStatement::checkMembersType(TypeChecker *checker, Function *function) {
     Statement::checkMembersType(checker, function);
     // no repeat report expression error
-    if (this->exp->getType()->getType() != INFER_TYPE) {
+    if (this->exp->getType()->getElementType() != INFER_TYPE) {
         if (exp->isArray()
-            || (this->exp->getType()->getType() != function->getReturnType()->getType()
-            && function->getReturnType()->getType() != FLOAT_TYPE
-            && this->exp->getType()->getType() != INT_TYPE)) {
+            || (this->exp->getType()->getElementType() != function->getReturnType()->getElementType()
+            && function->getReturnType()->getElementType() != FLOAT_TYPE
+            && this->exp->getType()->getElementType() != INT_TYPE)) {
             Error *err = new Error{getLocation(), MIS_RETURN_TYPE,
-                                   "return type is not the same as declared：" + function->getName()};
+                                   "return elementType is not the same as declared：" + function->getName()};
             checker->error(err);
         }
     }

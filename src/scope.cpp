@@ -26,8 +26,8 @@ bool LocalScope::isDefinedLocally(string& name){
     return Itor != variables.end();
 }
 
-void LocalScope::defineVariable(DefinedVariable &var){
-    this->variables.insert(pair<string, DefinedVariable*>(var.getName(), &var));
+void LocalScope::defineVariable(Variable &var){
+    this->variables.insert(pair<string, Variable*>(var.getName(), &var));
 }
 
 Entity* LocalScope::get(string &name) {

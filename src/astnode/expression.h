@@ -15,12 +15,12 @@ protected:
     VariableType* type;
     string value;//expression value if it is ID or int:float:char
     Entity* referenceVar;
-    int dimension;// used for array, means which dimension current is in
+    int dimension;// used for temp_array_size, means which dimension current is in
 public:
     Exp(AttrNode* terminal, DataType dataType);
     Exp(DataType dataType);
     virtual ~Exp(){
-//        delete(type);
+//        delete(elementType);
     }
     string& getValue(){
         return value;
@@ -41,8 +41,8 @@ public:
      * @return
      */
     VariableType* getType();
-    DefinedVariable* getReferenceValue(){
-        return (DefinedVariable*)referenceVar;
+    Variable* getReferenceValue(){
+        return (Variable*)referenceVar;
     }
     void setReferenceVar(Entity* entity)
     {
@@ -113,8 +113,8 @@ public:
 
 };
 
-bool checkEqualExp(Exp* exp1, Exp* exp2);
-bool CheckEqualVariableAndExp(DefinedVariable* var, Exp* exp);
+bool checkTypeEqualOfExp(Exp* exp1, Exp* exp2);
+bool CheckEqualVariableAndExp(Variable* var, Exp* exp);
 
 
 #endif //SPL_EXPRESSION_H

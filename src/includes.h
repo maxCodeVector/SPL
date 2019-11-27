@@ -12,14 +12,15 @@ using namespace std;
 class Location {
 private:
     int lineNo;
-public:
     Location(int line, int col) {
         this->lineNo = line;
     }
+public:
 
     string toString() {
         return to_string(lineNo);
     }
+    friend class BaseNode;
 };
 
 enum ErrorType{
@@ -41,6 +42,11 @@ enum ErrorType{
     INCOMPLETE_STRUCT,
     RECURSIVE_DEFINE,
     OTHER_ERROR
+};
+
+enum ErrorCode{
+    NULL_LOCATION=21,
+    ARRAY_TYPE_ARRAY
 };
 
 
@@ -69,14 +75,15 @@ enum NodeType {
 };
 
 enum DataType{
-    INFER_TYPE, // means it is derivative type, need to be inferred from other expressions
+    INFER_TYPE, // means it is derivative elementType, need to be inferred from other expressions
     INT_TYPE,
     FLOAT_TYPE,
     CHAR_TYPE,
     STRUCT_TYPE,
-    REF_TYPE, //  ID expression has this type or other expression that can inferred to this type,
-    // if inferred, type is REF_TYPE, before inferred, it is INFER_TYPE.
-    BOOL_TYPE
+    REF_TYPE, //  ID expression has this elementType or other expression that can inferred to this elementType,
+    // if inferred, elementType is REF_TYPE, before inferred, it is INFER_TYPE.
+    BOOL_TYPE,
+    ARRAY_TYPE
 };
 
 

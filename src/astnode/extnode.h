@@ -12,19 +12,19 @@ private:
     bool loc_alloc;// mark is it allocate Location* loc
 
 public:
-    enum NodeType flag=OTHER;
+    enum NodeType flag = OTHER;
     BaseNode *next;
 
     virtual void setScope(Scope *scope) {};
 
     Location *getLocation() {
-        if(loc== nullptr){
-            exit(21);
+        if (loc == nullptr) {
+            exit(ErrorCode::NULL_LOCATION);
         }
         return loc;
     }
 
-    void setLocation(Location* location) {
+    void setLocation(Location *location) {
         this->loc = location;
         loc_alloc = false;
     }
@@ -35,122 +35,176 @@ public:
     }
 
     virtual void setNext(AttrNode *extDef);
-    ~BaseNode(){
-        if(loc_alloc)
-            delete(loc);
+
+    ~BaseNode() {
+        if (loc_alloc)
+            delete (loc);
     }
 
 };
 
-class Entity : public BaseNode{
+class Entity : public BaseNode {
 public:
     bool isRefered = false;
 
-    virtual string &getName()=0;
+    virtual string &getName() = 0;
 
-    void refere(){
+    void refere() {
         isRefered = true;
     }
 };
 
 class VariableType : public BaseNode {
-    enum DataType type;
     string baseTypeName = "baseType";
+    VariableType* element;
+    enum DataType elementType;// primitive or temp_array_size, struct
+    // if elementType is primitive elementType, then element is NULL
+    int elementNum = 0;
 public:
-    explicit VariableType(DataType type){
-        this->type = type;
+    int getArraySize() const {
+        return elementNum;
     }
-    DataType getType(){
-        return type;
+
+public:
+    explicit VariableType(DataType type) {
+        this->elementType = type;
     }
-    virtual string& getTypeName(){
+
+    explicit VariableType(VariableType* element, int size) {
+        this->element = element;
+        this->elementNum = size;
+        this->elementType = ARRAY_TYPE;
+    }
+
+    VariableType *getElement() const {
+        return element;
+    }
+
+    DataType getElementType() {
+        return elementType;
+    }
+
+    virtual string &getTypeName() {
         return baseTypeName;
     }
-    virtual bool isComplete(){
+
+    virtual bool isComplete() {
         return true;
     }
-    virtual void setActualType(VariableType* type){}
-    virtual VariableType* getActualType(){
+
+    virtual void setActualType(VariableType *type) {}
+
+    virtual VariableType *getActualType() {
         return this;
     }
 
+    bool isArray(){
+        return elementNum > 0;
+    }
+
 };
-VariableType* getVariableType(string &name);
+
+VariableType *getVariableType(string &name);
 
 
-class DefinedVariable;
-class Struct: public VariableType{
+class Variable;
+
+class Struct : public VariableType {
     string typeName;
     bool is_complete;
-    VariableType* actualType; // used for if type is not complete
-    list<DefinedVariable*> members;
-    map<string, DefinedVariable*> memberMap;
+    VariableType *actualType; // used for if elementType is not complete
+    list<Variable *> members;
+    map<string, Variable *> memberMap;
 
 public:
-    explicit Struct(AttrNode* name);
-    Struct(AttrNode* name, AttrNode* defList);
+    explicit Struct(AttrNode *name);
+
+    Struct(AttrNode *name, AttrNode *defList);
+    Struct(const Struct& aStruct):VariableType(STRUCT_TYPE){
+        this->typeName = aStruct.typeName;
+        this->is_complete = aStruct.is_complete;
+
+    }
+
     ~Struct();
-    string& getTypeName()override {
+
+    string &getTypeName() override {
         return typeName;
     }
-    bool isComplete()override {
+
+    bool isComplete() override {
         return is_complete;
     }
-    void setActualType(VariableType* type)override {
+
+    void setActualType(VariableType *type) override {
         actualType = type;
     }
-    VariableType* getActualType() override {
-        if(is_complete || actualType== nullptr)
+
+    VariableType *getActualType() override {
+        if (is_complete || actualType == nullptr)
             return this;
         return actualType;
     }
-    list<DefinedVariable*>& getMemberList(){
+
+    list<Variable *> &getMemberList() {
         return members;
     };
-    DefinedVariable* getMember(string& name);
-    Error* checkDuplicatedNameMember();
+
+    Variable *getMember(string &name);
+
+    Error *checkDuplicatedNameMember();
 
 
 };
 
-class DeclaredTypeVariable:public Entity{
-    VariableType* type;
+class DeclaredVariableType : public Entity {
+    VariableType *type;
 public:
-    explicit DeclaredTypeVariable(AttrNode* spec);
-    string& getName() override {
+    explicit DeclaredVariableType(AttrNode *spec);
+
+    string &getName() override {
         return type->getTypeName();
     }
-    VariableType* getType(){
+
+    VariableType *getType() {
         return type;
     }
 };
 
 
 class Exp;
-class DefinedVariable : public Entity {
+
+class Variable : public Entity {
 private:
     VariableType* type;
-    list<int > array;
+    list<int > temp_array_size;
     string id;
-    Exp* value;
+    Exp *value;
 public:
 
-    explicit DefinedVariable(AttrNode *varDec);
+    explicit Variable(AttrNode *varDec);
 
     void setType(AttrNode *spec);
-    VariableType* getType(){
+
+    VariableType *getType() {
         return type->getActualType();
     }
+
     void addDimension(AttrNode *dim);
-    void setExp(AttrNode* exp){
-        this->value = (Exp*)exp->baseNode;
+
+    void setExp(AttrNode *exp) {
+        this->value = (Exp *) exp->baseNode;
     }
-    Exp* getValue(){
+
+    Exp *getValue() {
         return value;
     };
-    list<int >& getArrayDimension(){
-        return array;
-    };
+
+    void setArray(VariableType* elementType);
+
+//    list<int> &getArrayDimension() {
+//        return temp_array_size;
+//    };
 
 
     /**
@@ -158,41 +212,57 @@ public:
      * @param dimension, normal input dimension is 0
      * @return
      */
-    bool isArray(int dimension){
-        return array.size() > dimension;
+    bool isArray(int dimension) {
+        VariableType* inner_element = this->type;
+        while (dimension > 0){
+            if(inner_element== nullptr){
+                return false;
+            }
+            inner_element = inner_element->getElement();
+            dimension--;
+        }
+        return inner_element->isArray();
     }
-    string & getName() override {
+
+    string &getName() override {
         return this->id;
     }
 
-    ~DefinedVariable();
+    ~Variable();
 
 };
 
 class Body;
-class DefinedFunction : public Entity {
+
+class Function : public Entity {
 private:
-    VariableType* returnType;
+    VariableType *returnType;
     string id;
-    list<DefinedVariable*> parameters;
-    Body* functionBody;
-    void parseParameters(AttrNode* paraList);
+    list<Variable *> parameters;
+    Body *functionBody;
+
+    void parseParameters(AttrNode *paraList);
 
 public:
-    DefinedFunction(AttrNode *functionID, AttrNode *paraList);
-    explicit DefinedFunction(AttrNode *functionID);
-    ~DefinedFunction();
+    Function(AttrNode *functionID, AttrNode *paraList);
+
+    explicit Function(AttrNode *functionID);
+
+    ~Function();
 
 
-    list<DefinedVariable*>& getParameters();
-    void setReturnType(AttrNode* type);
-    VariableType* getReturnType(){
+    list<Variable *> &getParameters();
+
+    void setReturnType(AttrNode *type);
+
+    VariableType *getReturnType() {
         return returnType;
     }
 
     Body *getBody();
-    void setBody(AttrNode* body){
-        this->functionBody = (Body*)body->baseNode;
+
+    void setBody(AttrNode *body) {
+        this->functionBody = (Body *) body->baseNode;
     }
 
     string &getName() override {
@@ -202,14 +272,17 @@ public:
 };
 
 
-class Args: public BaseNode{
+class Args : public BaseNode {
 public:
-    list<Exp*> args;
-    Args(Location* loc){
+    list<Exp *> args;
+
+    Args(Location *loc) {
         setLocation(loc);
     }
+
     ~Args();
-    list<Exp*>& getArguments(){
+
+    list<Exp *> &getArguments() {
         return args;
     }
 };

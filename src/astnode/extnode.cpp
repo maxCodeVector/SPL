@@ -21,10 +21,10 @@ void setNextNode(BaseNode *pre, BaseNode *next) {
         return;
     }
     if (next->flag == VAR) {
-        auto var = (DefinedVariable *) next;
+        auto var = (Variable *) next;
         pre->next = var;
     } else if (next->flag == FUNC) {
-        auto *func = (DefinedFunction *) next;
+        auto *func = (Function *) next;
         pre->next = func;
     } else
         pre->next = next;
@@ -40,74 +40,85 @@ void BaseNode::setNext(AttrNode *extDef) {
 }
 
 
-DefinedVariable::DefinedVariable(AttrNode *varDec) {
+Variable::Variable(AttrNode *varDec) {
     this->id = varDec->value;
-    setLocation(new Location(varDec->lineNo, 0));
+    setLocation(varDec->lineNo, 0);
     this->flag = VAR;
 }
 
-void DefinedVariable::setType(AttrNode *spec) {
+void Variable::setType(AttrNode *spec) {
     VariableType *type = (VariableType *) spec->baseNode;
-    DefinedVariable *next = this;
+    Variable *next = this;
     while (next != nullptr) {
-        next->type = type;
-//        if(type->getType()==STRUCT_TYPE){
-//            next ->type = new Struct(*(Struct*)type);
-//        } else
-//            next->type = new VariableType(*type);
-//        while (!next->array.empty()){
-//            next->type->addDimension(next->array.front());
-//            next->array.pop_front();
-//        }
-        next = (DefinedVariable *) next->next;
+        next->setArray(type);
+        next = (Variable *) next->next;
     }
-//    delete(type);
+    delete(type);
 }
 
-void DefinedVariable::addDimension(AttrNode *dim) {
+void Variable::addDimension(AttrNode *dim) {
     int newDim = stoi(dim->value);
-    this->array.push_back(newDim);
+    this->temp_array_size.push_back(newDim);
 }
 
-DefinedVariable::~DefinedVariable() {
+Variable::~Variable() {
     delete (value);
+    delete (type);
 }
 
-DefinedFunction::DefinedFunction(AttrNode *functionID, AttrNode *paraList) {
+void Variable::setArray(VariableType* element) {
+    if (element->getElementType()==ARRAY_TYPE) {
+        printf("a wsl\n");
+        exit(ErrorCode::ARRAY_TYPE_ARRAY);
+    }
+    VariableType* inner_element;
+    if(element->getElementType()==STRUCT_TYPE){
+         inner_element = new Struct(*(Struct*)element);
+    } else
+        inner_element = new VariableType(element->getElementType());
+    auto itor = temp_array_size.end();
+    while (itor!=temp_array_size.begin()){
+        itor--;
+        inner_element = new VariableType(inner_element, *itor);
+    }
+    this->type = inner_element;
+}
+
+Function::Function(AttrNode *functionID, AttrNode *paraList) {
     this->id = functionID->value;
-    setLocation(new Location(functionID->lineNo, 0));
+    setLocation(functionID->lineNo, 0);
     this->flag = FUNC;
     parseParameters(paraList);
 }
 
-DefinedFunction::DefinedFunction(AttrNode *functionID) {
+Function::Function(AttrNode *functionID) {
     this->id = functionID->value;
-    setLocation(new Location(functionID->lineNo, 0));
+    setLocation(functionID->lineNo, 0);
     this->flag = FUNC;
 }
 
-void DefinedFunction::parseParameters(AttrNode *paraList) {
-    DefinedVariable *var = (DefinedVariable *) paraList->baseNode;
+void Function::parseParameters(AttrNode *paraList) {
+    Variable *var = (Variable *) paraList->baseNode;
     while (var != nullptr) {
         this->parameters.push_back(var);
-        var = (DefinedVariable *) var->next;
+        var = (Variable *) var->next;
     }
 }
 
 
-list<DefinedVariable *> &DefinedFunction::getParameters() {
+list<Variable *> &Function::getParameters() {
     return this->parameters;
 }
 
-Body *DefinedFunction::getBody() {
+Body *Function::getBody() {
     return this->functionBody;
 }
 
-void DefinedFunction::setReturnType(AttrNode *type) {
+void Function::setReturnType(AttrNode *type) {
     this->returnType = (VariableType *) type->baseNode;
 }
 
-DefinedFunction::~DefinedFunction() {
+Function::~Function() {
     delete (returnType);
     delete (functionBody);
     free_all(parameters);
@@ -126,28 +137,28 @@ Struct::Struct(AttrNode *name) : VariableType(STRUCT_TYPE) {
 
 Struct::Struct(AttrNode *name, AttrNode *defList) : VariableType(STRUCT_TYPE) {
     this->typeName = name->value;
-    DefinedVariable *nextVar = (DefinedVariable *) defList->baseNode;
+    Variable *nextVar = (Variable *) defList->baseNode;
     while (nextVar != nullptr) {
         this->members.push_back(nextVar);
-        nextVar = (DefinedVariable *) nextVar->next;
+        nextVar = (Variable *) nextVar->next;
     }
     this->setLocation(name->lineNo, 0);
     is_complete = true;
 }
 
 Error *Struct::checkDuplicatedNameMember() {
-    for (DefinedVariable *var: members) {
+    for (Variable *var: members) {
         string &name = var->getName();
         auto itor = memberMap.find(name);
         if (itor != memberMap.end()) {
-            return new Error{var->getLocation(), OTHER_ERROR, "struct type members should have different name"};
+            return new Error{var->getLocation(), OTHER_ERROR, "struct elementType members should have different name"};
         }
-        memberMap.insert(pair<string, DefinedVariable *>(name, var));
+        memberMap.insert(pair<string, Variable *>(name, var));
     }
     return nullptr;
 }
 
-DefinedVariable *Struct::getMember(string &name) {
+Variable *Struct::getMember(string &name) {
     auto itor = memberMap.find(name);
     if (itor == memberMap.end())
         return nullptr;
@@ -155,7 +166,7 @@ DefinedVariable *Struct::getMember(string &name) {
 }
 
 
-DeclaredTypeVariable::DeclaredTypeVariable(AttrNode *spec) {
+DeclaredVariableType::DeclaredVariableType(AttrNode *spec) {
     this->flag = DECLARATION;
     VariableType *variableType = (VariableType *) spec->baseNode;
     this->type = variableType;

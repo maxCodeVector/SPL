@@ -27,7 +27,7 @@ void LocalResolver::resolve(AST &ast) {
 
 void LocalResolver::resolveDeclaredType(list<VariableType *> &declared) {
     for (VariableType *variableType: declared) {
-        if(variableType->getType()!=STRUCT_TYPE)
+        if(variableType->getElementType() != STRUCT_TYPE)
             continue;
         // unique member
         typeTable->declareVariableType(variableType, errorHandler);
@@ -35,8 +35,8 @@ void LocalResolver::resolveDeclaredType(list<VariableType *> &declared) {
 }
 
 
-void LocalResolver::resolveFunctions(list<DefinedFunction *> &funcs) {
-    for (DefinedFunction *function: funcs) {
+void LocalResolver::resolveFunctions(list<Function *> &funcs) {
+    for (Function *function: funcs) {
         pushScope(function->getParameters());
         resolve(*function->getBody());
         function->setScope(popScope());
@@ -45,7 +45,7 @@ void LocalResolver::resolveFunctions(list<DefinedFunction *> &funcs) {
 
 void LocalResolver::resolve(Body &body) {
     LocalScope *curr = (LocalScope *) currentScope();
-    for (DefinedVariable *var: body.vars) {
+    for (Variable *var: body.vars) {
         if (curr->isDefinedLocally(var->getName())) {
             string message = "duplicated variable in scope：" + var->getName();
             error(var->getLocation(), REDEFINED_VAR, message);
@@ -53,7 +53,7 @@ void LocalResolver::resolve(Body &body) {
             curr->defineVariable(*var);
         }
     }
-    for (DefinedVariable *var: body.vars) {
+    for (Variable *var: body.vars) {
         if (var->getValue()) {
             // check defined variables' initial expression
             error(var->getValue()->checkReference(currentScope()));
@@ -64,12 +64,12 @@ void LocalResolver::resolve(Body &body) {
     }
 }
 
-void LocalResolver::pushScope(list<DefinedVariable *> &vars) {
+void LocalResolver::pushScope(list<Variable *> &vars) {
     Scope *parent = currentScope();
     LocalScope *scope = new LocalScope(parent);
     parent->children.emplace_back(scope);
 
-    for (DefinedVariable *var: vars) {
+    for (Variable *var: vars) {
         if (scope->isDefinedLocally(var->getName())) {
             string message = "duplicated variable in scope：" + var->getName();
             error(var->getLocation(), REDEFINED_VAR,  message);
@@ -91,7 +91,7 @@ TypeResolver::TypeResolver(ErrorHandler& errorHandle, TypeTable* type_table): Vi
 }
 
 Error *resolveVariableType(TypeTable* typeTable, VariableType *variableType) {
-    if (variableType->getType() == STRUCT_TYPE) {
+    if (variableType->getElementType() == STRUCT_TYPE) {
         VariableType *realType = typeTable->queryType(variableType->getTypeName());
         if (realType == nullptr) {
             return new Error{variableType->getLocation(), ErrorType ::INCOMPLETE_STRUCT,
@@ -104,20 +104,20 @@ Error *resolveVariableType(TypeTable* typeTable, VariableType *variableType) {
 }
 
 void TypeResolver::resolve(AST &ast) {
-    // non-struct type already has its actual type, so only deal with struct type
-    // by query it from type table, set referenced type's actual type
-    for (DefinedVariable *var: ast.getDefinedVars()) {
+    // non-struct elementType already has its actual elementType, so only deal with struct elementType
+    // by query it from elementType table, set referenced elementType's actual elementType
+    for (Variable *var: ast.getDefinedVars()) {
         Error *_error = resolveVariableType(typeTable, var->getType());
         this->error(_error);
     }
     for(VariableType* declared: ast.getDeclaredTypes()){
-        if(declared->getType()!=STRUCT_TYPE)
+        if(declared->getElementType() != STRUCT_TYPE)
             continue;
         Struct* aStruct = (Struct*)declared;
         // check if struct has duplicated name members
         error(aStruct->checkDuplicatedNameMember());
-        for(DefinedVariable* member: aStruct->getMemberList()){
-            // set each member's referenced type to its actual type
+        for(Variable* member: aStruct->getMemberList()){
+            // set each member's referenced elementType to its actual elementType
             Error *_error = resolveVariableType(typeTable, member->getType());
             this->error(_error);
         }
@@ -125,9 +125,9 @@ void TypeResolver::resolve(AST &ast) {
     resolveFunctions(ast.defineFunctions());
 }
 
-void TypeResolver::resolveFunctions(list<DefinedFunction *>& funs) {
-    for (DefinedFunction *fun: funs) {
-        for (DefinedVariable *para: fun->getParameters()) {
+void TypeResolver::resolveFunctions(list<Function *>& funs) {
+    for (Function *fun: funs) {
+        for (Variable *para: fun->getParameters()) {
             Error *err = resolveVariableType(typeTable, para->getType());
             error(err);
         }
@@ -138,7 +138,7 @@ void TypeResolver::resolveFunctions(list<DefinedFunction *>& funs) {
 }
 
 void TypeResolver::resolve(Body &body) {
-    for (DefinedVariable *var:body.vars) {
+    for (Variable *var:body.vars) {
         Error *err = resolveVariableType(typeTable, var->getType());
         error(err);
     }

@@ -6,9 +6,9 @@
 #include "scope.h"
 
 bool hasLoop(set<string> &mark, Struct *type) {
-    for (DefinedVariable *var :type->getMemberList()) {
+    for (Variable *var :type->getMemberList()) {
         VariableType *member_type = var->getType();
-        if (member_type->getType() != STRUCT_TYPE)
+        if (member_type->getElementType() != STRUCT_TYPE)
             continue;
         string &type_name = member_type->getTypeName();
         auto item = mark.find(type_name);
@@ -41,7 +41,7 @@ void TypeTable::checkRecursiveDefinition(ErrorHandler &errorHandler) {
 }
 
 void TypeTable::declareVariableType(VariableType *variableType, ErrorHandler &err) {
-    if (variableType->getType() == STRUCT_TYPE) {
+    if (variableType->getElementType() == STRUCT_TYPE) {
         string &name = ((Struct *) variableType)->getTypeName();
         auto Itor = declaredTypes.find(name);
         if (Itor == declaredTypes.end() || !Itor->second->isComplete()) {
@@ -70,7 +70,7 @@ DereferenceChecker::DereferenceChecker(ErrorHandler &errorHandle, TypeTable *typ
 
 
 void DereferenceChecker::resolve(AST &ast) {
-    for (DefinedFunction *function: ast.defineFunctions()) {
+    for (Function *function: ast.defineFunctions()) {
         resolve(*function->getBody());
     }
 }
@@ -85,21 +85,21 @@ TypeChecker::TypeChecker(ErrorHandler &errorHandle, TypeTable *type_table) : Vis
 
 void TypeChecker::resolve(AST &ast) {
     toplevelScope = ast.getScope();
-    for (DefinedFunction *function: ast.defineFunctions()) {
+    for (Function *function: ast.defineFunctions()) {
         checkFunction(function);
         checkReturnType(function->getReturnType());
     }
 }
 
 void TypeChecker::checkReturnType(VariableType *returnType) {
-    if(returnType->getType()!=INT_TYPE
-    && returnType->getType()!=CHAR_TYPE
-    && returnType->getType()!=FLOAT_TYPE){
+    if(returnType->getElementType() != INT_TYPE
+    && returnType->getElementType() != CHAR_TYPE
+    && returnType->getElementType() != FLOAT_TYPE){
         error(new Error{returnType->getLocation(), OTHER_ERROR, "only support return int/char/float"});
     }
 }
 
-void TypeChecker::checkFunction(DefinedFunction *function) {
+void TypeChecker::checkFunction(Function *function) {
     function->getBody()->checkMembersType(this, function);
 }
 

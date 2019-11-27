@@ -28,15 +28,15 @@ public:
     void resolve(Body& body);
     void resolve(AST& ast) override;
     void resolveDeclaredType(list<VariableType*> & declared);
-    void resolveFunctions(list<DefinedFunction*>& funcs);
-    void pushScope(list<DefinedVariable*>& vars);
+    void resolveFunctions(list<Function*>& funcs);
+    void pushScope(list<Variable*>& vars);
     Scope* popScope();
 
 };
 
 class TypeResolver : Visitor{
 private:
-    void resolveFunctions(list<DefinedFunction*>& funs);
+    void resolveFunctions(list<Function*>& funs);
     void resolve(Body& body);
     void resolveStatement(Statement* statement);
 public:

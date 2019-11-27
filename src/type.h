@@ -39,7 +39,7 @@ public:
 class TypeChecker: public Visitor{
     ToplevelScope* toplevelScope;
     void checkReturnType(VariableType* type);
-    void checkFunction(DefinedFunction* function);
+    void checkFunction(Function* function);
 
 public:
     void resolve(AST& ast) override;

@@ -12,7 +12,7 @@ using namespace std;
 class LocalScope;
 class Scope{
 public:
-    list<LocalScope*> children; // the actual type is LocalScope, will be type convert
+    list<LocalScope*> children; // the actual elementType is LocalScope, will be elementType convert
     virtual Entity* get(string& name)=0;
     virtual ~Scope(){
         free_all(children);
@@ -25,7 +25,7 @@ class ToplevelScope: public Scope{
 
 protected:
     map<string, Entity*> enties;
-    list<DefinedVariable*> staticLocalVariables; //cache
+    list<Variable*> staticLocalVariables; //cache
 public:
     Entity* declareEntity(Entity &entity);
     void checkReferences(ErrorHandler &err);
@@ -37,14 +37,14 @@ class LocalScope: public Scope{
 
 protected:
     Scope* parent;
-    map<string, DefinedVariable*> variables;
+    map<string, Variable*> variables;
 
 public:
     LocalScope(Scope *parent):Scope(){
         this->parent = parent;
     }
     bool isDefinedLocally(string& name);
-    void defineVariable(DefinedVariable &var);
+    void defineVariable(Variable &var);
     Entity* get(string& name);
 
 

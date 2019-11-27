@@ -6,13 +6,13 @@ void AST::findEntity(BaseNode* extList){
     BaseNode* next = extList;
     while (next != nullptr){
         if(next->flag == FUNC){
-            auto func = (DefinedFunction*)next;
+            auto func = (Function*)next;
             this->functions.push_back(func);
         } else if(next->flag == VAR){
-            auto var = (DefinedVariable*)next;
+            auto var = (Variable*)next;
             this->vars.push_back(var);
         } else if(next->flag==DECLARATION){
-            auto  dec = (DeclaredTypeVariable*)next;
+            auto  dec = (DeclaredVariableType*)next;
             string& decName = dec->getName();
             if("baseType"!=decName) {
                 this->declaredTypes.push_back(dec->getType());
@@ -26,10 +26,6 @@ void AST::convert2AST(AttrNode* root){
     findEntity(root->baseNode);
 }
 
-int AST::showSize() {
-    return declaredTypes.size();
-}
-
 void AST::setScope(Scope *scope_) {
     this->toplevelScope = (ToplevelScope*)scope_;
 }
@@ -39,16 +35,16 @@ void AST::setTypeTable(TypeTable *table) {
 }
 
 list<Entity*>& AST::declaritions(list<Entity*>& decaries){
-    for(DefinedVariable *var: this->vars){
+    for(Variable *var: this->vars){
         decaries.push_back(var);
     }
-    for(DefinedFunction* function: this->functions){
+    for(Function* function: this->functions){
         decaries.push_back(function);
     }
     return decaries;
 }
 
-list<DefinedFunction*>& AST::defineFunctions(){
+list<Function*>& AST::defineFunctions(){
     return this->functions;
 }
 void AST::setConstant(ConstantTable &constantTable){

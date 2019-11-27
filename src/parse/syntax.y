@@ -63,21 +63,21 @@ ExtDef: Specifier ExtDecList SEMI  {
         $$ = make_parent($1, "ExtDef");
         add_childs($$, $2);
         add_childs($$, $3);
-        DefinedVariable* var = (DefinedVariable*)$2->baseNode;
+        Variable* var = (Variable*)$2->baseNode;
         var->setType($1);
         $$->baseNode = var; // variable/function
     }
     | Specifier SEMI {
         $$ = make_parent($1, "ExtDef");
         add_childs($$, $2);
-        DeclaredTypeVariable* declare = new DeclaredTypeVariable($1);
+        DeclaredVariableType* declare = new DeclaredVariableType($1);
         $$ -> baseNode = declare;
     }
     | Specifier FunDec CompSt {
         $$ = make_parent($1, "ExtDef");
         add_childs($$, $2);
         add_childs($$, $3);
-        DefinedFunction* func = (DefinedFunction*)$2->baseNode;
+        Function* func = (Function*)$2->baseNode;
         func->setBody($3);
         func->setReturnType($1);
         $$->baseNode = func;
@@ -135,7 +135,7 @@ StructSpecifier: STRUCT ID LC DefList RC {
 /* declarator */
 VarDec: ID   {
                 $$ = make_parent($1, "VarDec");
-                DefinedVariable* var = new DefinedVariable($1);
+                Variable* var = new Variable($1);
                 $$->baseNode = var;
             }
     | VarDec LB INT RB {
@@ -143,7 +143,7 @@ VarDec: ID   {
                 add_childs($$, $2);
                 add_childs($$, $3);
                 add_childs($$, $4);
-	 	DefinedVariable* var = (DefinedVariable*)$1->baseNode;
+	 	Variable* var = (Variable*)$1->baseNode;
 	 	var->addDimension($3);
 		$$->baseNode = var;
             }
@@ -160,14 +160,14 @@ FunDec: ID LP VarList RP {
                 add_childs($$, $2);
                 add_childs($$, $3);
                 add_childs($$, $4);
-		DefinedFunction* func = new DefinedFunction($1, $3);
+		Function* func = new Function($1, $3);
 		$$->baseNode = func;
             }
     | ID LP RP {
                 $$ = make_parent($1, "FunDec");
                 add_childs($$, $2);
                 add_childs($$, $3);
-                DefinedFunction* func = new DefinedFunction($1);
+                Function* func = new Function($1);
 		$$->baseNode = func;
             }
     // | ID LP error
@@ -191,7 +191,7 @@ VarList: ParamDec COMMA VarList {
 ParamDec: Specifier VarDec {
                 $$ = make_parent($1, "ParamDec");
                 add_childs($$, $2);
-                DefinedVariable* var = (DefinedVariable*)$2->baseNode;
+                Variable* var = (Variable*)$2->baseNode;
                 var->setType($1);
                 $$->baseNode = var;
             }
@@ -295,7 +295,7 @@ Def: Specifier DecList SEMI{
                 $$ = make_parent($1, "Def");
                 add_childs($$, $2);
                 add_childs($$, $3);
-		DefinedVariable* var = (DefinedVariable*)$2->baseNode;
+		Variable* var = (Variable*)$2->baseNode;
 		var -> setType($1);
 		$$ -> baseNode = var;
             }
@@ -323,7 +323,7 @@ Dec: VarDec{
                 $$ = make_parent($1, "Dec");
                 add_childs($$, $2);
                 add_childs($$, $3);
-                DefinedVariable* var = (DefinedVariable*)$1->baseNode;
+                Variable* var = (Variable*)$1->baseNode;
                 var->setExp($3);
 		$$ -> baseNode = var;
             }
