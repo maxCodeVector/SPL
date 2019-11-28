@@ -51,6 +51,7 @@ public:
     Error *checkType(ToplevelScope *topLevel) { return inferType(topLevel);}
     bool isLeftValue();
     bool isArray();
+    bool isNumber();
     virtual Error * checkReference(Scope* scope);
     virtual void acceptDereferenceCheck(DereferenceChecker* checker){}
     virtual Error *inferType(ToplevelScope *topLevel);

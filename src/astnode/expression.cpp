@@ -36,6 +36,7 @@ Error *Exp::checkReference(Scope *scope) {
 }
 
 bool Exp::isLeftValue() {
+    return referenceVar != nullptr;
     return !(this->type->getElementType() == INT_TYPE
              || this->type->getElementType() == CHAR_TYPE
              || this->type->getElementType() == FLOAT_TYPE
@@ -43,17 +44,18 @@ bool Exp::isLeftValue() {
 }
 
 bool Exp::isArray() {
-    if (this->type->getElementType() == INT_TYPE
-        || this->type->getElementType() == CHAR_TYPE
-        || this->type->getElementType() == FLOAT_TYPE
-        || this->type->getElementType() == STRUCT_TYPE) {
-        return false;
-    }
-    Variable *var = (Variable *) this->referenceVar;
-    if (var) {
-        return var->isArray(this->dimension);
-    }
-    return true;
+//    if (this->type->getElementType() == INT_TYPE
+//        || this->type->getElementType() == CHAR_TYPE
+//        || this->type->getElementType() == FLOAT_TYPE
+//        || this->type->getElementType() == STRUCT_TYPE) {
+//        return false;
+//    }
+//    Variable *var = (Variable *) this->referenceVar;
+//    if (var) {
+//        return var->isArray(this->dimension);
+//    }
+//    return true;
+    return this->getType()->isArray();
 }
 
 Exp::Exp(DataType dataType) {
@@ -61,7 +63,7 @@ Exp::Exp(DataType dataType) {
 }
 
 VariableType *Exp::getType() {
-    if (type->getElementType() == REF_TYPE && referenceVar != nullptr)
+    if (type->getElementType()==REF_TYPE && referenceVar != nullptr)
         return ((Variable *) referenceVar)->getType()->getActualType();
     return type;
 }
@@ -70,6 +72,10 @@ Error *Exp::inferType(ToplevelScope *topLevel) {
     if (type->getElementType() == INFER_TYPE)
         return new Error{getLocation(), OTHER_ERROR, "elementType need to be inferred"};
     return nullptr;
+}
+
+bool Exp::isNumber() {
+    return this->getType()->getElementType()==INT_TYPE || this->getType()->getElementType()==FLOAT_TYPE;
 }
 
 
@@ -107,16 +113,17 @@ Error *BinaryExp::inferType(ToplevelScope *toplevelScope) {
         if (this->operatorType == ARRAY_INDEX_OP) {
             if (!left->isArray()) {
                 return new Error{getLocation(), NON_ARRAY,
-                                 "non temp_array_size but index:" + right->getValue()};
+                                 "non array type but index:" + right->getValue()};
             }
             if (right->getType()->getElementType() != INT_TYPE) {
                 return new Error{getLocation(), NON_INT_INDEX,
                                  "non integer index:" + right->getValue()};
             }
-            if (this->type->getElementType() == INFER_TYPE) {
-                delete (this->type);
-                this->type = new VariableType(REF_TYPE);
-            }
+//            if (this->type->getElementType() == INFER_TYPE) {
+//                delete (this->type);
+//            }
+            delete (this->type);
+            this->type = left->getType()->getElement();
             this->setReferenceVar(left->getReferenceValue());
             this->indexOneDimension(this->left->getCurrentDimension());
             return nullptr;
@@ -128,6 +135,7 @@ Error *BinaryExp::inferType(ToplevelScope *toplevelScope) {
                 return new Error{getLocation(), UNMATCHED_OPERATE,
                                  "can not logic operate non-bool elementType:"};
             }
+            free(this->type);
             this->type = new VariableType(BOOL_TYPE);
             return nullptr;
         }
@@ -138,15 +146,11 @@ Error *BinaryExp::inferType(ToplevelScope *toplevelScope) {
             || this->operatorType == Operator::GE_OP
             || this->operatorType == Operator::GT_OP
             || this->operatorType == Operator::NE_OP) {
-            if (left->isArray() || right->isArray()
-                || (left->getType()->getElementType() != INT_TYPE
-                    && left->getType()->getElementType() != FLOAT_TYPE)
-                || (right->getType()->getElementType() != INT_TYPE
-                    && right->getType()->getElementType() != FLOAT_TYPE)
-                    ) {
+            if (!left->isNumber() || !right->isNumber()){
                 return new Error{getLocation(), UNMATCHED_OPERATE,
                                  "compare not support for this elementType expression"};
             }
+            delete (this->type);
             this->type = new VariableType(BOOL_TYPE);
             return nullptr;
         }
@@ -155,20 +159,16 @@ Error *BinaryExp::inferType(ToplevelScope *toplevelScope) {
             || this->operatorType == Operator::SUB_OP
             || this->operatorType == Operator::MUL_OP
             || this->operatorType == Operator::DIV_OP) {
-            if (left->isArray() || right->isArray()
-                || (left->getType()->getElementType() != INT_TYPE
-                    && left->getType()->getElementType() != FLOAT_TYPE)
-                || (right->getType()->getElementType() != INT_TYPE
-                    && right->getType()->getElementType() != FLOAT_TYPE)
-                    ) {
+            if (!left->isNumber() || !right->isNumber()){
                 return new Error{getLocation(), UNMATCHED_OPERATE,
                                  "arithmetic not support for this elementType expression"};
             }
+            delete (this->type);
             if (left->getType()->getElementType() == FLOAT_TYPE
                 || right->getType()->getElementType() == FLOAT_TYPE) {
                 this->type = new VariableType(FLOAT_TYPE);
             } else
-                this->type = left->getType();
+                this->type = new VariableType(left->getType()->getElementType());
             return nullptr;
         }
 
@@ -184,8 +184,10 @@ Error *BinaryExp::inferType(ToplevelScope *toplevelScope) {
         }
 
         if (!checkTypeEqualOfExp(left, right))
-            return new Error{getLocation(), UNMATCHED_OPERATE, "two expression elementType need to same"};
-        this->type = left->getType();
+            return new Error{getLocation(), UNMATCHED_OPERATE,
+                             "two expression elementType need to same"};
+        delete (this->type);
+        this->type = new VariableType(left->getType()->getElementType());
         return nullptr;
     }
     return nullptr;
@@ -211,7 +213,7 @@ Error *UnaryExp::inferType(ToplevelScope *toplevelScope) {
         }
         if (operatorType == SUB_OP) {
             DataType operand_type = operand->getType()->getElementType();
-            if (operand_type != INT_TYPE && operand_type != FLOAT_TYPE)
+            if (!operand->isNumber())
                 return new Error{getLocation(), UNMATCHED_OPERATE,
                                  "can only solve negative of number:" + operand->getValue()};
         }
@@ -438,10 +440,10 @@ void GetAttributeExp::acceptDereferenceCheck(DereferenceChecker *checker) {
 }
 
 Error *GetAttributeExp::inferType(ToplevelScope *toplevelScope) {
-    Error *err = object->inferType(nullptr);
+    Error *err = object->inferType(toplevelScope);
     if (err)
         return err;
-    VariableType *father_type = object->getType();
+    VariableType *father_type = object->getType()->getActualType();
     if (father_type->getElementType() != STRUCT_TYPE) {
         return new Error{getLocation(), NON_STRUCT,
                          "want to get attribute from none struct elementType var:" + this->attrName};

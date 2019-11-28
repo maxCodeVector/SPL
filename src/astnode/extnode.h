@@ -77,6 +77,10 @@ public:
     }
 
     VariableType *getElement() const {
+        if (element== nullptr){
+            printf("are you crazy? you want to get element of none array\n");
+            exit(1);
+        }
         return element;
     }
 
@@ -91,15 +95,12 @@ public:
     virtual bool isComplete() {
         return true;
     }
-
-    virtual void setActualType(VariableType *type) {}
-
     virtual VariableType *getActualType() {
         return this;
     }
 
     bool isArray(){
-        return elementNum > 0;
+        return this->getElementType()==ARRAY_TYPE;
     }
 
 };
@@ -136,13 +137,17 @@ public:
         return is_complete;
     }
 
-    void setActualType(VariableType *type) override {
+    void setActualType(VariableType *type) {
         actualType = type;
     }
 
     VariableType *getActualType() override {
-        if (is_complete || actualType == nullptr)
+        if (is_complete)
             return this;
+        if (actualType == nullptr){
+//            printf("warning incomplete struct has null actual type");
+            return this;
+        }
         return actualType;
     }
 
@@ -161,6 +166,9 @@ class DeclaredVariableType : public Entity {
     VariableType *type;
 public:
     explicit DeclaredVariableType(AttrNode *spec);
+    ~DeclaredVariableType(){
+        delete(type);
+    }
 
     string &getName() override {
         return type->getTypeName();

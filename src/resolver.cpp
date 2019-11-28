@@ -14,8 +14,8 @@ void LocalResolver::resolve(AST &ast) {
         if (hasE != nullptr) {
             string message =
                     "duplicated define for:" + e->getName() + ", last defined in:" + hasE->getLocation()->toString();
-            ErrorType errorType = e->flag==FUNC? REDEFINED_FUN:REDEFINED_VAR;
-            error(e->getLocation(),errorType, message);
+            ErrorType errorType = e->flag == FUNC ? REDEFINED_FUN : REDEFINED_VAR;
+            error(e->getLocation(), errorType, message);
         }
     }
     resolveDeclaredType(ast.getDeclaredTypes());
@@ -27,7 +27,7 @@ void LocalResolver::resolve(AST &ast) {
 
 void LocalResolver::resolveDeclaredType(list<VariableType *> &declared) {
     for (VariableType *variableType: declared) {
-        if(variableType->getElementType() != STRUCT_TYPE)
+        if (variableType->getElementType() != STRUCT_TYPE)
             continue;
         // unique member
         typeTable->declareVariableType(variableType, errorHandler);
@@ -72,7 +72,7 @@ void LocalResolver::pushScope(list<Variable *> &vars) {
     for (Variable *var: vars) {
         if (scope->isDefinedLocally(var->getName())) {
             string message = "duplicated variable in scope：" + var->getName();
-            error(var->getLocation(), REDEFINED_VAR,  message);
+            error(var->getLocation(), REDEFINED_VAR, message);
         } else {
             scope->defineVariable(*var);
         }
@@ -81,24 +81,26 @@ void LocalResolver::pushScope(list<Variable *> &vars) {
 }
 
 Scope *LocalResolver::popScope() {
-    Scope* scope = scopeStack.back();
+    Scope *scope = scopeStack.back();
     scopeStack.pop_back();
     return scope;
 }
 
 
-TypeResolver::TypeResolver(ErrorHandler& errorHandle, TypeTable* type_table): Visitor(errorHandle, type_table) {
+TypeResolver::TypeResolver(ErrorHandler &errorHandle, TypeTable *type_table) : Visitor(errorHandle, type_table) {
 }
 
-Error *resolveVariableType(TypeTable* typeTable, VariableType *variableType) {
+Error *resolveVariableType(TypeTable *typeTable, VariableType *variableType) {
     if (variableType->getElementType() == STRUCT_TYPE) {
         VariableType *realType = typeTable->queryType(variableType->getTypeName());
         if (realType == nullptr) {
-            return new Error{variableType->getLocation(), ErrorType ::INCOMPLETE_STRUCT,
+            return new Error{variableType->getLocation(), ErrorType::INCOMPLETE_STRUCT,
                              "can not found complete definition for:" + variableType->getTypeName()};
         } else {
-            variableType->setActualType(realType);
+            ((Struct *) variableType)->setActualType(realType);
         }
+    } else if (variableType->getElementType() == ARRAY_TYPE) {
+        return resolveVariableType(typeTable, variableType->getElement());
     }
     return nullptr;
 }
@@ -110,13 +112,13 @@ void TypeResolver::resolve(AST &ast) {
         Error *_error = resolveVariableType(typeTable, var->getType());
         this->error(_error);
     }
-    for(VariableType* declared: ast.getDeclaredTypes()){
-        if(declared->getElementType() != STRUCT_TYPE)
+    for (VariableType *declared: ast.getDeclaredTypes()) {
+        if (declared->getElementType() != STRUCT_TYPE)
             continue;
-        Struct* aStruct = (Struct*)declared;
+        Struct *aStruct = (Struct *) declared;
         // check if struct has duplicated name members
         error(aStruct->checkDuplicatedNameMember());
-        for(Variable* member: aStruct->getMemberList()){
+        for (Variable *member: aStruct->getMemberList()) {
             // set each member's referenced elementType to its actual elementType
             Error *_error = resolveVariableType(typeTable, member->getType());
             this->error(_error);
@@ -125,7 +127,7 @@ void TypeResolver::resolve(AST &ast) {
     resolveFunctions(ast.defineFunctions());
 }
 
-void TypeResolver::resolveFunctions(list<Function *>& funs) {
+void TypeResolver::resolveFunctions(list<Function *> &funs) {
     for (Function *fun: funs) {
         for (Variable *para: fun->getParameters()) {
             Error *err = resolveVariableType(typeTable, para->getType());

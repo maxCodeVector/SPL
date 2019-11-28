@@ -16,7 +16,8 @@ void AST::findEntity(BaseNode* extList){
             string& decName = dec->getName();
             if("baseType"!=decName) {
                 this->declaredTypes.push_back(dec->getType());
-            }
+            } else
+                delete(dec);
         }
         next = next->next;
     }
