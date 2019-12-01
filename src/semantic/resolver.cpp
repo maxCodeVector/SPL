@@ -4,17 +4,31 @@
 
 #include "resolver.h"
 
+
+void addBuildFunctions(AST &ast) {
+    list<Function *> &functions = ast.defineFunctions();
+    Function *read = getBuildFunction("read", new VariableType(INT_TYPE));
+    Function *write = getBuildFunction("write", new VariableType(INT_TYPE));
+
+    Variable *var = new Variable("n", INT_TYPE);
+    write->parameters.push_back(var);
+
+    functions.push_back(read);
+    functions.push_back(write);
+}
+
 void LocalResolver::resolve(AST &ast) {
     ToplevelScope *toplevelScope = new ToplevelScope();
     scopeStack.push_back(toplevelScope);
 
+    addBuildFunctions(ast);
     list<Entity *> entities;
     for (Entity *e: ast.declaritions(entities)) {
         Entity *hasE = toplevelScope->declareEntity(*e);
         if (hasE != nullptr) {
             string message =
                     "duplicated define for:" + e->getName() + ", last defined in:" + hasE->getLocation()->toString();
-            ErrorType errorType = e->flag == FUNC ? REDEFINED_FUN : REDEFINED_VAR;
+            ErrorType errorType = typeid(Function) == typeid(*e) ? REDEFINED_FUN : REDEFINED_VAR;
             error(e->getLocation(), errorType, message);
         }
     }
@@ -38,7 +52,8 @@ void LocalResolver::resolveDeclaredType(list<VariableType *> &declared) {
 void LocalResolver::resolveFunctions(list<Function *> &funcs) {
     for (Function *function: funcs) {
         pushScope(function->getParameters());
-        resolve(*function->getBody());
+        if (function->flag != BUILD_NODE)
+            resolve(*function->getBody());
         function->setScope(popScope());
     }
 }
@@ -135,7 +150,8 @@ void TypeResolver::resolveFunctions(list<Function *> &funs) {
         }
         Error *err = resolveVariableType(typeTable, fun->getReturnType());
         error(err);
-        resolve(*fun->getBody());
+        if (fun->flag != BUILD_NODE)
+            resolve(*fun->getBody());
     }
 }
 

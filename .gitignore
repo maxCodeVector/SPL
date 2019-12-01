@@ -16,3 +16,4 @@ syntax.output
 .idea/
 cmake-build-debug/
 mytest.spl
+*.log

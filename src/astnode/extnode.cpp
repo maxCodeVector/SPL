@@ -1,5 +1,5 @@
 #include "extnode.h"
-#include "../sematic/scope.h"
+#include "../semantic/scope.h"
 #include "statement.h"
 #include "expression.h"
 
@@ -53,7 +53,7 @@ void Variable::setType(AttrNode *spec) {
         next->setArray(type);
         next = (Variable *) next->next;
     }
-    delete(type);
+    delete (type);
 }
 
 void Variable::addDimension(AttrNode *dim) {
@@ -66,22 +66,27 @@ Variable::~Variable() {
     delete (type);
 }
 
-void Variable::setArray(VariableType* element) {
-    if (element->getElementType()==ARRAY_TYPE) {
+void Variable::setArray(VariableType *element) {
+    if (element->getElementType() == ARRAY_TYPE) {
         printf("a wsl\n");
         exit(ErrorCode::ARRAY_TYPE_ARRAY);
     }
-    VariableType* inner_element;
-    if(element->getElementType()==STRUCT_TYPE){
-         inner_element = new Struct(*(Struct*)element);
+    VariableType *inner_element;
+    if (element->getElementType() == STRUCT_TYPE) {
+        inner_element = new Struct(*(Struct *) element);
     } else
         inner_element = new VariableType(element->getElementType());
     auto itor = temp_array_size.end();
-    while (itor!=temp_array_size.begin()){
+    while (itor != temp_array_size.begin()) {
         itor--;
         inner_element = new VariableType(inner_element, *itor);
     }
     this->type = inner_element;
+}
+
+Variable::Variable(const char *id, DataType type) {
+    this->id = id;
+    this->type = new VariableType(type);
 }
 
 Function::Function(AttrNode *functionID, AttrNode *paraList) {
@@ -123,6 +128,16 @@ Function::~Function() {
     delete (functionBody);
     free_all(parameters);
 }
+
+Function* getBuildFunction(const char* id, VariableType* returnType){
+    Function* function = new Function;
+    function->id = id;
+    function->returnType = returnType;
+    function->flag = BUILD_NODE;
+    function->setLocation(-1, 0);
+    return function;
+}
+
 
 
 Struct::~Struct() {

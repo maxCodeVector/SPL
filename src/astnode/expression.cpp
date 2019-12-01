@@ -3,8 +3,8 @@
 //
 
 #include "expression.h"
-#include "../sematic/scope.h"
-#include "../sematic/type.h"
+#include "../semantic/scope.h"
+#include "../semantic/type.h"
 
 Exp::Exp(AttrNode *terminal, DataType dataType) {
     // only char, int, float and id(ref) could invoke this constructor
@@ -63,7 +63,7 @@ Exp::Exp(DataType dataType) {
 }
 
 VariableType *Exp::getType() {
-    if (type->getElementType()==REF_TYPE && referenceVar != nullptr)
+    if (type->getElementType() == REF_TYPE && referenceVar != nullptr)
         return ((Variable *) referenceVar)->getType()->getActualType();
     return type;
 }
@@ -75,7 +75,7 @@ Error *Exp::inferType(ToplevelScope *topLevel) {
 }
 
 bool Exp::isNumber() {
-    return this->getType()->getElementType()==INT_TYPE || this->getType()->getElementType()==FLOAT_TYPE;
+    return this->getType()->getElementType() == INT_TYPE || this->getType()->getElementType() == FLOAT_TYPE;
 }
 
 
@@ -146,7 +146,7 @@ Error *BinaryExp::inferType(ToplevelScope *toplevelScope) {
             || this->operatorType == Operator::GE_OP
             || this->operatorType == Operator::GT_OP
             || this->operatorType == Operator::NE_OP) {
-            if (!left->isNumber() || !right->isNumber()){
+            if (!left->isNumber() || !right->isNumber()) {
                 return new Error{getLocation(), UNMATCHED_OPERATE,
                                  "compare not support for this elementType expression"};
             }
@@ -159,7 +159,7 @@ Error *BinaryExp::inferType(ToplevelScope *toplevelScope) {
             || this->operatorType == Operator::SUB_OP
             || this->operatorType == Operator::MUL_OP
             || this->operatorType == Operator::DIV_OP) {
-            if (!left->isNumber() || !right->isNumber()){
+            if (!left->isNumber() || !right->isNumber()) {
                 return new Error{getLocation(), UNMATCHED_OPERATE,
                                  "arithmetic not support for this elementType expression"};
             }
@@ -264,7 +264,7 @@ Error *InvokeExp::checkReference(Scope *scope) {
     Entity *entity = scope->get(this->functionName);
     if (entity == nullptr) {
         return new Error{getLocation(), UNDEFINED_FUN, "not found this function:" + functionName};
-    } else if (entity->flag != FUNC) {
+    } else if (typeid(*entity) != typeid(Function)) {
         return new Error{getLocation(), NON_FUNC, "want to invoke non-function:" + functionName};
     }
     for (Exp *exp:args->args) {

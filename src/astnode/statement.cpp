@@ -4,7 +4,7 @@
 
 #include "statement.h"
 #include "expression.h"
-#include "../sematic/resolver.h"
+#include "../semantic/resolver.h"
 
 Statement::Statement(AttrNode *exp) {
     this->exp = (Exp *) exp->baseNode;

@@ -32,8 +32,8 @@ void TypeTable::checkRecursiveDefinition(ErrorHandler &errorHandler) {
         bool loop = hasLoop(mark, (Struct *) itor->second);
         if (loop) {
             errorHandler.recordError(new Error{
-                itor->second->getLocation(),ErrorType ::RECURSIVE_DEFINE,
-                "Recursive Definition for:" + type_name});
+                    itor->second->getLocation(), ErrorType::RECURSIVE_DEFINE,
+                    "Recursive Definition for:" + type_name});
         }
         itor++;
     }
@@ -86,15 +86,16 @@ TypeChecker::TypeChecker(ErrorHandler &errorHandle, TypeTable *type_table) : Vis
 void TypeChecker::resolve(AST &ast) {
     toplevelScope = ast.getScope();
     for (Function *function: ast.defineFunctions()) {
-        checkFunction(function);
+        if (function->flag != BUILD_NODE)
+            checkFunction(function);
         checkReturnType(function->getReturnType());
     }
 }
 
 void TypeChecker::checkReturnType(VariableType *returnType) {
-    if(returnType->getElementType() != INT_TYPE
-    && returnType->getElementType() != CHAR_TYPE
-    && returnType->getElementType() != FLOAT_TYPE){
+    if (returnType->getElementType() != INT_TYPE
+        && returnType->getElementType() != CHAR_TYPE
+        && returnType->getElementType() != FLOAT_TYPE) {
         error(new Error{returnType->getLocation(), OTHER_ERROR, "only support return int/char/float"});
     }
 }

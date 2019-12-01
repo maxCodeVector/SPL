@@ -56,7 +56,7 @@ public:
 
 class VariableType : public BaseNode {
     string baseTypeName = "baseType";
-    VariableType* element;
+    VariableType *element;
     enum DataType elementType;// primitive or temp_array_size, struct
     // if elementType is primitive elementType, then element is NULL
     int elementNum = 0;
@@ -70,14 +70,14 @@ public:
         this->elementType = type;
     }
 
-    explicit VariableType(VariableType* element, int size) {
+    explicit VariableType(VariableType *element, int size) {
         this->element = element;
         this->elementNum = size;
         this->elementType = ARRAY_TYPE;
     }
 
     VariableType *getElement() const {
-        if (element== nullptr){
+        if (element == nullptr) {
             printf("are you crazy? you want to get element of none array\n");
             exit(1);
         }
@@ -95,12 +95,13 @@ public:
     virtual bool isComplete() {
         return true;
     }
+
     virtual VariableType *getActualType() {
         return this;
     }
 
-    bool isArray(){
-        return this->getElementType()==ARRAY_TYPE;
+    bool isArray() {
+        return this->getElementType() == ARRAY_TYPE;
     }
 
 };
@@ -121,7 +122,8 @@ public:
     explicit Struct(AttrNode *name);
 
     Struct(AttrNode *name, AttrNode *defList);
-    Struct(const Struct& aStruct):VariableType(STRUCT_TYPE){
+
+    Struct(const Struct &aStruct) : VariableType(STRUCT_TYPE) {
         this->typeName = aStruct.typeName;
         this->is_complete = aStruct.is_complete;
 
@@ -144,7 +146,7 @@ public:
     VariableType *getActualType() override {
         if (is_complete)
             return this;
-        if (actualType == nullptr){
+        if (actualType == nullptr) {
 //            printf("warning incomplete struct has null actual type");
             return this;
         }
@@ -166,8 +168,9 @@ class DeclaredVariableType : public Entity {
     VariableType *type;
 public:
     explicit DeclaredVariableType(AttrNode *spec);
-    ~DeclaredVariableType(){
-        delete(type);
+
+    ~DeclaredVariableType() {
+        delete (type);
     }
 
     string &getName() override {
@@ -181,15 +184,14 @@ public:
 
 
 class Exp;
-
 class Variable : public Entity {
 private:
-    VariableType* type;
-    list<int > temp_array_size;
+    VariableType *type;
+    list<int> temp_array_size;
     string id;
     Exp *value;
 public:
-
+    Variable(const char* id, DataType type);
     explicit Variable(AttrNode *varDec);
 
     void setType(AttrNode *spec);
@@ -208,7 +210,7 @@ public:
         return value;
     };
 
-    void setArray(VariableType* elementType);
+    void setArray(VariableType *elementType);
 
 //    list<int> &getArrayDimension() {
 //        return temp_array_size;
@@ -221,9 +223,9 @@ public:
      * @return
      */
     bool isArray(int dimension) {
-        VariableType* inner_element = this->type;
-        while (dimension > 0){
-            if(inner_element== nullptr){
+        VariableType *inner_element = this->type;
+        while (dimension > 0) {
+            if (inner_element == nullptr) {
                 return false;
             }
             inner_element = inner_element->getElement();
@@ -241,7 +243,7 @@ public:
 };
 
 class Body;
-
+class AST;
 class Function : public Entity {
 private:
     VariableType *returnType;
@@ -252,6 +254,11 @@ private:
     void parseParameters(AttrNode *paraList);
 
 public:
+    Function(){}
+    friend void addBuildFunctions(AST& ast);
+
+    friend Function* getBuildFunction(const char* id, VariableType* returnType);
+
     Function(AttrNode *functionID, AttrNode *paraList);
 
     explicit Function(AttrNode *functionID);
@@ -279,6 +286,7 @@ public:
 
 };
 
+Function* getBuildFunction(const char* id, VariableType* returnType);
 
 class Args : public BaseNode {
 public:

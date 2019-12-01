@@ -1,5 +1,5 @@
 #include "error.h"
-#include "sematic/scope.h"
+#include "semantic/scope.h"
 #include "ast.h"
 
 void AST::findEntity(BaseNode* extList){

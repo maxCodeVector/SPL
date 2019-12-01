@@ -71,7 +71,8 @@ enum NodeType {
     VAR,
     FUNC,
     DECLARATION,
-    BODY
+    BODY,
+    BUILD_NODE
 };
 
 enum DataType{
