@@ -3,8 +3,8 @@
 //
 
 #include "expression.h"
-#include "../scope.h"
-#include "../type.h"
+#include "../sematic/scope.h"
+#include "../sematic/type.h"
 
 Exp::Exp(AttrNode *terminal, DataType dataType) {
     // only char, int, float and id(ref) could invoke this constructor

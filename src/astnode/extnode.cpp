@@ -1,5 +1,5 @@
 #include "extnode.h"
-#include "../scope.h"
+#include "../sematic/scope.h"
 #include "statement.h"
 #include "expression.h"
 

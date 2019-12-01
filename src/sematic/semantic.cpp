@@ -1,5 +1,5 @@
 #include "semantic.h"
-#include "error.h"
+#include "../error.h"
 #include "type.h"
 #include "resolver.h"
 

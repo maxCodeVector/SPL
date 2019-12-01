@@ -6,8 +6,8 @@
 #define SPL_TYPE_H
 
 #include <set>
-#include "ast.h"
-#include "error.h"
+#include "../ast.h"
+#include "../error.h"
 
 
 class TypeTable{

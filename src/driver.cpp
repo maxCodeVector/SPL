@@ -2,7 +2,7 @@
 // Created by hya on 11/19/19.
 //
 #include "parse/deliver.h"
-#include "semantic.h"
+#include "sematic/semantic.h"
 #include <fstream>
 
 int main(int argc, char **argv){

@@ -4,8 +4,8 @@
 #include <map>
 #include <list>
 #include <string>
-#include "error.h"
-#include "astnode/extnode.h"
+#include "../error.h"
+#include "../astnode/extnode.h"
 #include "type.h"
 using namespace std;
 

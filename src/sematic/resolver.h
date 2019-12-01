@@ -6,7 +6,7 @@
 #define SPL_RESOLVER_H
 
 #include "scope.h"
-#include "ast.h"
+#include "../ast.h"
 
 class LocalResolver:public Visitor{
 private:

@@ -2,7 +2,7 @@
 // Created by hya on 11/19/19.
 //
 #include "type.h"
-#include "astnode/statement.h"
+#include "../astnode/statement.h"
 #include "scope.h"
 
 bool hasLoop(set<string> &mark, Struct *type) {

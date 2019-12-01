@@ -1,6 +1,6 @@
 #ifndef _SEMATIC
 #define _SEMATIC
-#include "ast.h"
+#include "../ast.h"
 
 
 ErrorHandler* semantic_analysis(AST& ast);
