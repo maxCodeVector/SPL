@@ -37,8 +37,8 @@ $(BISON_SRC)/syntax.tab.o:$(BISON_SRC)/lex.l $(BISON_SRC)/syntax.y
 	$(CC) -c -g syntax.tab.c -o syntax.tab.o
 
 
-debug:$(BISON_SRC)/syntax.tab.o $(OBJS)
-	$(CC) -g $(OBJS) $(BISON_SRC)/syntax.tab.o -lfl -ly -o $(SRC_DIR)/splc.out
+debug:$(BISON_SRC)/syntax.tab.o $(BUILD_OBJS)
+	$(CC) -g $(BUILD_OBJS) $(BISON_SRC)/syntax.tab.o -lfl -ly -o $(OUT_DIR)/splc.out
 
 
 test: bin/splc
