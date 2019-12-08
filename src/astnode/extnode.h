@@ -45,9 +45,21 @@ public:
 
 
 class IRInst;
+
+class IR;
+
 class Entity : public BaseNode {
-public:
+protected:
     bool isRefered = false;
+    IR *ir;
+public:
+    IR *getIr() const {
+        return ir;
+    }
+
+    void setIr(IR *ir) {
+        Entity::ir = ir;
+    }
 
     virtual string &getName() = 0;
 
@@ -186,6 +198,9 @@ public:
 
 
 class Exp;
+
+class IR;
+
 class Variable : public Entity {
 private:
     VariableType *type;
@@ -193,12 +208,14 @@ private:
     string id;
     Exp *value;
 public:
-    Variable(const char* id, DataType type);
+    Variable(const char *id, DataType type);
+
     explicit Variable(AttrNode *varDec);
 
-    bool hasInitializer(){
-        return value!= nullptr;
+    bool hasInitializer() {
+        return value != nullptr;
     }
+
     void setType(AttrNode *spec);
 
     VariableType *getType() {
@@ -245,12 +262,15 @@ public:
 
     ~Variable();
 
-    void setIR(IRInst* irInst);
+    void setIR(IR *irInst);
 };
 
 class Body;
+
 class AST;
+
 class IRStatement;
+
 class Function : public Entity {
 private:
     VariableType *returnType;
@@ -261,10 +281,11 @@ private:
     void parseParameters(AttrNode *paraList);
 
 public:
-    Function(){}
-    friend void addBuildFunctions(AST& ast);
+    Function() {}
 
-    friend Function* getBuildFunction(const char* id, VariableType* returnType);
+    friend void addBuildFunctions(AST &ast);
+
+    friend Function *getBuildFunction(const char *id, VariableType *returnType);
 
     Function(AttrNode *functionID, AttrNode *paraList);
 
@@ -290,11 +311,10 @@ public:
     string &getName() override {
         return this->id;
     }
-    void setIR(list<IRStatement *> *);
 
 };
 
-Function* getBuildFunction(const char* id, VariableType* returnType);
+Function *getBuildFunction(const char *id, VariableType *returnType);
 
 class Args : public BaseNode {
 public:

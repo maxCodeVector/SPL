@@ -120,4 +120,13 @@ void free_all(list<T*>& element_list){
     }
 }
 
+
+template <typename T>
+void copy_all(list<T*>& element_list, list<T*>& dest){
+    while (!element_list.empty()){
+        T* element = element_list.front();
+        element_list.pop_front();
+        dest.push_back(element);
+    }
+}
 #endif //SPL_INCLUDES_H

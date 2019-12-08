@@ -31,21 +31,43 @@ enum IROperator {
 };
 
 class IRInst {
-public:
     IROperator irOperator;
     string target;
     string arg1;
     string arg2;
+    string toString();
+public:
+    IRInst(IROperator irOperator, string& target, string& arg1, string& arg2);
+    IRInst(IROperator irOperator, string &target);
+    friend ostream& operator<<(ostream&, IRInst& inst);
+};
+ostream &operator<<(ostream & os, IRInst* inst);
+
+class IR {
+    list<IR*> blocks;
+public:
+    void write(ostream &basicOstream);
+    void addBlock(IR* ir);
+    virtual list<IRInst*> * getInstructions(){ return nullptr;}
+
+
 };
 
-class IRExpr : public IRInst {
+class IRExpr : public IR {
 
 
 };
 
-class IRStatement : public IRInst {
+class IRStatement : public IR {
+    list<IRInst*> instructions;
+public:
+    void addInstruction(IROperator irOperator, string& target);
+    void addInstruction(IROperator irOperator, string &target, string &arg1, string &arg2);
+    list<IRInst*> * getInstructions() override;
 
-};
+
+
+    };
 
 
 class IRVisitor {
@@ -62,10 +84,6 @@ class JumpEntry {
 
 };
 
-class IR {
-public:
-    void write(ostream &basicOstream);
 
-};
 
 #endif //SPL_IRNODE_H

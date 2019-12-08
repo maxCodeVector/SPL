@@ -27,7 +27,7 @@ IR *IRGenerator::generate(AST &ast) {
         }
     }
     for (Function *function:ast.getFunctions()) {
-        function->setIR(complileFunctionBody(function));
+        function->setIr(complileFunctionBody(function));
     }
     if (this->errorHandler.errorOccured()){
         return nullptr;
@@ -35,17 +35,17 @@ IR *IRGenerator::generate(AST &ast) {
     return ast.getIR();
 }
 
-list<IRStatement *> *IRGenerator::complileFunctionBody(Function *f) {
-    auto *list = new std::list<IRStatement *>();
+IRStatement* IRGenerator::complileFunctionBody(Function *f) {
     if(f->flag==BUILD_NODE){
-        return list;
+        return nullptr;
     }
-
+    IRStatement* irStatement = new IRStatement;
+    irStatement->addInstruction(IROperator::IR_FUNCTION, f->getName());
     free_all(this->scopeStack);
     this->jumpMap.clear();
     transformStmt(f->getBody());
     checkJumpLinks(jumpMap);
-    return list;
+    return irStatement;
 }
 
 void IRGenerator::checkJumpLinks(map<string, JumpEntry> &maps) {

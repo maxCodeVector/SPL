@@ -2,6 +2,7 @@
 #include "../semantic/scope.h"
 #include "statement.h"
 #include "expression.h"
+#include "../ir/irnode.h"
 
 VariableType *getVariableType(string &name) {
     DataType type;
@@ -89,7 +90,7 @@ Variable::Variable(const char *id, DataType type) {
     this->type = new VariableType(type);
 }
 
-void Variable::setIR(IRInst *irInst) {
+void Variable::setIR(IR *irInst) {
 
 }
 
@@ -140,10 +141,6 @@ Function* getBuildFunction(const char* id, VariableType* returnType){
     function->flag = BUILD_NODE;
     function->setLocation(-1, 0);
     return function;
-}
-
-void Function::setIR(list<IRStatement *> *) {
-
 }
 
 

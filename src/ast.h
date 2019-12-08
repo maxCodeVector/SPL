@@ -17,11 +17,10 @@ private:
     list<Function*> functions;
     list<Variable*> vars;
     list<VariableType*> declaredTypes;
+    IR* ir;
 
 public:
-    AST(AttrNode* root){
-        convert2AST(root);
-    }
+    explicit AST(AttrNode* root);
 
     IR* getIR();
     list<Entity*>& declaritions(list<Entity*>& decaries);

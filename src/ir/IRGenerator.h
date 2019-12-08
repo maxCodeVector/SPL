@@ -22,7 +22,7 @@ class IRGenerator : public IRVisitor {
 
     void checkJumpLinks(map<string, JumpEntry> &maps);
 
-    list<IRStatement *> *complileFunctionBody(Function *f);
+    IRStatement* complileFunctionBody(Function *f);
 
 public:
     IR *generate(AST &ast);
