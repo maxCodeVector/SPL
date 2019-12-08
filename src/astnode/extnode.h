@@ -43,6 +43,8 @@ public:
 
 };
 
+
+class IRInst;
 class Entity : public BaseNode {
 public:
     bool isRefered = false;
@@ -194,6 +196,9 @@ public:
     Variable(const char* id, DataType type);
     explicit Variable(AttrNode *varDec);
 
+    bool hasInitializer(){
+        return value!= nullptr;
+    }
     void setType(AttrNode *spec);
 
     VariableType *getType() {
@@ -206,7 +211,7 @@ public:
         this->value = (Exp *) exp->baseNode;
     }
 
-    Exp *getValue() {
+    Exp *getInitializer() {
         return value;
     };
 
@@ -240,10 +245,12 @@ public:
 
     ~Variable();
 
+    void setIR(IRInst* irInst);
 };
 
 class Body;
 class AST;
+class IRStatement;
 class Function : public Entity {
 private:
     VariableType *returnType;
@@ -283,6 +290,7 @@ public:
     string &getName() override {
         return this->id;
     }
+    void setIR(list<IRStatement *> *);
 
 };
 

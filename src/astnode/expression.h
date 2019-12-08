@@ -9,6 +9,8 @@
 
 class ToplevelScope;
 class DereferenceChecker;
+class IRExpr;
+class IRVisitor;
 class Exp:public BaseNode{
 protected:
     enum Operator operatorType;
@@ -55,6 +57,7 @@ public:
     virtual Error * checkReference(Scope* scope);
     virtual void acceptDereferenceCheck(DereferenceChecker* checker){}
     virtual Error *inferType(ToplevelScope *topLevel);
+    virtual IRExpr* accept(IRVisitor* visitor);
 };
 
 

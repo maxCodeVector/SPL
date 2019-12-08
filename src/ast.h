@@ -7,6 +7,7 @@ using namespace std;
 
 class ToplevelScope;
 class TypeTable;
+class IR;
 class AST: public BaseNode{
 private:
     void convert2AST(AttrNode* root);
@@ -22,9 +23,10 @@ public:
         convert2AST(root);
     }
 
+    IR* getIR();
     list<Entity*>& declaritions(list<Entity*>& decaries);
     void setConstant(ConstantTable &constantTable);
-    list<Function*>& defineFunctions();
+    list<Function*>& getFunctions();
     list<Variable*>& getDefinedVars(){
         return vars;
     }

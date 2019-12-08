@@ -89,6 +89,10 @@ Variable::Variable(const char *id, DataType type) {
     this->type = new VariableType(type);
 }
 
+void Variable::setIR(IRInst *irInst) {
+
+}
+
 Function::Function(AttrNode *functionID, AttrNode *paraList) {
     this->id = functionID->value;
     setLocation(functionID->lineNo, 0);
@@ -138,6 +142,9 @@ Function* getBuildFunction(const char* id, VariableType* returnType){
     return function;
 }
 
+void Function::setIR(list<IRStatement *> *) {
+
+}
 
 
 Struct::~Struct() {

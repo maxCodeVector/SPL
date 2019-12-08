@@ -70,7 +70,7 @@ DereferenceChecker::DereferenceChecker(ErrorHandler &errorHandle, TypeTable *typ
 
 
 void DereferenceChecker::resolve(AST &ast) {
-    for (Function *function: ast.defineFunctions()) {
+    for (Function *function: ast.getFunctions()) {
         resolve(*function->getBody());
     }
 }
@@ -85,7 +85,7 @@ TypeChecker::TypeChecker(ErrorHandler &errorHandle, TypeTable *type_table) : Vis
 
 void TypeChecker::resolve(AST &ast) {
     toplevelScope = ast.getScope();
-    for (Function *function: ast.defineFunctions()) {
+    for (Function *function: ast.getFunctions()) {
         if (function->flag != BUILD_NODE)
             checkFunction(function);
         checkReturnType(function->getReturnType());

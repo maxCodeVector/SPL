@@ -5,6 +5,7 @@
 #include "statement.h"
 #include "expression.h"
 #include "../semantic/resolver.h"
+#include "../ir/irnode.h"
 
 Statement::Statement(AttrNode *exp) {
     this->exp = (Exp *) exp->baseNode;
@@ -29,6 +30,10 @@ void Statement::checkMembersType(TypeChecker *checker, Function *function) {
 
 Statement::~Statement() {
     delete (exp);
+}
+
+void Statement::accept(IRVisitor *visitor) {
+    visitor->visit(this);
 }
 
 
@@ -58,7 +63,7 @@ void Body::checkReference(LocalResolver *resolver, Scope *scope) {
 
 void Body::acceptDereferenceCheck(DereferenceChecker *checker) {
     for (Variable *var: vars) {
-        Exp *value = var->getValue();
+        Exp *value = var->getInitializer();
         if (value != nullptr) {
             value->acceptDereferenceCheck(checker);
         }
@@ -70,7 +75,7 @@ void Body::acceptDereferenceCheck(DereferenceChecker *checker) {
 
 void Body::checkMembersType(TypeChecker *checker, Function *function) {
     for (Variable *var: this->vars) {
-        Exp *value = var->getValue();
+        Exp *value = var->getInitializer();
         if (value) {
             Error *err = value->checkType(checker->getTopLevelScope());
             if (err) {
@@ -87,6 +92,15 @@ void Body::checkMembersType(TypeChecker *checker, Function *function) {
     }
     for (Statement *statement: this->statements) {
         statement->checkMembersType(checker, function);
+    }
+}
+
+void Body::accept(IRVisitor *visitor) {
+    for(Variable* variable: this->vars){
+
+    }
+    for(Statement* statement: statements){
+        statement->accept(visitor);
     }
 }
 
@@ -119,6 +133,13 @@ void IfStatement::checkMembersType(TypeChecker *checker, Function *function) {
         elseBody->checkMembersType(checker, function);
 }
 
+void IfStatement::accept(IRVisitor *visitor) {
+    exp->accept(visitor);
+    ifBody->accept(visitor);
+    if(elseBody)
+        elseBody->accept(visitor);
+}
+
 
 void WhileStatement::checkReference(LocalResolver *resolver, Scope *scope) {
     Statement::checkReference(resolver, scope);
@@ -143,6 +164,11 @@ void WhileStatement::checkMembersType(TypeChecker *checker, Function *function) 
         loop->checkMembersType(checker, function);
 }
 
+void WhileStatement::accept(IRVisitor *visitor) {
+    exp->accept(visitor);
+    loop->accept(visitor);
+}
+
 void ReturnStatement::checkMembersType(TypeChecker *checker, Function *function) {
     Statement::checkMembersType(checker, function);
     // no repeat report expression error
@@ -156,4 +182,8 @@ void ReturnStatement::checkMembersType(TypeChecker *checker, Function *function)
             checker->error(err);
         }
     }
+}
+
+void ReturnStatement::accept(IRVisitor *visitor) {
+    exp->accept(visitor);
 }

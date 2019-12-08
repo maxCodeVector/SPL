@@ -5,6 +5,7 @@
 #include "expression.h"
 #include "../semantic/scope.h"
 #include "../semantic/type.h"
+#include "../ir/irnode.h"
 
 Exp::Exp(AttrNode *terminal, DataType dataType) {
     // only char, int, float and id(ref) could invoke this constructor
@@ -76,6 +77,11 @@ Error *Exp::inferType(ToplevelScope *topLevel) {
 
 bool Exp::isNumber() {
     return this->getType()->getElementType() == INT_TYPE || this->getType()->getElementType() == FLOAT_TYPE;
+}
+
+IRExpr *Exp::accept(IRVisitor *visitor) {
+    visitor->visit(this);
+    return nullptr;
 }
 
 

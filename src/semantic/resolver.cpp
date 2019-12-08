@@ -6,7 +6,7 @@
 
 
 void addBuildFunctions(AST &ast) {
-    list<Function *> &functions = ast.defineFunctions();
+    list<Function *> &functions = ast.getFunctions();
     Function *read = getBuildFunction("read", new VariableType(INT_TYPE));
     Function *write = getBuildFunction("write", new VariableType(INT_TYPE));
 
@@ -33,7 +33,7 @@ void LocalResolver::resolve(AST &ast) {
         }
     }
     resolveDeclaredType(ast.getDeclaredTypes());
-    resolveFunctions(ast.defineFunctions());
+    resolveFunctions(ast.getFunctions());
     ast.setScope(toplevelScope);
     ast.setConstant(this->constantTable);
 }
@@ -69,9 +69,9 @@ void LocalResolver::resolve(Body &body) {
         }
     }
     for (Variable *var: body.vars) {
-        if (var->getValue()) {
+        if (var->getInitializer()) {
             // check defined variables' initial expression
-            error(var->getValue()->checkReference(currentScope()));
+            error(var->getInitializer()->checkReference(currentScope()));
         }
     }
     for (Statement *statement:body.statements) {
@@ -139,7 +139,7 @@ void TypeResolver::resolve(AST &ast) {
             this->error(_error);
         }
     }
-    resolveFunctions(ast.defineFunctions());
+    resolveFunctions(ast.getFunctions());
 }
 
 void TypeResolver::resolveFunctions(list<Function *> &funs) {

@@ -45,7 +45,7 @@ list<Entity*>& AST::declaritions(list<Entity*>& decaries){
     return decaries;
 }
 
-list<Function*>& AST::defineFunctions(){
+list<Function*>& AST::getFunctions(){
     return this->functions;
 }
 void AST::setConstant(ConstantTable &constantTable){
@@ -58,6 +58,10 @@ AST::~AST() {
     free_all(declaredTypes);
     delete(toplevelScope);
     delete (typeTable);
+}
+
+IR *AST::getIR() {
+    return nullptr;
 }
 
 
