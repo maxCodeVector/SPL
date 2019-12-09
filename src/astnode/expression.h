@@ -126,6 +126,8 @@ public:
     Error * checkReference(Scope* scope) override;
     void acceptDereferenceCheck(DereferenceChecker* checker) override;
     Error* inferType(ToplevelScope* toplevelScope) override;
+    void accept(IRVisitor* visitor) override;
+
 
 };
 

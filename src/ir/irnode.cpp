@@ -73,6 +73,18 @@ string IRInst::toString() {
     if (this->irOperator == IR_DIV)
         return target + " := " + arg1 + " / " + arg2;
 
+    if (this->irOperator == IR_WRITE)
+        return "WRITE " + target;
+    if (this->irOperator == IR_READ)
+        return "READ " + target;
+
+    if (this->irOperator == IR_CALL)
+        return target + " := CALL " + arg1;
+    if (this->irOperator == IR_ARG)
+        return "ARG " + target;
+    if (this->irOperator == IR_PARAM)
+        return "PARAM " + target;
+
     target + arg1;
     return "fuckyou";
 }

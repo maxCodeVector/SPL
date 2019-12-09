@@ -444,6 +444,10 @@ Error *InvokeExp::inferType(ToplevelScope *toplevelScope) {
     return checkArgument(function->getParameters(), this->args);
 }
 
+void InvokeExp::accept(IRVisitor *visitor) {
+    visitor->visit(this);
+}
+
 GetAttributeExp::GetAttributeExp(AttrNode *operated, string &attributeName) : Exp(DataType::INFER_TYPE) {
     Exp *exp = (Exp *) operated->baseNode;
     this->attrName = attributeName;

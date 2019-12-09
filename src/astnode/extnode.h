@@ -58,7 +58,7 @@ public:
     }
 
     void setIr(IR *ir) {
-        Entity::ir = ir;
+        this->ir = ir;
     }
 
     virtual string &getName() = 0;

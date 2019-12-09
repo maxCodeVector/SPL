@@ -43,7 +43,7 @@ string TempNameGenerator::generateName(int numId) {
 }
 
 void TempNameGenerator::releaseAll() {
-    for(int i=0;i<curr_max_id_num;i++){
+    for (int i = 0; i < curr_max_id_num; i++) {
         allocated[i] = 0;
     }
 }
@@ -74,6 +74,7 @@ bool IRGenerator::isStatement() {
 }
 
 IR *IRGenerator::generate(AST &ast) {
+    currAst = &ast;
     for (Variable *variable: ast.getDefinedVars()) {
         if (variable->hasInitializer()) {
             variable->setIR(transformExpr(variable->getInitializer()));
@@ -94,6 +95,9 @@ IRStatement *IRGenerator::complileFunctionBody(Function *f) {
     }
     this->currIrStatement = new IRStatement;
     currIrStatement->addInstruction(IROperator::IR_FUNCTION, f->getName());
+    for(Variable* para: f->getParameters()){
+        currIrStatement->addInstruction(IR_PARAM, para->getName());
+    }
     free_all(this->scopeStack);
     this->jumpMap.clear();
     transformStmt(f->getBody());
@@ -107,12 +111,13 @@ void IRGenerator::checkJumpLinks(map<string, JumpEntry> &maps) {
 
 void IRGenerator::visit(ReturnStatement *statementNode) {
     currIrStatement->addInstruction(IR_RETURN, statementNode->getExpression()->getSymbol());
+    tempVariable->releaseAll();
 }
 
 void IRGenerator::visit(BinaryExp *expNode) {
     expNode->left->accept(this);
     expNode->right->accept(this);
-    if(expNode->getOperatorType()==ASSIGN_OP){
+    if (expNode->getOperatorType() == ASSIGN_OP) {
         currIrStatement->addInstruction(IR_ASSIGN, expNode->left->getSymbol(), expNode->right->getSymbol(), "");
 //        expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
         tempVariable->releaseAll();
@@ -121,7 +126,45 @@ void IRGenerator::visit(BinaryExp *expNode) {
     if (item != operatorMap.end()) {
         expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
         currIrStatement->addInstruction(item->second,
-                expNode->getSymbol(), expNode->left->getSymbol(), expNode->right->getSymbol());
+                                        expNode->getSymbol(), expNode->left->getSymbol(), expNode->right->getSymbol());
+    }
+
+}
+
+void IRGenerator::visit(Variable *variable) {
+    if (variable->hasInitializer()) {
+        Exp *value = variable->getInitializer();
+        value->accept(this);
+        currIrStatement->addInstruction(IR_ASSIGN, variable->getName(), value->getSymbol(), "");
+//        expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
+        tempVariable->releaseAll();
+    }
+}
+
+void IRGenerator::visit(InvokeExp *expNode) {
+    for (Exp *exp: expNode->args->getArguments()) {
+        exp->accept(this);
+    }
+    tempVariable->releaseAll();
+    Function *function = (Function *) currAst->getScope()->get(expNode->functionName);
+    if (function->flag == BUILD_NODE) {
+        if (function->getName() == "read") {
+            string tempName = tempVariable->generateName(tempVariable->allocate());
+            currIrStatement->addInstruction(IR_READ, tempName);
+            expNode->setSymbol(tempName);
+        } else if (function->getName() == "write") {
+            currIrStatement->addInstruction(IR_WRITE, expNode->args->getArguments().front()->getSymbol());
+        }
+    } else {
+        list<Exp *> &args = expNode->args->getArguments();
+        auto item = args.end();
+        while (item != args.begin()) {
+            item--;
+            currIrStatement->addInstruction(IR_ARG, (*item)->getSymbol());
+        }
+        string tempName = tempVariable->generateName(tempVariable->allocate());
+        currIrStatement->addInstruction(IR_CALL, tempName, function->getName(), "");
+        expNode->setSymbol(tempName);
     }
 
 }

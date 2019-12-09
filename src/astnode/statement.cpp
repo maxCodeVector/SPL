@@ -97,7 +97,7 @@ void Body::checkMembersType(TypeChecker *checker, Function *function) {
 
 void Body::accept(IRVisitor *visitor) {
     for(Variable* variable: this->vars){
-
+        visitor->visit(variable);
     }
     for(Statement* statement: statements){
         statement->accept(visitor);

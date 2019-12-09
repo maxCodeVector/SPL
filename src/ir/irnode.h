@@ -93,6 +93,10 @@ public:
 
     virtual void visit(BinaryExp *expNode) = 0;
 
+    virtual void visit(InvokeExp *expNode) = 0;
+
+    virtual void visit(Variable *variable) = 0;
+
     virtual void visit(ReturnStatement *statementNode) = 0;
 
 };
