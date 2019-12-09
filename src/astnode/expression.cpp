@@ -79,9 +79,23 @@ bool Exp::isNumber() {
     return this->getType()->getElementType() == INT_TYPE || this->getType()->getElementType() == FLOAT_TYPE;
 }
 
-IRExpr *Exp::accept(IRVisitor *visitor) {
-    visitor->visit(this);
-    return nullptr;
+void Exp::accept(IRVisitor *visitor) {
+    if (this->type->getElementType() == INT_TYPE) {
+        setSymbol("#" + value);
+    } else
+        setSymbol(value);
+}
+
+Operator Exp::getOperatorType() const {
+    return operatorType;
+}
+
+const string &Exp::getSymbol() const {
+    return symbol;
+}
+
+void Exp::setSymbol(const string &symbol) {
+    Exp::symbol = symbol;
 }
 
 
@@ -197,6 +211,10 @@ Error *BinaryExp::inferType(ToplevelScope *toplevelScope) {
         return nullptr;
     }
     return nullptr;
+}
+
+void BinaryExp::accept(IRVisitor *visitor) {
+    visitor->visit(this);
 }
 
 UnaryExp::UnaryExp(AttrNode *operatedNode, Operator operatorType) : Exp(DataType::INFER_TYPE) {

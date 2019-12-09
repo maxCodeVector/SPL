@@ -13,7 +13,18 @@ class IRExpr;
 class IRVisitor;
 class Exp:public BaseNode{
 protected:
+    string symbol;
+public:
+    const string &getSymbol() const;
+
+    void setSymbol(const string &symbol);
+
+protected:
     enum Operator operatorType;
+public:
+    Operator getOperatorType() const;
+
+protected:
     VariableType* type;
     string value;//expression value if it is ID or int:float:char
     Entity* referenceVar;
@@ -57,7 +68,7 @@ public:
     virtual Error * checkReference(Scope* scope);
     virtual void acceptDereferenceCheck(DereferenceChecker* checker){}
     virtual Error *inferType(ToplevelScope *topLevel);
-    virtual IRExpr* accept(IRVisitor* visitor);
+    virtual void accept(IRVisitor* visitor);
 };
 
 
@@ -73,6 +84,7 @@ public:
     Error * checkReference(Scope* scope) override;
     void acceptDereferenceCheck(DereferenceChecker *checker) override;
     Error* inferType(ToplevelScope* toplevelScope) override;
+    void accept(IRVisitor* visitor) override;
 
 };
 

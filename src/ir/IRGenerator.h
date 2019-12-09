@@ -9,9 +9,34 @@
 #include "irnode.h"
 #include "../semantic/scope.h"
 
+class TempNameGenerator {
+    string prefix;
+    int *allocated;
+    int curr_max_id_num;
+public:
+    explicit TempNameGenerator(const string &prefix, int size);
+
+    int allocate();
+
+    void release(int numberId);
+
+    void releaseAll();
+
+    ~TempNameGenerator();
+
+    string generateName(int numId);
+
+};
+
+
 class IRGenerator : public IRVisitor {
     list<LocalScope *> scopeStack;
+    TempNameGenerator *tempVariable;
+    TempNameGenerator *label;
+    IRStatement *currIrStatement;
     map<string, JumpEntry> jumpMap;
+    map<Operator, IROperator> operatorMap;
+
     int exprNestLevel = 0;
 
     void transformStmt(Statement *statement);
@@ -22,14 +47,16 @@ class IRGenerator : public IRVisitor {
 
     void checkJumpLinks(map<string, JumpEntry> &maps);
 
-    IRStatement* complileFunctionBody(Function *f);
+    IRStatement *complileFunctionBody(Function *f);
 
 public:
+    IRGenerator();
+
     IR *generate(AST &ast);
 
-    void visit(Exp *expNode) override;
+    void visit(BinaryExp *expNode) override;
 
-    void visit(Statement *statementNode) override;
+    void visit(ReturnStatement *statementNode) override;
 
 };
 

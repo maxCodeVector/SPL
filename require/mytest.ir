@@ -1,0 +1,9 @@
+FUNCTION main :
+t0 := #1 + #2
+m := t0
+t0 := m * m
+t1 := #3 * m
+t2 := t1 / #2
+t3 := t0 + t2
+result := t3
+RETURN result

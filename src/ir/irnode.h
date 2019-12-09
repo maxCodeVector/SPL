@@ -15,7 +15,7 @@ enum IROperator {
     IR_ADD,
     IR_SUB,
     IR_MUL,
-    IR_DEV,
+    IR_DIV,
     IR_ADDRESS,
     IR_ASSIGN_VALUE_IN_ADDRESS,
     IR_COPY_VALUE_TO_ADDRESS,
@@ -35,48 +35,65 @@ class IRInst {
     string target;
     string arg1;
     string arg2;
+
     string toString();
+
 public:
-    IRInst(IROperator irOperator, string& target, string& arg1, string& arg2);
-    IRInst(IROperator irOperator, string &target);
-    friend ostream& operator<<(ostream&, IRInst& inst);
+
+    IRInst(IROperator irOperator, const string &target, const string &arg1, const string &arg2);
+
+    IRInst(IROperator irOperator, const string &target);
+
+    friend ostream &operator<<(ostream &, IRInst &inst);
 };
-ostream &operator<<(ostream & os, IRInst* inst);
+
+ostream &operator<<(ostream &os, IRInst *inst);
 
 class IR {
-    list<IR*> blocks;
+    list<IR *> blocks;
 public:
     void write(ostream &basicOstream);
-    void addBlock(IR* ir);
-    virtual list<IRInst*> * getInstructions(){ return nullptr;}
+
+    void addBlock(IR *ir);
+
+    virtual list<IRInst *> *getInstructions() { return nullptr; }
 
 
 };
 
 class IRExpr : public IR {
+    list<IRInst *> instructions;
+public:
+    void addInstruction(IROperator irOperator, string &target);
+
+    void addInstruction(IROperator irOperator, string &target, string &arg1, string &arg2);
+
+    list<IRInst *> *getInstructions() override;
 
 
 };
 
+
 class IRStatement : public IR {
-    list<IRInst*> instructions;
+    list<IRInst *> instructions;
 public:
-    void addInstruction(IROperator irOperator, string& target);
-    void addInstruction(IROperator irOperator, string &target, string &arg1, string &arg2);
-    list<IRInst*> * getInstructions() override;
+    void addInstruction(IROperator irOperator, const string &target);
+
+    void addInstruction(IROperator irOperator, const string &target, const string &arg1, const string &arg2);
+
+    list<IRInst *> *getInstructions() override;
 
 
-
-    };
+};
 
 
 class IRVisitor {
 public:
     ErrorHandler errorHandler;
 
-    virtual void visit(Exp *expNode) = 0;
+    virtual void visit(BinaryExp *expNode) = 0;
 
-    virtual void visit(Statement *statementNode) = 0;
+    virtual void visit(ReturnStatement *statementNode) = 0;
 
 };
 

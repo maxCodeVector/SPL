@@ -33,7 +33,7 @@ Statement::~Statement() {
 }
 
 void Statement::accept(IRVisitor *visitor) {
-    visitor->visit(this);
+    exp->accept(visitor);
 }
 
 
@@ -186,4 +186,5 @@ void ReturnStatement::checkMembersType(TypeChecker *checker, Function *function)
 
 void ReturnStatement::accept(IRVisitor *visitor) {
     exp->accept(visitor);
+    visitor->visit(this);
 }
