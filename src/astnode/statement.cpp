@@ -162,8 +162,7 @@ void WhileStatement::checkMembersType(TypeChecker *checker, Function *function) 
 }
 
 void WhileStatement::accept(IRVisitor *visitor) {
-    exp->accept(visitor);
-    loop->accept(visitor);
+    visitor->visit(this);
 }
 
 void ReturnStatement::checkMembersType(TypeChecker *checker, Function *function) {

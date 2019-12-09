@@ -30,13 +30,13 @@ public:
 
 
 class IRGenerator : public IRVisitor {
-    list<LocalScope *> scopeStack;
+    list<string > labelStack;
     AST *currAst;
 
     TempNameGenerator *tempVariable;
     TempNameGenerator *label;
     IRStatement *currIrStatement;
-    map<string, JumpEntry> jumpMap;
+    map<string, JumpEntry*> jumpMap;
     map<Operator, IROperator> operatorMap;
 
     int exprNestLevel = 0;
@@ -47,7 +47,7 @@ class IRGenerator : public IRVisitor {
 
     bool isStatement();
 
-    void checkJumpLinks(map<string, JumpEntry> &maps);
+    void checkJumpLinks(map<string, JumpEntry*> &maps);
 
     IRStatement *complileFunctionBody(Function *f);
 

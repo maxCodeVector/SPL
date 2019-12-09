@@ -17,3 +17,4 @@ syntax.output
 cmake-build-debug/
 mytest.*
 *.log
+*.ir

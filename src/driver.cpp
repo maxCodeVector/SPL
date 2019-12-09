@@ -17,9 +17,9 @@ int main(int argc, char **argv) {
     ErrorHandler *handler = semantic_analysis(*ast);
 
     string out_file_name = argv[1];
-    out_file_name = out_file_name.substr(0, out_file_name.size() - 3) + "ir";
-    ofstream outfile(out_file_name);
     if (handler->errorOccured()) {
+//        string compile_out_file = out_file_name.substr(0, out_file_name.size() - 3) + "out";
+//        ofstream outfile(compile_out_file);
 //        handler->showError(outfile);
         handler->showError(std::cerr);
         return 1;
@@ -27,6 +27,9 @@ int main(int argc, char **argv) {
 
     IRGenerator irGenerator;
     IR *ir = irGenerator.generate(*ast);
+    string ir_file_name = out_file_name.substr(0, out_file_name.size() - 3) + "ir";
+    ofstream outfile(ir_file_name);
+
     ir->write(std::cout);
     ir->write(outfile);
     delete (ast);

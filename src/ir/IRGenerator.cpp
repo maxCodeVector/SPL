@@ -50,7 +50,7 @@ void TempNameGenerator::releaseAll() {
 
 
 IRGenerator::IRGenerator() {
-    this->label = new TempNameGenerator("LABEL", -1);
+    this->label = new TempNameGenerator("label", -1);
     this->tempVariable = new TempNameGenerator("t", 10);
     operatorMap.insert(pair<Operator, IROperator>(ADD_OP, IR_ADD));
     operatorMap.insert(pair<Operator, IROperator>(SUB_OP, IR_SUB));
@@ -98,14 +98,13 @@ IRStatement *IRGenerator::complileFunctionBody(Function *f) {
     for (Variable *para: f->getParameters()) {
         currIrStatement->addInstruction(IR_PARAM, para->getName());
     }
-    free_all(this->scopeStack);
     this->jumpMap.clear();
     transformStmt(f->getBody());
     checkJumpLinks(jumpMap);
     return currIrStatement;
 }
 
-void IRGenerator::checkJumpLinks(map<string, JumpEntry> &maps) {
+void IRGenerator::checkJumpLinks(map<string, JumpEntry *> &maps) {
 
 }
 
@@ -116,6 +115,7 @@ void IRGenerator::visit(BinaryExp *expNode) {
         currIrStatement->addInstruction(IR_ASSIGN, expNode->left->getSymbol(), expNode->right->getSymbol(), "");
 //        expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
         tempVariable->releaseAll();
+        return;
     }
     auto item = operatorMap.find(expNode->getOperatorType());
     if (item != operatorMap.end()) {
@@ -123,6 +123,61 @@ void IRGenerator::visit(BinaryExp *expNode) {
         currIrStatement->addInstruction(item->second,
                                         expNode->getSymbol(), expNode->left->getSymbol(), expNode->right->getSymbol());
     }
+    if (expNode->getOperatorType() == OR_OP) {
+
+    }
+    if (expNode->getOperatorType() == AND_OP) {
+
+    }
+    if (expNode->getOperatorType() == LT_OP) {
+        string gotolabel = label->generateName(label->allocate());
+        JumpEntry *jumpEntry = new JumpEntry;
+        this->jumpMap.insert(pair<string, JumpEntry *>(gotolabel, jumpEntry));
+        currIrStatement->addInstruction(IR_IF_GE,
+                                        gotolabel, expNode->left->getSymbol(), expNode->right->getSymbol());
+        labelStack.push_back(gotolabel);
+    }
+    if (expNode->getOperatorType() == GT_OP) {
+        string gotolabel = label->generateName(label->allocate());
+        JumpEntry *jumpEntry = new JumpEntry;
+        this->jumpMap.insert(pair<string, JumpEntry *>(gotolabel, jumpEntry));
+        currIrStatement->addInstruction(IR_IF_LE,
+                                        gotolabel, expNode->left->getSymbol(), expNode->right->getSymbol());
+        labelStack.push_back(gotolabel);
+    }
+    if (expNode->getOperatorType() == LE_OP) {
+        string gotolabel = label->generateName(label->allocate());
+        JumpEntry *jumpEntry = new JumpEntry;
+        this->jumpMap.insert(pair<string, JumpEntry *>(gotolabel, jumpEntry));
+        currIrStatement->addInstruction(IR_IF_GT,
+                                        gotolabel, expNode->left->getSymbol(), expNode->right->getSymbol());
+        labelStack.push_back(gotolabel);
+    }
+    if (expNode->getOperatorType() == GE_OP) {
+        string gotolabel = label->generateName(label->allocate());
+        JumpEntry *jumpEntry = new JumpEntry;
+        this->jumpMap.insert(pair<string, JumpEntry *>(gotolabel, jumpEntry));
+        currIrStatement->addInstruction(IR_IF_LT,
+                                        gotolabel, expNode->left->getSymbol(), expNode->right->getSymbol());
+        labelStack.push_back(gotolabel);
+    }
+    if (expNode->getOperatorType() == NE_OP) {
+        string gotolabel = label->generateName(label->allocate());
+        JumpEntry *jumpEntry = new JumpEntry;
+        this->jumpMap.insert(pair<string, JumpEntry *>(gotolabel, jumpEntry));
+        currIrStatement->addInstruction(IR_IF_EQ,
+                                        gotolabel, expNode->left->getSymbol(), expNode->right->getSymbol());
+        labelStack.push_back(gotolabel);
+    }
+    if (expNode->getOperatorType() == EQ_OP) {
+        string gotolabel = label->generateName(label->allocate());
+        JumpEntry *jumpEntry = new JumpEntry;
+        this->jumpMap.insert(pair<string, JumpEntry *>(gotolabel, jumpEntry));
+        currIrStatement->addInstruction(IR_IF_NE,
+                                        gotolabel, expNode->left->getSymbol(), expNode->right->getSymbol());
+        labelStack.push_back(gotolabel);
+    }
+
 
 }
 
@@ -177,13 +232,30 @@ void IRGenerator::visit(InvokeExp *expNode) {
 
 void IRGenerator::visit(IfStatement *statementNode) {
     statementNode->getExpression()->accept(this);
+    string gotoLabel = labelStack.back();
+    labelStack.pop_back();
     statementNode->ifBody->accept(this);
-    if(statementNode->elseBody)
+    if (statementNode->elseBody) {
+        string outLabel = label->generateName(label->allocate());
+        currIrStatement->addInstruction(IR_GOTO, outLabel);
+        currIrStatement->addInstruction(IR_LABEL, gotoLabel);
         statementNode->elseBody->accept(this);
+        currIrStatement->addInstruction(IR_LABEL, outLabel);
+    } else {
+        currIrStatement->addInstruction(IR_LABEL, gotoLabel);
+    }
 }
 
 void IRGenerator::visit(WhileStatement *statementNode) {
+    string startLabel = label->generateName(label->allocate());
+    currIrStatement->addInstruction(IR_LABEL, startLabel);
+    statementNode->getExpression()->accept(this);
+    statementNode->loop->accept(this);
+    currIrStatement->addInstruction(IR_GOTO, startLabel);
 
+    string gotoLabel = labelStack.back();
+    labelStack.pop_back();
+    currIrStatement->addInstruction(IR_LABEL, gotoLabel);
 }
 
 void IRGenerator::visit(ReturnStatement *statementNode) {

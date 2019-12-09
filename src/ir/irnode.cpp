@@ -85,6 +85,24 @@ string IRInst::toString() {
     if (this->irOperator == IR_PARAM)
         return "PARAM " + target;
 
+    if (this->irOperator == IR_IF_EQ)
+        return "IF " + arg1 + " == " + arg2 + " GOTO " + target;
+    if (this->irOperator == IR_IF_NE)
+        return "IF " + arg1 + " != " + arg2 + " GOTO " + target;
+    if (this->irOperator == IR_IF_LT)
+        return "IF " + arg1 + " < " + arg2 + " GOTO " + target;
+    if (this->irOperator == IR_IF_LE)
+        return "IF " + arg1 + " <= " + arg2 + " GOTO " + target;
+    if (this->irOperator == IR_IF_GT)
+        return "IF " + arg1 + " > " + arg2 + " GOTO " + target;
+    if (this->irOperator == IR_IF_GE)
+        return "IF " + arg1 + " >= " + arg2 + " GOTO " + target;
+    if (this->irOperator == IR_GOTO)
+        return "GOTO " + target;
+    if (this->irOperator == IR_LABEL)
+        return "LABEL " + target + " :";
+
+
     target + arg1;
     return "fuckyou";
 }
