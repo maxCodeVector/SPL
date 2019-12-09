@@ -254,6 +254,16 @@ Error *UnaryExp::inferType(ToplevelScope *toplevelScope) {
     return nullptr;
 }
 
+void UnaryExp::accept(IRVisitor *visitor) {
+    if(this->operand->type->getElementType()==INT_TYPE){
+        if(this->operatorType==SUB_OP){
+            setSymbol("#-"+operand->getValue());
+            return;
+        }
+    }
+    visitor->visit(this);
+}
+
 
 InvokeExp::InvokeExp(AttrNode *invoker) : Exp(DataType::INFER_TYPE) {
     this->functionName = invoker->value;

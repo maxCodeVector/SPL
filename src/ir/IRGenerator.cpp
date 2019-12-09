@@ -95,7 +95,7 @@ IRStatement *IRGenerator::complileFunctionBody(Function *f) {
     }
     this->currIrStatement = new IRStatement;
     currIrStatement->addInstruction(IROperator::IR_FUNCTION, f->getName());
-    for(Variable* para: f->getParameters()){
+    for (Variable *para: f->getParameters()) {
         currIrStatement->addInstruction(IR_PARAM, para->getName());
     }
     free_all(this->scopeStack);
@@ -107,11 +107,6 @@ IRStatement *IRGenerator::complileFunctionBody(Function *f) {
 
 void IRGenerator::checkJumpLinks(map<string, JumpEntry> &maps) {
 
-}
-
-void IRGenerator::visit(ReturnStatement *statementNode) {
-    currIrStatement->addInstruction(IR_RETURN, statementNode->getExpression()->getSymbol());
-    tempVariable->releaseAll();
 }
 
 void IRGenerator::visit(BinaryExp *expNode) {
@@ -130,6 +125,17 @@ void IRGenerator::visit(BinaryExp *expNode) {
     }
 
 }
+
+
+void IRGenerator::visit(UnaryExp *expNode) {
+    expNode->operand->accept(this);
+    if (expNode->getOperatorType() == SUB_OP) {
+        expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
+        currIrStatement->addInstruction(IR_SUB,
+                                        expNode->getSymbol(), "#0", expNode->operand->getSymbol());
+    }
+}
+
 
 void IRGenerator::visit(Variable *variable) {
     if (variable->hasInitializer()) {
@@ -169,3 +175,18 @@ void IRGenerator::visit(InvokeExp *expNode) {
 
 }
 
+void IRGenerator::visit(IfStatement *statementNode) {
+    statementNode->getExpression()->accept(this);
+    statementNode->ifBody->accept(this);
+    if(statementNode->elseBody)
+        statementNode->elseBody->accept(this);
+}
+
+void IRGenerator::visit(WhileStatement *statementNode) {
+
+}
+
+void IRGenerator::visit(ReturnStatement *statementNode) {
+    currIrStatement->addInstruction(IR_RETURN, statementNode->getExpression()->getSymbol());
+    tempVariable->releaseAll();
+}

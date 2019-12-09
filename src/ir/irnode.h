@@ -93,18 +93,23 @@ public:
 
     virtual void visit(BinaryExp *expNode) = 0;
 
+    virtual void visit(UnaryExp *expNode) = 0;
+
     virtual void visit(InvokeExp *expNode) = 0;
 
     virtual void visit(Variable *variable) = 0;
 
     virtual void visit(ReturnStatement *statementNode) = 0;
 
+    virtual void visit(IfStatement *statementNode) = 0;
+
+    virtual void visit(WhileStatement *statementNode) = 0;
+
 };
 
 class JumpEntry {
 
 };
-
 
 
 #endif //SPL_IRNODE_H

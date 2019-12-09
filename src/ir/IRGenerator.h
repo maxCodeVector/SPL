@@ -31,7 +31,7 @@ public:
 
 class IRGenerator : public IRVisitor {
     list<LocalScope *> scopeStack;
-    AST* currAst;
+    AST *currAst;
 
     TempNameGenerator *tempVariable;
     TempNameGenerator *label;
@@ -58,11 +58,17 @@ public:
 
     void visit(BinaryExp *expNode) override;
 
-    void visit(InvokeExp *expNode);
+    void visit(UnaryExp *expNode) override;
+
+    void visit(InvokeExp *expNode) override;
 
     void visit(Variable *variable) override;
 
     void visit(ReturnStatement *statementNode) override;
+
+    void visit(IfStatement *statementNode) override;
+
+    void visit(WhileStatement *statementNode) override;
 
 };
 

@@ -134,10 +134,7 @@ void IfStatement::checkMembersType(TypeChecker *checker, Function *function) {
 }
 
 void IfStatement::accept(IRVisitor *visitor) {
-    exp->accept(visitor);
-    ifBody->accept(visitor);
-    if(elseBody)
-        elseBody->accept(visitor);
+   visitor->visit(this);
 }
 
 

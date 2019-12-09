@@ -15,5 +15,5 @@ syntax.output
 *.o
 .idea/
 cmake-build-debug/
-mytest.spl
+mytest.*
 *.log
