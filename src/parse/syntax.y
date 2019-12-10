@@ -26,10 +26,8 @@
 %left GT
 %left LE
 %left LT
-%left MINUS
-%left PLUS
-%left DIV
-%left MUL
+%left MINUS PLUS
+%left DIV MUL
 %right NOT
 %left DOT
 %left LC RC
