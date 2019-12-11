@@ -147,7 +147,7 @@ int VariableType::getSize() {
     if (elementType == INT_TYPE)
         return 4;
     else if (elementType == ARRAY_TYPE) {
-        return this->element->getSize() * this->elementNum;
+        return this->element->getActualType()->getSize() * this->elementNum;
     }
     return 8;
 }

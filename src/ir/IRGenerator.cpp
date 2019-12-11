@@ -116,7 +116,7 @@ void IRGenerator::visit(Variable *variable) {
         tempVariable->releaseAll();
     }
     if (variable->getType()->getElementType() == STRUCT_TYPE || variable->getType()->isArray()) {
-        string object = pointer->generateName(tempVariable->allocate());
+        string object = pointer->generateName(pointer->allocate());
         int storageSize = variable->getType()->getSize();
         currIrStatement->addInstruction(IR_DEC, object, to_string(storageSize), "");
         currIrStatement->addInstruction(IR_ADDRESS, variable->getName(), object, "");
@@ -288,10 +288,14 @@ void IRGenerator::visit(ReturnStatement *statementNode) {
 }
 
 void IRGenerator::visit(GetAttributeExp *expNode) {
+    expNode->object->accept(this);
     Struct *object = (Struct *) expNode->object->getType();
     int offset = object->getOffset(expNode->getAttrName());
-    const string &basePointer = expNode->object->getReferenceValue()->getName();
+    const string &basePointer = expNode->object->getSymbol();
     string tempName = tempVariable->generateName(tempVariable->allocate());
     currIrStatement->addInstruction(IR_ADD, tempName, basePointer, "#" + to_string(offset));
-    expNode->setSymbol("*" + tempName);
+    if (expNode->isArray() || expNode->getType()->getElementType()==STRUCT_TYPE) {
+        expNode->setSymbol(tempName);
+    } else
+        expNode->setSymbol("*" + tempName);
 }
