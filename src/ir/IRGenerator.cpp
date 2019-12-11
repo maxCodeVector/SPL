@@ -113,15 +113,12 @@ void IRGenerator::visit(Variable *variable) {
 //        expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
         tempVariable->releaseAll();
     }
-    if (variable->getType()->getElementType() == STRUCT_TYPE) {
+    if (variable->getType()->getElementType() == STRUCT_TYPE || variable->getType()->isArray()) {
         string object = pointer->generateName(tempVariable->allocate());
         int storageSize = variable->getType()->getSize();
         currIrStatement->addInstruction(IR_DEC, object, to_string(storageSize), "");
         currIrStatement->addInstruction(IR_ADDRESS, variable->getName(), object, "");
         return;
-    }
-    if (variable->getType()->isArray()) {
-
     }
 }
 
@@ -146,8 +143,14 @@ void IRGenerator::visit(BinaryExp *expNode) {
         return;
     }
     if (expNode->getOperatorType() == ARRAY_INDEX_OP) {
+        string offsetUnit = expNode->right->getSymbol();
+        string offsetName = tempVariable->generateName(tempVariable->allocate());
+        int unitSize = expNode->left->getType()->getElement()->getSize();
+        currIrStatement->addInstruction(IR_MUL, offsetName, offsetUnit, "#"+to_string(unitSize));
 
-
+        string tempName = tempVariable->generateName(tempVariable->allocate());
+        currIrStatement->addInstruction(IR_ADD, tempName, expNode->left->getSymbol(), offsetName);
+        expNode->setSymbol("*" + tempName);
     }
     if (expNode->getOperatorType() == OR_OP) {
 
