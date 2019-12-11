@@ -152,10 +152,11 @@ void IRGenerator::visit(BinaryExp *expNode) {
 
         string tempName = tempVariable->generateName(tempVariable->allocate());
         currIrStatement->addInstruction(IR_ADD, tempName, expNode->left->getSymbol(), offsetName);
-        if (!expNode->isArray()) {
-            expNode->setSymbol("*" + tempName);
-        } else
+        if (expNode->isArray() || expNode->getType()->getElementType()==STRUCT_TYPE) {
             expNode->setSymbol(tempName);
+        } else
+            expNode->setSymbol("*" + tempName);
+
     }
     if (expNode->getOperatorType() == OR_OP) {
 

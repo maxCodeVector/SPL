@@ -64,9 +64,22 @@ Exp::Exp(DataType dataType) {
 }
 
 VariableType *Exp::getType() {
-    if (type->getElementType() == REF_TYPE && referenceVar != nullptr)
-        return ((Variable *) referenceVar)->getType()->getActualType();
-    return type;
+    if (type->getElementType() == REF_TYPE && referenceVar != nullptr) {
+        VariableType *refType = ((Variable *) referenceVar)->getType()->getActualType();
+        int currDim = this->dimension;
+        if(currDim == 0)
+            return refType;
+        VariableType *inner_element = refType->getElement();
+        while (currDim > 0) {
+            if (inner_element == nullptr) {
+                return nullptr;
+            }
+            inner_element = inner_element->getElement();
+            currDim--;
+        }
+        return inner_element;
+    }
+    return type->getActualType();
 }
 
 Error *Exp::inferType(ToplevelScope *topLevel) {
@@ -333,7 +346,7 @@ bool checkEqualVariableType(VariableType *type1, VariableType *type2) {
     }
     if (type1->getElementType() == STRUCT_TYPE) {
         if (type1->getTypeName() != type1->getTypeName()
-            || !checkStructEquivalence((Struct *) type1, (Struct *) type2)) {
+            && !checkStructEquivalence((Struct *) type1, (Struct *) type2)) {
             return false;
         }
     }
