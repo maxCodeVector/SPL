@@ -43,15 +43,17 @@ string TempNameGenerator::generateName(int numId) {
 }
 
 void TempNameGenerator::releaseAll() {
-    for (int i = 0; i < curr_max_id_num; i++) {
-        allocated[i] = 0;
+    if(allocated) {
+        for (int i = 0; i < curr_max_id_num; i++) {
+            allocated[i] = 0;
+        }
     }
 }
 
 
 IRGenerator::IRGenerator() {
     this->label = new TempNameGenerator("label", -1);
-    this->tempVariable = new TempNameGenerator("t", 10);
+    this->tempVariable = new TempNameGenerator("t", -1);
     this->pointer = new TempNameGenerator("p", -1);
     arithmeticMap.insert(pair<Operator, IROperator>(ADD_OP, IR_ADD));
     arithmeticMap.insert(pair<Operator, IROperator>(SUB_OP, IR_SUB));
