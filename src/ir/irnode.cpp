@@ -13,6 +13,7 @@ void IR::write(ostream &os) {
     }
     for (IRInst *inst: instructions)
         os << inst << endl;
+    cerr << "inst number: " << instructions.size() << endl;
 }
 
 void IRStatement::addInstruction(IROperator irOperator, const string &target, const string &arg1, const string &arg2) {
@@ -53,61 +54,60 @@ IRInst::IRInst(IROperator irOperator, const string &target, const string &arg1, 
 
 IRInst::IRInst(IROperator irOperator, const string &target) {
     this->irOperator = irOperator;
-    this->target = target;
+    this->arg1 = target;
 }
 
 string IRInst::toString() {
-    if (this->irOperator == IR_FUNCTION)
-        return "FUNCTION " + target + " :";
-    if (this->irOperator == IR_ASSIGN)
-        return target + " := " + arg1;
-    if (this->irOperator == IR_RETURN)
-        return "RETURN " + target;
-
-    if (this->irOperator == IR_ADD)
-        return target + " := " + arg1 + " + " + arg2;
-    if (this->irOperator == IR_SUB)
-        return target + " := " + arg1 + " - " + arg2;
-    if (this->irOperator == IR_MUL)
-        return target + " := " + arg1 + " * " + arg2;
-    if (this->irOperator == IR_DIV)
-        return target + " := " + arg1 + " / " + arg2;
-
-    if (this->irOperator == IR_WRITE)
-        return "WRITE " + target;
-    if (this->irOperator == IR_READ)
-        return "READ " + target;
-
-    if (this->irOperator == IR_CALL)
-        return target + " := CALL " + arg1;
-    if (this->irOperator == IR_ARG)
-        return "ARG " + target;
-    if (this->irOperator == IR_PARAM)
-        return "PARAM " + target;
-
-    if (this->irOperator == IR_IF_EQ)
-        return "IF " + arg1 + " == " + arg2 + " GOTO " + target;
-    if (this->irOperator == IR_IF_NE)
-        return "IF " + arg1 + " != " + arg2 + " GOTO " + target;
-    if (this->irOperator == IR_IF_LT)
-        return "IF " + arg1 + " < " + arg2 + " GOTO " + target;
-    if (this->irOperator == IR_IF_LE)
-        return "IF " + arg1 + " <= " + arg2 + " GOTO " + target;
-    if (this->irOperator == IR_IF_GT)
-        return "IF " + arg1 + " > " + arg2 + " GOTO " + target;
-    if (this->irOperator == IR_IF_GE)
-        return "IF " + arg1 + " >= " + arg2 + " GOTO " + target;
-    if (this->irOperator == IR_GOTO)
-        return "GOTO " + target;
-    if (this->irOperator == IR_LABEL)
-        return "LABEL " + target + " :";
-
-    if (this->irOperator == IR_DEC)
-        return "DEC " + target + " " +arg1;
-    if (this->irOperator == IR_ADDRESS)
-        return target + " := &" +arg1;
-
-    target + arg1;
+    switch (irOperator) {
+        case IR_LABEL:
+            return "LABEL " + arg1 + " :";
+        case IR_FUNCTION:
+            return "FUNCTION " + arg1 + " :";
+        case IR_ASSIGN:
+            return target + " := " + arg1;
+        case IR_ADD:
+            return target + " := " + arg1 + " + " + arg2;
+        case IR_SUB:
+            return target + " := " + arg1 + " - " + arg2;
+        case IR_MUL:
+            return target + " := " + arg1 + " * " + arg2;
+        case IR_DIV:
+            return target + " := " + arg1 + " / " + arg2;
+        case IR_ADDRESS:
+            return target + " := &" + arg1;
+        case IR_ASSIGN_VALUE_IN_ADDRESS:
+            break;
+        case IR_COPY_VALUE_TO_ADDRESS:
+            break;
+        case IR_GOTO:
+            return "GOTO " + arg1;
+        case IR_IF_LT:
+            return "IF " + arg1 + " < " + arg2 + " GOTO " + target;
+        case IR_IF_LE:
+            return "IF " + arg1 + " <= " + arg2 + " GOTO " + target;
+        case IR_IF_GT:
+            return "IF " + arg1 + " > " + arg2 + " GOTO " + target;
+        case IR_IF_GE:
+            return "IF " + arg1 + " >= " + arg2 + " GOTO " + target;
+        case IR_IF_EQ:
+            return "IF " + arg1 + " == " + arg2 + " GOTO " + target;
+        case IR_IF_NE:
+            return "IF " + arg1 + " != " + arg2 + " GOTO " + target;
+        case IR_RETURN:
+            return "RETURN " + arg1;
+        case IR_DEC:
+            return "DEC " + target + " " + arg1;
+        case IR_PARAM:
+            return "PARAM " + arg1;
+        case IR_ARG:
+            return "ARG " + arg1;
+        case IR_CALL:
+            return target + " := CALL " + arg1;
+        case IR_READ:
+            return "READ " + arg1;
+        case IR_WRITE:
+            return "WRITE " + arg1;
+    }
     return "fuckyou";
 }
 

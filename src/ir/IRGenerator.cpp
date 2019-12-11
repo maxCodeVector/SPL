@@ -3,6 +3,7 @@
 //
 
 #include "IRGenerator.h"
+#include "optimizer.h"
 
 TempNameGenerator::TempNameGenerator(const string &prefix, int size) {
     this->prefix = prefix;
@@ -43,7 +44,7 @@ string TempNameGenerator::generateName(int numId) {
 }
 
 void TempNameGenerator::releaseAll() {
-    if(allocated) {
+    if (allocated) {
         for (int i = 0; i < curr_max_id_num; i++) {
             allocated[i] = 0;
         }
@@ -59,6 +60,13 @@ IRGenerator::IRGenerator() {
     arithmeticMap.insert(pair<Operator, IROperator>(SUB_OP, IR_SUB));
     arithmeticMap.insert(pair<Operator, IROperator>(MUL_OP, IR_MUL));
     arithmeticMap.insert(pair<Operator, IROperator>(DIV_OP, IR_DIV));
+
+    compareOppositeMap.insert(pair<Operator, IROperator>(LT_OP, IR_IF_GE));
+    compareOppositeMap.insert(pair<Operator, IROperator>(LE_OP, IR_IF_GT));
+    compareOppositeMap.insert(pair<Operator, IROperator>(GT_OP, IR_IF_LE));
+    compareOppositeMap.insert(pair<Operator, IROperator>(GE_OP, IR_IF_LT));
+    compareOppositeMap.insert(pair<Operator, IROperator>(NE_OP, IR_IF_EQ));
+    compareOppositeMap.insert(pair<Operator, IROperator>(EQ_OP, IR_IF_NE));
 }
 
 void IRGenerator::transformStmt(Statement *statement) {
@@ -84,7 +92,9 @@ IR *IRGenerator::generate(AST &ast) {
         }
     }
     for (Function *function:ast.getFunctions()) {
-        function->setIr(complileFunctionBody(function));
+        Optimizer irOptimizer;
+        IRStatement* insts = complileFunctionBody(function);
+        function->setIr(irOptimizer.optimize(insts));
     }
     if (this->errorHandler.errorOccured()) {
         return nullptr;
@@ -152,7 +162,7 @@ void IRGenerator::visit(BinaryExp *expNode) {
 
         string tempName = tempVariable->generateName(tempVariable->allocate());
         currIrStatement->addInstruction(IR_ADD, tempName, expNode->left->getSymbol(), offsetName);
-        if (expNode->isArray() || expNode->getType()->getElementType()==STRUCT_TYPE) {
+        if (expNode->isArray() || expNode->getType()->getElementType() == STRUCT_TYPE) {
             expNode->setSymbol(tempName);
         } else
             expNode->setSymbol("*" + tempName);
@@ -164,55 +174,17 @@ void IRGenerator::visit(BinaryExp *expNode) {
     if (expNode->getOperatorType() == AND_OP) {
 
     }
-    if (expNode->getOperatorType() == LT_OP) {
-        string gotolabel = label->generateName(label->allocate());
-        JumpEntry *jumpEntry = new JumpEntry;
-        this->jumpMap.insert(pair<string, JumpEntry *>(gotolabel, jumpEntry));
-        currIrStatement->addInstruction(IR_IF_GE,
-                                        gotolabel, expNode->left->getSymbol(), expNode->right->getSymbol());
-        labelStack.push_back(gotolabel);
-    }
-    if (expNode->getOperatorType() == GT_OP) {
-        string gotolabel = label->generateName(label->allocate());
-        JumpEntry *jumpEntry = new JumpEntry;
-        this->jumpMap.insert(pair<string, JumpEntry *>(gotolabel, jumpEntry));
-        currIrStatement->addInstruction(IR_IF_LE,
-                                        gotolabel, expNode->left->getSymbol(), expNode->right->getSymbol());
-        labelStack.push_back(gotolabel);
-    }
-    if (expNode->getOperatorType() == LE_OP) {
-        string gotolabel = label->generateName(label->allocate());
-        JumpEntry *jumpEntry = new JumpEntry;
-        this->jumpMap.insert(pair<string, JumpEntry *>(gotolabel, jumpEntry));
-        currIrStatement->addInstruction(IR_IF_GT,
-                                        gotolabel, expNode->left->getSymbol(), expNode->right->getSymbol());
-        labelStack.push_back(gotolabel);
-    }
-    if (expNode->getOperatorType() == GE_OP) {
-        string gotolabel = label->generateName(label->allocate());
-        JumpEntry *jumpEntry = new JumpEntry;
-        this->jumpMap.insert(pair<string, JumpEntry *>(gotolabel, jumpEntry));
-        currIrStatement->addInstruction(IR_IF_LT,
-                                        gotolabel, expNode->left->getSymbol(), expNode->right->getSymbol());
-        labelStack.push_back(gotolabel);
-    }
-    if (expNode->getOperatorType() == NE_OP) {
-        string gotolabel = label->generateName(label->allocate());
-        JumpEntry *jumpEntry = new JumpEntry;
-        this->jumpMap.insert(pair<string, JumpEntry *>(gotolabel, jumpEntry));
-        currIrStatement->addInstruction(IR_IF_EQ,
-                                        gotolabel, expNode->left->getSymbol(), expNode->right->getSymbol());
-        labelStack.push_back(gotolabel);
-    }
-    if (expNode->getOperatorType() == EQ_OP) {
-        string gotolabel = label->generateName(label->allocate());
-        JumpEntry *jumpEntry = new JumpEntry;
-        this->jumpMap.insert(pair<string, JumpEntry *>(gotolabel, jumpEntry));
-        currIrStatement->addInstruction(IR_IF_NE,
-                                        gotolabel, expNode->left->getSymbol(), expNode->right->getSymbol());
-        labelStack.push_back(gotolabel);
-    }
 
+    auto compareItem = compareOppositeMap.find(expNode->getOperatorType());
+    if (compareItem != compareOppositeMap.end()) {
+        string gotolabel = label->generateName(label->allocate());
+        auto *jumpEntry = new JumpEntry;
+        this->jumpMap.insert(pair<string, JumpEntry *>(gotolabel, jumpEntry));
+        currIrStatement->addInstruction(compareItem->second,
+                                        gotolabel, expNode->left->getSymbol(), expNode->right->getSymbol());
+        labelStack.push_back(gotolabel);
+        return;
+    }
 
 }
 
@@ -294,7 +266,7 @@ void IRGenerator::visit(GetAttributeExp *expNode) {
     const string &basePointer = expNode->object->getSymbol();
     string tempName = tempVariable->generateName(tempVariable->allocate());
     currIrStatement->addInstruction(IR_ADD, tempName, basePointer, "#" + to_string(offset));
-    if (expNode->isArray() || expNode->getType()->getElementType()==STRUCT_TYPE) {
+    if (expNode->isArray() || expNode->getType()->getElementType() == STRUCT_TYPE) {
         expNode->setSymbol(tempName);
     } else
         expNode->setSymbol("*" + tempName);

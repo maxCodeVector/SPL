@@ -31,6 +31,8 @@ public:
 
 class IRGenerator : public IRVisitor {
     list<string > labelStack;
+    list<string > breakStack;
+    list<string > continueStack;
     AST *currAst;
 
     TempNameGenerator *tempVariable;
@@ -39,7 +41,7 @@ class IRGenerator : public IRVisitor {
     IRStatement *currIrStatement;
     map<string, JumpEntry*> jumpMap;
     map<Operator, IROperator> arithmeticMap;
-
+    map<Operator, IROperator> compareOppositeMap;
     int exprNestLevel = 0;
 
     void transformStmt(Statement *statement);

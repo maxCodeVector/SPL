@@ -35,6 +35,7 @@ enum IROperator {
     IR_WRITE
 };
 
+
 class IRInst {
     IROperator irOperator;
     string target;
@@ -42,6 +43,8 @@ class IRInst {
     string arg2;
 
     string toString();
+    friend class Optimizer;
+
 
 public:
 
@@ -55,7 +58,9 @@ public:
 ostream &operator<<(ostream &os, IRInst *inst);
 
 class IR {
+protected:
     list<IR *> blocks;
+    list<IRInst *> instructions;
 public:
     void write(ostream &basicOstream);
 
@@ -63,11 +68,10 @@ public:
 
     virtual list<IRInst *> *getInstructions() { return nullptr; }
 
-
+    friend class Optimizer;
 };
 
 class IRExpr : public IR {
-    list<IRInst *> instructions;
 public:
     void addInstruction(IROperator irOperator, string &target);
 
@@ -80,7 +84,6 @@ public:
 
 
 class IRStatement : public IR {
-    list<IRInst *> instructions;
 public:
     void addInstruction(IROperator irOperator, const string &target);
 
