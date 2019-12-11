@@ -9,16 +9,21 @@
 
 class Optimizer {
 
-    map<string, int > referCount;
-    void optimizerConstant(list<IRInst*>& insts, list<IRInst*>::iterator& itor, int max_depth);
+    map<string, int> referCount;
+    map<string, string> localSymbleTable;
+
+    void optimizerConstant(list<IRInst *> &insts, list<IRInst *>::iterator &itor, int max_depth);
+
     bool mergeInst(list<IRInst *> &insts, list<IRInst *>::iterator &itor);
-    void addReferCount(list<IRInst *>::iterator& iterator);
-    void rmReferCount(list<IRInst *>::iterator& iterator);
+
+    void addReferCount(list<IRInst *>::iterator &iterator);
+
+    void rmReferCount(list<IRInst *>::iterator &iterator);
 
 public:
-    IR* optimize(IR* ir);
+    IR *optimize(IR *ir);
 
+    static bool cacExpression(IRInst *inst, int *value);
 };
-
 
 #endif //SPL_OPTIMIZER_H

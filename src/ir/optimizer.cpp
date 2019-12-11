@@ -31,7 +31,7 @@ bool Optimizer::mergeInst(list<IRInst *> &insts, list<IRInst *>::iterator &itor)
         IRInst *preInst = *pre;
         if (isSimilarAssignOp(preInst->irOperator) && preInst->target == curr->arg1) {
             auto item = this->referCount.find(curr->arg1);
-            if(item==referCount.end()||item->second<=0){
+            if (item == referCount.end() || item->second <= 0) {
                 preInst->target = curr->target;
                 return true;
             }
@@ -70,12 +70,19 @@ IR *Optimizer::optimize(IR *ir) {
 
 void Optimizer::optimizerConstant(list<IRInst *> &insts, list<IRInst *>::iterator &itor, int max_depth) {
     IRInst *inst = *itor;
-    if(!isSimilarAssignOp(inst->irOperator))
-        return;
-    if(inst->arg1==inst->arg2) {
-        inst->arg1 = "#0";
+    int value;
+    if(cacExpression(inst, &value)){
+        inst->arg1 = "#"+to_string(value);
         inst->irOperator = IR_ASSIGN;
-        return;
+    }
+}
+
+bool Optimizer::cacExpression(IRInst *inst, int* value){
+    if (!isSimilarAssignOp(inst->irOperator))
+        return false;
+    if (inst->irOperator == IR_SUB && inst->arg1 == inst->arg2) {
+        *value = 0;
+        return true;
     }
     int number1, number2;
     if (isNumber(inst->arg1, &number1) && isNumber(inst->arg2, &number2)) {
@@ -96,42 +103,42 @@ void Optimizer::optimizerConstant(list<IRInst *> &insts, list<IRInst *>::iterato
             default:
                 res = 0;
         }
-        inst->irOperator = IR_ASSIGN;
-        inst->arg1 = "#" + to_string(res);
+        *value = res;
+        return true;
     }
-
+    return false;
 }
 
-void Optimizer::addReferCount(list<IRInst *>::iterator& iterator) {
+void Optimizer::addReferCount(list<IRInst *>::iterator &iterator) {
     auto inst = *iterator;
-    if(!inst->arg1.empty()){
+    if (!inst->arg1.empty()) {
         auto item = this->referCount.find(inst->arg1);
-        if(item==referCount.end()){
-            referCount.insert(pair<string,int >(inst->arg1, 1));
+        if (item == referCount.end()) {
+            referCount.insert(pair<string, int>(inst->arg1, 1));
         } else
-            (item->second) ++;
+            (item->second)++;
     }
-    if(!inst->arg2.empty()){
+    if (!inst->arg2.empty()) {
         auto item = this->referCount.find(inst->arg2);
-        if(item==referCount.end()){
-            referCount.insert(pair<string,int >(inst->arg2, 1));
+        if (item == referCount.end()) {
+            referCount.insert(pair<string, int>(inst->arg2, 1));
         } else
-            (item->second) ++;
+            (item->second)++;
     }
 }
 
 void Optimizer::rmReferCount(list<IRInst *>::iterator &iterator) {
     auto inst = *iterator;
-    if(!inst->arg1.empty()){
+    if (!inst->arg1.empty()) {
         auto item = this->referCount.find(inst->arg1);
-        if(item!=referCount.end()){
-            (item->second) --;
+        if (item != referCount.end()) {
+            (item->second)--;
         }
     }
-    if(!inst->arg2.empty()){
+    if (!inst->arg2.empty()) {
         auto item = this->referCount.find(inst->arg2);
-        if(item!=referCount.end()){
-            (item->second) --;
+        if (item != referCount.end()) {
+            (item->second)--;
         }
     }
 }

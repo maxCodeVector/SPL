@@ -93,7 +93,7 @@ IR *IRGenerator::generate(AST &ast) {
     }
     for (Function *function:ast.getFunctions()) {
         Optimizer irOptimizer;
-        IRStatement* insts = complileFunctionBody(function);
+        IRStatement *insts = complileFunctionBody(function);
         function->setIr(irOptimizer.optimize(insts));
     }
     if (this->errorHandler.errorOccured()) {
@@ -149,9 +149,15 @@ void IRGenerator::visit(BinaryExp *expNode) {
     }
     auto item = arithmeticMap.find(expNode->getOperatorType());
     if (item != arithmeticMap.end()) {
-        expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
-        currIrStatement->addInstruction(item->second,
-                                        expNode->getSymbol(), expNode->left->getSymbol(), expNode->right->getSymbol());
+        auto inst = IRInst(item->second, "tt", expNode->left->getSymbol(), expNode->right->getSymbol());
+        int value;
+        if (Optimizer::cacExpression(&inst, &value)) {
+            expNode->setSymbol("#" + to_string(value));
+        } else {
+            expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
+            currIrStatement->addInstruction(item->second, expNode->getSymbol(),
+                                            expNode->left->getSymbol(), expNode->right->getSymbol());
+        }
         return;
     }
     if (expNode->getOperatorType() == ARRAY_INDEX_OP) {
