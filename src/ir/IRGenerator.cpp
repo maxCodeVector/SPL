@@ -146,11 +146,14 @@ void IRGenerator::visit(BinaryExp *expNode) {
         string offsetUnit = expNode->right->getSymbol();
         string offsetName = tempVariable->generateName(tempVariable->allocate());
         int unitSize = expNode->left->getType()->getElement()->getSize();
-        currIrStatement->addInstruction(IR_MUL, offsetName, offsetUnit, "#"+to_string(unitSize));
+        currIrStatement->addInstruction(IR_MUL, offsetName, offsetUnit, "#" + to_string(unitSize));
 
         string tempName = tempVariable->generateName(tempVariable->allocate());
         currIrStatement->addInstruction(IR_ADD, tempName, expNode->left->getSymbol(), offsetName);
-        expNode->setSymbol("*" + tempName);
+        if (!expNode->isArray()) {
+            expNode->setSymbol("*" + tempName);
+        } else
+            expNode->setSymbol(tempName);
     }
     if (expNode->getOperatorType() == OR_OP) {
 
