@@ -502,3 +502,11 @@ Error *GetAttributeExp::checkReference(Scope *scope) {
     return this->object->checkReference(scope);
 }
 
+void GetAttributeExp::accept(IRVisitor *visitor) {
+    visitor->visit(this);
+}
+
+const string &GetAttributeExp::getAttrName() const {
+    return attrName;
+}
+

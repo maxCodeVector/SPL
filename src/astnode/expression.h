@@ -138,6 +138,9 @@ public:
 class GetAttributeExp : public Exp {
     string attrName;
 public:
+    const string &getAttrName() const;
+
+public:
     Exp *object;
 
     GetAttributeExp(AttrNode *operated, string &attributeName);
@@ -151,6 +154,8 @@ public:
     void acceptDereferenceCheck(DereferenceChecker *checker) override;
 
     Error *inferType(ToplevelScope *toplevelScope) override;
+
+    void accept(IRVisitor *visitor) override;
 
 };
 

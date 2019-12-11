@@ -134,13 +134,22 @@ Function::~Function() {
     free_all(parameters);
 }
 
-Function* getBuildFunction(const char* id, VariableType* returnType){
-    Function* function = new Function;
+Function *getBuildFunction(const char *id, VariableType *returnType) {
+    Function *function = new Function;
     function->id = id;
     function->returnType = returnType;
     function->flag = BUILD_NODE;
     function->setLocation(-1, 0);
     return function;
+}
+
+int VariableType::getSize() {
+    if (elementType == INT_TYPE)
+        return 4;
+    else if (elementType == ARRAY_TYPE) {
+        return this->element->getSize() * this->elementNum;
+    }
+    return 8;
 }
 
 
@@ -182,6 +191,28 @@ Variable *Struct::getMember(string &name) {
     if (itor == memberMap.end())
         return nullptr;
     return itor->second;
+}
+
+int Struct::getOffset(const string &attrName) {
+    int offset = 0;
+    for (Variable *member: this->members) {
+        if(member->getName()==attrName){
+            return offset;
+        }
+        offset += member->getType()->getSize();
+    }
+    return 0;
+}
+
+int Struct::getSize() {
+    if (storageSize == -1) {
+        int storage = 0;
+        for (Variable *member: this->members) {
+            storage += member->getType()->getSize();
+        }
+        storageSize = storage;
+    }
+    return this->storageSize;
 }
 
 

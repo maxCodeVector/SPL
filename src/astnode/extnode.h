@@ -70,6 +70,10 @@ public:
 
 class VariableType : public BaseNode {
     string baseTypeName = "baseType";
+public:
+    virtual int getSize();
+
+private:
     VariableType *element;
     enum DataType elementType;// primitive or temp_array_size, struct
     // if elementType is primitive elementType, then element is NULL
@@ -131,9 +135,12 @@ class Struct : public VariableType {
     VariableType *actualType; // used for if elementType is not complete
     list<Variable *> members;
     map<string, Variable *> memberMap;
+    int storageSize=-1;
 
 public:
     explicit Struct(AttrNode *name);
+
+    int getSize() override;
 
     Struct(AttrNode *name, AttrNode *defList);
 
@@ -175,6 +182,8 @@ public:
 
     Error *checkDuplicatedNameMember();
 
+    int getOffset(const string &attrName);
+
 
 };
 
@@ -207,6 +216,7 @@ private:
     list<int> temp_array_size;
     string id;
     Exp *value;
+
 public:
     Variable(const char *id, DataType type);
 

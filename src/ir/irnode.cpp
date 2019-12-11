@@ -102,6 +102,10 @@ string IRInst::toString() {
     if (this->irOperator == IR_LABEL)
         return "LABEL " + target + " :";
 
+    if (this->irOperator == IR_DEC)
+        return "DEC " + target + " " +arg1;
+    if (this->irOperator == IR_ADDRESS)
+        return target + " := &" +arg1;
 
     target + arg1;
     return "fuckyou";

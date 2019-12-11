@@ -64,4 +64,4 @@ wc:
 clean:
 	@rm -rf bin/
 	@-cd src/parse && rm -f lex.yy.* syntax.tab* *.so syntax.output *.o
-	@-rm $(TEST_DIR)/*.res
+	@-rm $(TEST_DIR)/*.res  $(TEST_DIR)/*.ir

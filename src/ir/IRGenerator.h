@@ -35,9 +35,10 @@ class IRGenerator : public IRVisitor {
 
     TempNameGenerator *tempVariable;
     TempNameGenerator *label;
+    TempNameGenerator *pointer;
     IRStatement *currIrStatement;
     map<string, JumpEntry*> jumpMap;
-    map<Operator, IROperator> operatorMap;
+    map<Operator, IROperator> arithmeticMap;
 
     int exprNestLevel = 0;
 
@@ -61,6 +62,8 @@ public:
     void visit(UnaryExp *expNode) override;
 
     void visit(InvokeExp *expNode) override;
+
+    void visit(GetAttributeExp *expNode) override;
 
     void visit(Variable *variable) override;
 

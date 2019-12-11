@@ -52,10 +52,11 @@ void TempNameGenerator::releaseAll() {
 IRGenerator::IRGenerator() {
     this->label = new TempNameGenerator("label", -1);
     this->tempVariable = new TempNameGenerator("t", 10);
-    operatorMap.insert(pair<Operator, IROperator>(ADD_OP, IR_ADD));
-    operatorMap.insert(pair<Operator, IROperator>(SUB_OP, IR_SUB));
-    operatorMap.insert(pair<Operator, IROperator>(MUL_OP, IR_MUL));
-    operatorMap.insert(pair<Operator, IROperator>(DIV_OP, IR_DIV));
+    this->pointer = new TempNameGenerator("p", -1);
+    arithmeticMap.insert(pair<Operator, IROperator>(ADD_OP, IR_ADD));
+    arithmeticMap.insert(pair<Operator, IROperator>(SUB_OP, IR_SUB));
+    arithmeticMap.insert(pair<Operator, IROperator>(MUL_OP, IR_MUL));
+    arithmeticMap.insert(pair<Operator, IROperator>(DIV_OP, IR_DIV));
 }
 
 void IRGenerator::transformStmt(Statement *statement) {
@@ -104,6 +105,26 @@ IRStatement *IRGenerator::complileFunctionBody(Function *f) {
     return currIrStatement;
 }
 
+void IRGenerator::visit(Variable *variable) {
+    if (variable->hasInitializer()) {
+        Exp *value = variable->getInitializer();
+        value->accept(this);
+        currIrStatement->addInstruction(IR_ASSIGN, variable->getName(), value->getSymbol(), "");
+//        expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
+        tempVariable->releaseAll();
+    }
+    if (variable->getType()->getElementType() == STRUCT_TYPE) {
+        string object = pointer->generateName(tempVariable->allocate());
+        int storageSize = variable->getType()->getSize();
+        currIrStatement->addInstruction(IR_DEC, object, to_string(storageSize), "");
+        currIrStatement->addInstruction(IR_ADDRESS, variable->getName(), object, "");
+        return;
+    }
+    if (variable->getType()->isArray()) {
+
+    }
+}
+
 void IRGenerator::checkJumpLinks(map<string, JumpEntry *> &maps) {
 
 }
@@ -117,11 +138,16 @@ void IRGenerator::visit(BinaryExp *expNode) {
         tempVariable->releaseAll();
         return;
     }
-    auto item = operatorMap.find(expNode->getOperatorType());
-    if (item != operatorMap.end()) {
+    auto item = arithmeticMap.find(expNode->getOperatorType());
+    if (item != arithmeticMap.end()) {
         expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
         currIrStatement->addInstruction(item->second,
                                         expNode->getSymbol(), expNode->left->getSymbol(), expNode->right->getSymbol());
+        return;
+    }
+    if (expNode->getOperatorType() == ARRAY_INDEX_OP) {
+
+
     }
     if (expNode->getOperatorType() == OR_OP) {
 
@@ -191,17 +217,6 @@ void IRGenerator::visit(UnaryExp *expNode) {
     }
 }
 
-
-void IRGenerator::visit(Variable *variable) {
-    if (variable->hasInitializer()) {
-        Exp *value = variable->getInitializer();
-        value->accept(this);
-        currIrStatement->addInstruction(IR_ASSIGN, variable->getName(), value->getSymbol(), "");
-//        expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
-        tempVariable->releaseAll();
-    }
-}
-
 void IRGenerator::visit(InvokeExp *expNode) {
     for (Exp *exp: expNode->args->getArguments()) {
         exp->accept(this);
@@ -261,4 +276,13 @@ void IRGenerator::visit(WhileStatement *statementNode) {
 void IRGenerator::visit(ReturnStatement *statementNode) {
     currIrStatement->addInstruction(IR_RETURN, statementNode->getExpression()->getSymbol());
     tempVariable->releaseAll();
+}
+
+void IRGenerator::visit(GetAttributeExp *expNode) {
+    Struct *object = (Struct *) expNode->object->getType();
+    int offset = object->getOffset(expNode->getAttrName());
+    const string &basePointer = expNode->object->getReferenceValue()->getName();
+    string tempName = tempVariable->generateName(tempVariable->allocate());
+    currIrStatement->addInstruction(IR_ADD, tempName, basePointer, "#" + to_string(offset));
+    expNode->setSymbol("*" + tempName);
 }
