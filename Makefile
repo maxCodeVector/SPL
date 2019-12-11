@@ -52,6 +52,31 @@ test: bin/splc
 		echo ; \
 	)
 
+check:
+	cd $(TEST_DIR)/diffc && gcc testb1.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc testb2.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc testb3.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc testb4.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc testb5.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc testr1.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc testr2.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc testr3.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc testr4.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc testr5.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc testr6.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc testr7.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc testr8.c && ./a.out < input.txt
+	-cd $(TEST_DIR)/diffc && gcc testr9.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc testr10.c && ./a.out < input.txt
+	rm $(TEST_DIR)/diffc/a.out
+
+
+run:
+	@$(foreach var, $(TEST_SOURCE),\
+		irsim $(patsubst %.spl,%.ir,$(var)) -i 5,15,16,19,3,7; \
+	)
+
+
 
 wc:
 	find . -name "*.cpp" |xargs cat|wc -l
