@@ -45,6 +45,9 @@ public:
     }
     bool isDefinedLocally(string& name);
     void defineVariable(Variable &var);
+    map<string, Variable*>& getVariables(){
+        return variables;
+    }
     Entity* get(string& name);
 
 

@@ -4,8 +4,6 @@
 
 #include "optimizer.h"
 
-void optimize(IR *ir);
-
 bool isNumber(const string &arg, int *value) {
     if (arg.empty())
         return false;
@@ -14,6 +12,12 @@ bool isNumber(const string &arg, int *value) {
         return true;
     }
     return false;
+}
+
+bool isVar(const string &arg, char flag) {
+    if (arg.empty())
+        return false;
+    return arg[0] == flag;
 }
 
 bool isSimilarAssignOp(IROperator irOperator) {
@@ -30,8 +34,7 @@ bool Optimizer::mergeInst(list<IRInst *> &insts, list<IRInst *>::iterator &itor)
     if (curr->irOperator == IR_ASSIGN) {
         IRInst *preInst = *pre;
         if (isSimilarAssignOp(preInst->irOperator) && preInst->target == curr->arg1) {
-            auto item = this->referCount.find(curr->arg1);
-            if (item == referCount.end() || item->second <= 0) {
+            if (isVar(preInst->target, 't')) {
                 preInst->target = curr->target;
                 return true;
             }
@@ -45,39 +48,106 @@ IR *Optimizer::optimize(IR *ir) {
 //    return ir;
     if (!ir)
         return ir;
+//    optimizerConstant(ir->instructions, 2);
+
     auto iterator = ir->instructions.begin();
     while (iterator != ir->instructions.end()) {
-        addReferCount(iterator);
-        iterator++;
-    }
-
-    iterator = ir->instructions.begin();
-    while (iterator != ir->instructions.end()) {
-        optimizerConstant(ir->instructions, iterator, 1);
-        iterator++;
-    }
-
-    iterator = ir->instructions.begin();
-    while (iterator != ir->instructions.end()) {
-        rmReferCount(iterator);
         if (mergeInst(ir->instructions, iterator)) {
+            auto inst = *iterator;
             iterator = ir->instructions.erase(iterator);
+            delete (inst);
         } else
             iterator++;
     }
     return ir;
 }
 
-void Optimizer::optimizerConstant(list<IRInst *> &insts, list<IRInst *>::iterator &itor, int max_depth) {
-    IRInst *inst = *itor;
-    int value;
-    if(cacExpression(inst, &value)){
-        inst->arg1 = "#"+to_string(value);
-        inst->irOperator = IR_ASSIGN;
+void putSymbol(map<string, int> &symbol, string &key) {
+    auto item = symbol.find(key);
+    if (item != symbol.end()) {
+        item->second++;
+    } else
+        symbol.insert(pair<string, int>(key, 1));
+}
+
+void Optimizer::optimizerConstant(list<IRInst *> &insts, int max_depth = 3) {
+    auto iterator = insts.begin();
+    while (iterator != insts.end()) {
+        list<IRInst *> localInsts;
+        auto curr = iterator;
+        for (int i = 0; i < max_depth; i++) {
+            localInsts.push_back(*curr);
+            if (curr == insts.begin()) {
+                break;
+            }
+            curr--;
+        }
+        map<string, int> leftSymbol;
+        map<string, int> rightSymbol;
+        for (IRInst *inst:localInsts) {
+            int terminal_flag = 0;
+            switch (inst->irOperator) {
+                case IR_ASSIGN: {
+                    putSymbol(leftSymbol, inst->target);
+                    putSymbol(rightSymbol, inst->arg1);
+                }
+                    break;
+                case IR_ADD: {
+                    putSymbol(leftSymbol, inst->target);
+                    putSymbol(rightSymbol, inst->arg1);
+                    putSymbol(rightSymbol, inst->arg2);
+                }
+                    break;
+                case IR_SUB: {
+                    putSymbol(leftSymbol, inst->target);
+                    putSymbol(rightSymbol, inst->arg1);
+                    putSymbol(leftSymbol, inst->arg2);
+                }
+                    break;
+                default:
+                    terminal_flag = 1;
+            }
+            if (terminal_flag)
+                break;
+        }
+        auto item = leftSymbol.begin();
+        while (item != leftSymbol.end()) {
+            auto rightItem = rightSymbol.find(item->first);
+            if (rightItem != rightSymbol.end()) {
+                rightItem->second--;
+                if (rightItem->second == 0) {
+                    rightSymbol.erase(item->first);
+                }
+                item->second--;
+            }
+            if (item->second == 0) {
+                item = leftSymbol.erase(item);
+            } else {
+                item++;
+            }
+        }
+        // means it has chance to merge
+        if (leftSymbol.size() == 1 && leftSymbol.begin()->second == 1) {
+            IRInst* currInst = *iterator;
+            switch (rightSymbol.size()) {
+                case 1:
+                    currInst->arg1 = rightSymbol.begin()->first;
+                    currInst->irOperator = IR_ASSIGN;
+                    iterator--;
+                    iterator = insts.erase(iterator);
+                    iterator++;
+                    continue;
+                case 2:
+                default:
+                    break;
+            }
+
+        }
+        iterator++;
     }
 }
 
-bool Optimizer::cacExpression(IRInst *inst, int* value){
+bool Optimizer::cacExpression(IRInst *inst, int *value) {
     if (!isSimilarAssignOp(inst->irOperator))
         return false;
     if (inst->irOperator == IR_SUB && inst->arg1 == inst->arg2) {

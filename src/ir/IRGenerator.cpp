@@ -43,11 +43,13 @@ string TempNameGenerator::generateName(int numId) {
     return prefix + to_string(numId);
 }
 
-void TempNameGenerator::releaseAll() {
+void TempNameGenerator::releaseAll(bool strong= false) {
     if (allocated) {
         for (int i = 0; i < curr_max_id_num; i++) {
             allocated[i] = 0;
         }
+    } else if(strong){
+        this->curr_max_id_num = 0;
     }
 }
 
@@ -56,6 +58,7 @@ IRGenerator::IRGenerator() {
     this->label = new TempNameGenerator("label", -1);
     this->tempVariable = new TempNameGenerator("t", -1);
     this->pointer = new TempNameGenerator("p", -1);
+    this->varVariable = new TempNameGenerator("v", -1);
     arithmeticMap.insert(pair<Operator, IROperator>(ADD_OP, IR_ADD));
     arithmeticMap.insert(pair<Operator, IROperator>(SUB_OP, IR_SUB));
     arithmeticMap.insert(pair<Operator, IROperator>(MUL_OP, IR_MUL));
@@ -92,6 +95,7 @@ IR *IRGenerator::generate(AST &ast) {
         }
     }
     for (Function *function:ast.getFunctions()) {
+        initCurrScopeSymbol ((LocalScope*)function->getScope());
         Optimizer irOptimizer;
         IRStatement *insts = complileFunctionBody(function);
         function->setIr(irOptimizer.optimize(insts));
@@ -109,7 +113,7 @@ IRStatement *IRGenerator::complileFunctionBody(Function *f) {
     this->currIrStatement = new IRStatement;
     currIrStatement->addInstruction(IROperator::IR_FUNCTION, f->getName());
     for (Variable *para: f->getParameters()) {
-        currIrStatement->addInstruction(IR_PARAM, para->getName());
+        currIrStatement->addInstruction(IR_PARAM, getAddress(para->getName()));
     }
     this->jumpMap.clear();
     transformStmt(f->getBody());
@@ -121,7 +125,7 @@ void IRGenerator::visit(Variable *variable) {
     if (variable->hasInitializer()) {
         Exp *value = variable->getInitializer();
         value->accept(this);
-        currIrStatement->addInstruction(IR_ASSIGN, variable->getName(), value->getSymbol(), "");
+        currIrStatement->addInstruction(IR_ASSIGN, getAddress(variable->getName()), value->getSymbol(), "");
 //        expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
         tempVariable->releaseAll();
     }
@@ -129,7 +133,7 @@ void IRGenerator::visit(Variable *variable) {
         string object = pointer->generateName(pointer->allocate());
         int storageSize = variable->getType()->getSize();
         currIrStatement->addInstruction(IR_DEC, object, to_string(storageSize), "");
-        currIrStatement->addInstruction(IR_ADDRESS, variable->getName(), object, "");
+        currIrStatement->addInstruction(IR_ADDRESS,getAddress(variable->getName()), object, "");
         return;
     }
 }
@@ -276,4 +280,21 @@ void IRGenerator::visit(GetAttributeExp *expNode) {
         expNode->setSymbol(tempName);
     } else
         expNode->setSymbol("*" + tempName);
+}
+
+string IRGenerator::getAddress(string &id) {
+    auto item = this->symbolAddrTable.find(id);
+    if(item!=symbolAddrTable.end()){
+        return item->second;
+    }
+    return id;
+}
+
+void IRGenerator::initCurrScopeSymbol(LocalScope *localScope) {
+    symbolAddrTable.clear();
+//    varVariable->releaseAll(true);
+    for(auto item: localScope->getVariables()){
+        string newVarName = varVariable->generateName(varVariable->allocate());
+        symbolAddrTable.insert(pair<string, string>(item.first, newVarName));
+    }
 }

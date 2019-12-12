@@ -12,7 +12,7 @@ class Optimizer {
     map<string, int> referCount;
     map<string, string> localSymbleTable;
 
-    void optimizerConstant(list<IRInst *> &insts, list<IRInst *>::iterator &itor, int max_depth);
+    void optimizerConstant(list<IRInst *> &insts, int max_depth);
 
     bool mergeInst(list<IRInst *> &insts, list<IRInst *>::iterator &itor);
 

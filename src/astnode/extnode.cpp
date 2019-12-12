@@ -134,6 +134,15 @@ Function::~Function() {
     free_all(parameters);
 }
 
+void Function::setScope(Scope *scope) {
+    this->localScope = (LocalScope*)scope;
+}
+
+Scope *Function::getScope() {
+    return this->localScope;
+}
+
+
 Function *getBuildFunction(const char *id, VariableType *returnType) {
     Function *function = new Function;
     function->id = id;
@@ -196,7 +205,7 @@ Variable *Struct::getMember(string &name) {
 int Struct::getOffset(const string &attrName) {
     int offset = 0;
     for (Variable *member: this->members) {
-        if(member->getName()==attrName){
+        if (member->getName() == attrName) {
             return offset;
         }
         offset += member->getType()->getSize();

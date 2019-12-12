@@ -20,7 +20,7 @@ public:
 
     void release(int numberId);
 
-    void releaseAll();
+    void releaseAll(bool);
 
     ~TempNameGenerator();
 
@@ -30,16 +30,18 @@ public:
 
 
 class IRGenerator : public IRVisitor {
-    list<string > labelStack;
-    list<string > breakStack;
-    list<string > continueStack;
+    list<string> labelStack;
+    list<string> breakStack;
+    list<string> continueStack;
     AST *currAst;
 
+    map<string, string> symbolAddrTable;
+    TempNameGenerator *varVariable;
     TempNameGenerator *tempVariable;
     TempNameGenerator *label;
     TempNameGenerator *pointer;
     IRStatement *currIrStatement;
-    map<string, JumpEntry*> jumpMap;
+    map<string, JumpEntry *> jumpMap;
     map<Operator, IROperator> arithmeticMap;
     map<Operator, IROperator> compareOppositeMap;
     int exprNestLevel = 0;
@@ -50,14 +52,18 @@ class IRGenerator : public IRVisitor {
 
     bool isStatement();
 
-    void checkJumpLinks(map<string, JumpEntry*> &maps);
+    void checkJumpLinks(map<string, JumpEntry *> &maps);
 
     IRStatement *complileFunctionBody(Function *f);
+
+    void initCurrScopeSymbol(LocalScope* localScope);
 
 public:
     IRGenerator();
 
     IR *generate(AST &ast);
+
+    string getAddress(string &id) override;
 
     void visit(BinaryExp *expNode) override;
 

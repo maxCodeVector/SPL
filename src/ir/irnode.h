@@ -99,6 +99,10 @@ class IRVisitor {
 public:
     ErrorHandler errorHandler;
 
+    virtual string getAddress(string& id){
+        return id;
+    }
+
     virtual void visit(BinaryExp *expNode) = 0;
 
     virtual void visit(UnaryExp *expNode) = 0;

@@ -32,8 +32,8 @@ public:
     list<VariableType*>& getDeclaredTypes(){
         return declaredTypes;
     }
-    ToplevelScope* getScope(){
-        return toplevelScope;
+    Scope* getScope(){
+        return (Scope*)toplevelScope;
     }
 
     void setScope(Scope* scope_) override;

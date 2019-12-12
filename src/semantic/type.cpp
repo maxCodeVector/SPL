@@ -84,7 +84,7 @@ TypeChecker::TypeChecker(ErrorHandler &errorHandle, TypeTable *type_table) : Vis
 }
 
 void TypeChecker::resolve(AST &ast) {
-    toplevelScope = ast.getScope();
+    toplevelScope = (ToplevelScope*)ast.getScope();
     for (Function *function: ast.getFunctions()) {
         if (function->flag != BUILD_NODE)
             checkFunction(function);

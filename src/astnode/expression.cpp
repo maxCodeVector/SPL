@@ -96,7 +96,7 @@ void Exp::accept(IRVisitor *visitor) {
     if (this->type->getElementType() == INT_TYPE) {
         setSymbol("#" + value);
     } else
-        setSymbol(value);
+        setSymbol(visitor->getAddress(value));
 }
 
 Operator Exp::getOperatorType() const {

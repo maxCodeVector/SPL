@@ -17,6 +17,8 @@ public:
 
     virtual void setScope(Scope *scope) {};
 
+    virtual Scope *getScope() { return nullptr; };
+
     Location *getLocation() {
         if (loc == nullptr) {
             exit(ErrorCode::NULL_LOCATION);
@@ -135,7 +137,7 @@ class Struct : public VariableType {
     VariableType *actualType; // used for if elementType is not complete
     list<Variable *> members;
     map<string, Variable *> memberMap;
-    int storageSize=-1;
+    int storageSize = -1;
 
 public:
     explicit Struct(AttrNode *name);
@@ -281,12 +283,15 @@ class AST;
 
 class IRStatement;
 
+class LocalScope;
+
 class Function : public Entity {
 private:
     VariableType *returnType;
     string id;
     list<Variable *> parameters;
     Body *functionBody;
+    LocalScope *localScope;
 
     void parseParameters(AttrNode *paraList);
 
@@ -303,6 +308,9 @@ public:
 
     ~Function();
 
+    void setScope(Scope *scope) override;
+
+    Scope *getScope() override;
 
     list<Variable *> &getParameters();
 
