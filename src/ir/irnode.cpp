@@ -16,12 +16,17 @@ void IR::write(ostream &os) {
     cerr << "inst number: " << instructions.size() << endl;
 }
 
-void IRStatement::addInstruction(IROperator irOperator, const string &target, const string &arg1, const string &arg2) {
-    this->instructions.push_back(new IRInst(irOperator, target, arg1, arg2));
+IRInst *
+IRStatement::addInstruction(IROperator irOperator, const string &target, const string &arg1, const string &arg2) {
+    IRInst *inst = new IRInst(irOperator, target, arg1, arg2);
+    this->instructions.push_back(inst);
+    return inst;
 }
 
-void IRStatement::addInstruction(IROperator irOperator, const string &target) {
-    this->instructions.push_back(new IRInst(irOperator, target));
+IRInst *IRStatement::addInstruction(IROperator irOperator, const string &target) {
+    IRInst *inst = new IRInst(irOperator, target);
+    this->instructions.push_back(inst);
+    return inst;
 }
 
 list<IRInst *> *IRStatement::getInstructions() {
@@ -121,4 +126,16 @@ ostream &operator<<(ostream &os, IRInst &inst) {
 
 ostream &operator<<(ostream &os, IRInst *inst) {
     return operator<<(os, *inst);
+}
+
+JumpEntry::JumpEntry(string &labelName) {
+    this->labelName = labelName;
+}
+
+void JumpEntry::addInst(IRInst *inst) {
+    this->jumpInst.push_back(inst);
+}
+
+const list<IRInst *> &JumpEntry::getJumpInst() const {
+    return jumpInst;
 }

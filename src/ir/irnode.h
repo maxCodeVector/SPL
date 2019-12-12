@@ -43,7 +43,9 @@ class IRInst {
     string arg2;
 
     string toString();
+
     friend class Optimizer;
+
     friend class IRGenerator;
 
 
@@ -86,11 +88,11 @@ public:
 
 class IRStatement : public IR {
 public:
-    void addInstruction(IROperator irOperator, const string &target);
+    IRInst *addInstruction(IROperator irOperator, const string &target);
 
-    void addInstruction(IRInst* inst);
+    void addInstruction(IRInst *inst);
 
-    void addInstruction(IROperator irOperator, const string &target, const string &arg1, const string &arg2);
+    IRInst *addInstruction(IROperator irOperator, const string &target, const string &arg1, const string &arg2);
 
     list<IRInst *> *getInstructions() override;
 
@@ -102,7 +104,7 @@ class IRVisitor {
 public:
     ErrorHandler errorHandler;
 
-    virtual string getAddress(string& id){
+    virtual string getAddress(string &id) {
         return id;
     }
 
@@ -125,7 +127,14 @@ public:
 };
 
 class JumpEntry {
+    string labelName;
+    list<IRInst *> jumpInst;
+public:
+    const list<IRInst*> & getJumpInst() const;
+public:
+    explicit JumpEntry(string &labelName);
 
+    void addInst(IRInst *inst);
 };
 
 

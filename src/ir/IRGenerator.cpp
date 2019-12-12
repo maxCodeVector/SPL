@@ -101,6 +101,7 @@ IR *IRGenerator::generate(AST &ast) {
         function->setIr(irOptimizer.optimize(insts));
     }
     if (this->errorHandler.errorOccured()) {
+        errorHandler.showError(cerr);
         return nullptr;
     }
     return ast.getIR();
@@ -117,7 +118,7 @@ IRStatement *IRGenerator::complileFunctionBody(Function *f) {
     }
     this->jumpMap.clear();
     transformStmt(f->getBody());
-    checkJumpLinks(jumpMap);
+    checkJumpLinks(currIrStatement);
     return currIrStatement;
 }
 
@@ -138,10 +139,6 @@ void IRGenerator::visit(Variable *variable) {
     }
 }
 
-void IRGenerator::checkJumpLinks(map<string, JumpEntry *> &maps) {
-
-}
-
 void IRGenerator::visit(BinaryExp *expNode) {
     expNode->left->accept(this);
     expNode->right->accept(this);
@@ -157,7 +154,7 @@ void IRGenerator::visit(BinaryExp *expNode) {
         int flag;
         // flag be -1 means only optimized half (one argument), not calculate the real value
         if (Optimizer::cacExpression(inst, &flag)) {
-            switch (flag){
+            switch (flag) {
                 case 1:
                     expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
                     inst->target = expNode->getSymbol();
@@ -165,10 +162,10 @@ void IRGenerator::visit(BinaryExp *expNode) {
                     break;
                 case 2:
                     expNode->setSymbol(inst->arg1);
-                    delete(inst);
+                    delete (inst);
                     break;
                 case -1:
-                    this->errorHandler.recordError(expNode->getLocation(),ErrorType::OTHER_ERROR, "divide by 0");
+                    this->errorHandler.recordError(expNode->getLocation(), ErrorType::OTHER_ERROR, "divide by 0");
                     expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
                     inst->target = expNode->getSymbol();
                     currIrStatement->addInstruction(inst);
@@ -192,7 +189,7 @@ void IRGenerator::visit(BinaryExp *expNode) {
         int flag;
         // flag be -1 means only optimized half (one argument), not calculate the real value
         if (Optimizer::cacExpression(inst, &flag)) {
-            switch (flag){
+            switch (flag) {
                 case 1:
                     offsetName = tempVariable->generateName(tempVariable->allocate());
                     expNode->setSymbol(offsetName);
@@ -201,7 +198,7 @@ void IRGenerator::visit(BinaryExp *expNode) {
                     break;
                 case 2:
                     offsetName = inst->arg1;
-                    delete(inst);
+                    delete (inst);
                     break;
                 default:
                     break;
@@ -232,10 +229,10 @@ void IRGenerator::visit(BinaryExp *expNode) {
     auto compareItem = compareOppositeMap.find(expNode->getOperatorType());
     if (compareItem != compareOppositeMap.end()) {
         string gotolabel = label->generateName(label->allocate());
-        auto *jumpEntry = new JumpEntry;
-        this->jumpMap.insert(pair<string, JumpEntry *>(gotolabel, jumpEntry));
-        currIrStatement->addInstruction(compareItem->second,
-                                        gotolabel, expNode->left->getSymbol(), expNode->right->getSymbol());
+        IRInst *jumpInst = currIrStatement->addInstruction(compareItem->second,
+                                                           gotolabel, expNode->left->getSymbol(),
+                                                           expNode->right->getSymbol());
+        addInstToJumpEntry(gotolabel, jumpInst);
         labelStack.push_back(gotolabel);
         return;
     }
@@ -287,7 +284,9 @@ void IRGenerator::visit(IfStatement *statementNode) {
     statementNode->ifBody->accept(this);
     if (statementNode->elseBody) {
         string outLabel = label->generateName(label->allocate());
-        currIrStatement->addInstruction(IR_GOTO, outLabel);
+        IRInst *jumpInst = currIrStatement->addInstruction(IR_GOTO, outLabel);
+        addInstToJumpEntry(outLabel, jumpInst);
+
         currIrStatement->addInstruction(IR_LABEL, gotoLabel);
         statementNode->elseBody->accept(this);
         currIrStatement->addInstruction(IR_LABEL, outLabel);
@@ -301,7 +300,8 @@ void IRGenerator::visit(WhileStatement *statementNode) {
     currIrStatement->addInstruction(IR_LABEL, startLabel);
     statementNode->getExpression()->accept(this);
     statementNode->loop->accept(this);
-    currIrStatement->addInstruction(IR_GOTO, startLabel);
+    IRInst *jumpInst = currIrStatement->addInstruction(IR_GOTO, startLabel);
+    addInstToJumpEntry(startLabel, jumpInst);
 
     string gotoLabel = labelStack.back();
     labelStack.pop_back();
@@ -340,5 +340,41 @@ void IRGenerator::initCurrScopeSymbol(LocalScope *localScope) {
     for (auto item: localScope->getVariables()) {
         string newVarName = varVariable->generateName(varVariable->allocate());
         symbolAddrTable.insert(pair<string, string>(item.first, newVarName));
+    }
+}
+
+void IRGenerator::checkJumpLinks(IR *ir) {
+    list<IRInst *> &list_ir_inst = *ir->getInstructions();
+    auto curr = list_ir_inst.begin();
+    auto preInst = *curr;
+    curr++;
+    while (curr != list_ir_inst.end()) {
+        IRInst *currInst = *curr;
+        if (currInst->irOperator == IR_LABEL && preInst->irOperator == IR_LABEL) {
+            printf("fuck\n");
+            JumpEntry *entry = this->jumpMap.find(currInst->arg1)->second;
+            for (IRInst *inst:entry->getJumpInst()) {
+                if (inst->irOperator == IR_GOTO) {
+                    inst->arg1 = preInst->arg1;
+                } else
+                    inst->target = preInst->arg1;
+            }
+            curr = list_ir_inst.erase(curr);
+            continue;
+        }
+        preInst = currInst;
+        curr++;
+    }
+}
+
+void IRGenerator::addInstToJumpEntry(string &labelName, IRInst *inst) {
+    auto item = this->jumpMap.find(labelName);
+    if (item != jumpMap.end()) {
+        JumpEntry *entry = item->second;
+        entry->addInst(inst);
+    } else {
+        auto *jumpEntry = new JumpEntry(labelName);
+        jumpEntry->addInst(inst);
+        jumpMap.insert(pair<string, JumpEntry *>(labelName, jumpEntry));
     }
 }
