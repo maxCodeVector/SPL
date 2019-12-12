@@ -44,6 +44,7 @@ class IRInst {
 
     string toString();
     friend class Optimizer;
+    friend class IRGenerator;
 
 
 public:
@@ -86,6 +87,8 @@ public:
 class IRStatement : public IR {
 public:
     void addInstruction(IROperator irOperator, const string &target);
+
+    void addInstruction(IRInst* inst);
 
     void addInstruction(IROperator irOperator, const string &target, const string &arg1, const string &arg2);
 

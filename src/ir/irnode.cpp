@@ -28,6 +28,10 @@ list<IRInst *> *IRStatement::getInstructions() {
     return &this->instructions;
 }
 
+void IRStatement::addInstruction(IRInst *inst) {
+    this->instructions.push_back(inst);
+}
+
 void IRExpr::addInstruction(IROperator irOperator, string &target, string &arg1, string &arg2) {
     this->instructions.push_back(new IRInst(irOperator, target, arg1, arg2));
 }

@@ -25,21 +25,45 @@ bool isSimilarAssignOp(IROperator irOperator) {
            || irOperator == IR_MUL || irOperator == IR_DIV;
 }
 
-bool Optimizer::mergeInst(list<IRInst *> &insts, list<IRInst *>::iterator &itor) {
-    if (itor == insts.begin())
-        return false;
-    auto pre = itor;
-    pre--;
-    IRInst *curr = *itor;
-    if (curr->irOperator == IR_ASSIGN) {
+bool Optimizer::mergeInst(list<IRInst *> &insts) {
+    auto itor = insts.begin();
+    while (itor != insts.end()) {
+        if (itor == insts.begin()) {
+            itor++;
+            continue;
+        }
+        auto pre = itor;
+        pre--;
         IRInst *preInst = *pre;
-        if (isSimilarAssignOp(preInst->irOperator) && preInst->target == curr->arg1) {
+        IRInst *curr = *itor;
+        if (curr->irOperator == IR_ASSIGN) {
+            if (isSimilarAssignOp(preInst->irOperator) && preInst->target == curr->arg1) {
+                if (isVar(preInst->target, 't')) {
+                    preInst->target = curr->target;
+                    itor = insts.erase(itor);
+                    delete (curr);
+                }
+            }
+        } else if (preInst->irOperator == IR_ASSIGN) {
             if (isVar(preInst->target, 't')) {
-                preInst->target = curr->target;
-                return true;
+                int replace_flag = 0;
+                if (curr->arg1 == preInst->target) {
+                    curr->arg1 = preInst->arg1;
+                    replace_flag = 1;
+                }
+                if (curr->arg2 == preInst->target) {
+                    curr->arg2 = preInst->arg1;
+                    replace_flag = 1;
+                }
+                if (replace_flag) {
+                    itor = insts.erase(pre);
+                    delete (preInst);
+                }
             }
         }
+        itor++;
     }
+
     return false;
 }
 
@@ -48,17 +72,8 @@ IR *Optimizer::optimize(IR *ir) {
 //    return ir;
     if (!ir)
         return ir;
-//    optimizerConstant(ir->instructions, 2);
-
-    auto iterator = ir->instructions.begin();
-    while (iterator != ir->instructions.end()) {
-        if (mergeInst(ir->instructions, iterator)) {
-            auto inst = *iterator;
-            iterator = ir->instructions.erase(iterator);
-            delete (inst);
-        } else
-            iterator++;
-    }
+    optimizerConstant(ir->instructions, 2);
+    mergeInst(ir->instructions);
     return ir;
 }
 
@@ -76,12 +91,23 @@ void Optimizer::optimizerConstant(list<IRInst *> &insts, int max_depth = 3) {
         list<IRInst *> localInsts;
         auto curr = iterator;
         for (int i = 0; i < max_depth; i++) {
-            localInsts.push_back(*curr);
+            IRInst *currInst = *curr;
+            if (currInst->irOperator != IR_ASSIGN &&
+                currInst->irOperator != IR_ADD &&
+                currInst->irOperator != IR_SUB) {
+                break;
+            }
+            localInsts.push_back(currInst);
             if (curr == insts.begin()) {
                 break;
             }
             curr--;
         }
+        if (localInsts.size() != max_depth) {
+            iterator++;
+            continue;
+        }
+
         map<string, int> leftSymbol;
         map<string, int> rightSymbol;
         for (IRInst *inst:localInsts) {
@@ -110,8 +136,13 @@ void Optimizer::optimizerConstant(list<IRInst *> &insts, int max_depth = 3) {
             if (terminal_flag)
                 break;
         }
+        IRInst *currInst = *iterator;
         auto item = leftSymbol.begin();
         while (item != leftSymbol.end()) {
+            if (item->first == currInst->target) {
+                item++;
+                continue;
+            }
             auto rightItem = rightSymbol.find(item->first);
             if (rightItem != rightSymbol.end()) {
                 rightItem->second--;
@@ -127,35 +158,77 @@ void Optimizer::optimizerConstant(list<IRInst *> &insts, int max_depth = 3) {
             }
         }
         // means it has chance to merge
-        if (leftSymbol.size() == 1 && leftSymbol.begin()->second == 1) {
-            IRInst* currInst = *iterator;
-            switch (rightSymbol.size()) {
-                case 1:
-                    currInst->arg1 = rightSymbol.begin()->first;
-                    currInst->irOperator = IR_ASSIGN;
-                    iterator--;
-                    iterator = insts.erase(iterator);
-                    iterator++;
-                    continue;
-                case 2:
-                default:
-                    break;
+        list<string> posSymbol;
+        list<string> negSymbol;
+        int constant1 = 0;
+        for (auto &left:leftSymbol) {
+            if (left.first != currInst->target) {
+                int value;
+                if (isNumber(left.first, &value)) {
+                    constant1 += value * left.second;
+                } else {
+                    for (int i = 0; i < left.second; i++) {
+                        negSymbol.push_back(left.first);
+                    }
+                }
             }
+        }
+        if (constant1 != 0) {
+            negSymbol.push_back("#"+to_string(constant1));
+        }
 
+        int constant2 = 0;
+        for (auto &right:rightSymbol) {
+            int value;
+            if (isNumber(right.first, &value)) {
+                constant2 += value * right.second;
+            } else
+                for (int i = 0; i < right.second; i++) {
+                posSymbol.push_back(right.first);
+            }
+        }
+        if (constant2 != 0) {
+            posSymbol.push_back("#"+to_string(constant2));
+        }
+
+        if (posSymbol.size() == 1 && negSymbol.empty()) {
+            curr = iterator;
+            curr--;
+            IRInst *preInst = *curr;
+            if (isVar(preInst->target, 't')) {
+                currInst->arg1 = posSymbol.front();
+                currInst->irOperator = IR_ASSIGN;
+                iterator = insts.erase(curr);
+                delete (preInst);
+            }
         }
         iterator++;
     }
 }
 
-bool Optimizer::cacExpression(IRInst *inst, int *value) {
-    if (!isSimilarAssignOp(inst->irOperator))
-        return false;
-    if (inst->irOperator == IR_SUB && inst->arg1 == inst->arg2) {
-        *value = 0;
-        return true;
+IRInst *Optimizer::cacExpression(IRInst *inst, int *flag) {
+    if (!isSimilarAssignOp(inst->irOperator)) {
+        *flag = 0;
+        return nullptr;
+    }
+    if (inst->arg1 == inst->arg2) {
+        if (inst->irOperator == IR_SUB) {
+            *flag = 2;
+            inst->arg1 = "#0";
+            inst->irOperator = IR_ASSIGN;
+            return inst;
+        }
+        if (inst->irOperator == IR_DIV) {
+            *flag = 2;
+            inst->arg1 = "#1";
+            inst->irOperator = IR_ASSIGN;
+            return inst;
+        }
     }
     int number1, number2;
-    if (isNumber(inst->arg1, &number1) && isNumber(inst->arg2, &number2)) {
+    bool isNum1 = isNumber(inst->arg1, &number1);
+    bool isNum2 = isNumber(inst->arg2, &number2);
+    if (isNum1 && isNum2) {
         int res;
         switch (inst->irOperator) {
             case IR_ADD:
@@ -173,10 +246,86 @@ bool Optimizer::cacExpression(IRInst *inst, int *value) {
             default:
                 res = 0;
         }
-        *value = res;
-        return true;
+        *flag = 2;
+        inst->arg1 = "#" + to_string(res);
+        inst->irOperator = IR_ASSIGN;
+        return inst;
+    } else if (isNum1) {
+        switch (inst->irOperator) {
+            case IR_ADD:
+            case IR_SUB:
+                if (number1 == 0) {
+                    *flag = 1;
+                    inst->arg1 = inst->arg2;
+                    inst->irOperator = IR_ASSIGN;
+                    return inst;
+                }
+                break;
+            case IR_MUL:
+                if (number1 == 0) {
+                    *flag = 2;
+                    inst->arg1 = "#0";
+                    inst->irOperator = IR_ASSIGN;
+                    return inst;
+                }
+                if (number1 == 1) {
+                    *flag = 1;
+                    inst->arg1 = inst->arg2;
+                    inst->irOperator = IR_ASSIGN;
+                    return inst;
+                }
+                break;
+            case IR_DIV:
+                if (number1 == 0) {
+                    *flag = 2;
+                    inst->arg1 = "#0";
+                    inst->irOperator = IR_ASSIGN;
+                    return inst;
+                }
+                break;
+            default:
+                break;
+        }
+    } else if (isNum2) {
+        switch (inst->irOperator) {
+            case IR_ADD:
+            case IR_SUB:
+                if (number2 == 0) {
+                    *flag = 1;
+                    inst->irOperator = IR_ASSIGN;
+                    return inst;
+                }
+                break;
+            case IR_MUL:
+                if (number2 == 0) {
+                    *flag = 2;
+                    inst->arg1 = "#0";
+                    inst->irOperator = IR_ASSIGN;
+                    return inst;
+                }
+                if (number2 == 1) {
+                    *flag = 1;
+                    inst->irOperator = IR_ASSIGN;
+                    return inst;
+                }
+                break;
+            case IR_DIV:
+                if (number2 == 1) {
+                    *flag = 1;
+                    inst->irOperator = IR_ASSIGN;
+                    return inst;
+                }
+                if (number2 == 0) {
+                    *flag = -1;
+                    return inst;
+                }
+                break;
+            default:
+                break;
+        }
     }
-    return false;
+    *flag = 0;
+    return nullptr;
 }
 
 void Optimizer::addReferCount(list<IRInst *>::iterator &iterator) {

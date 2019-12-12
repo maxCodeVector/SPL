@@ -43,12 +43,12 @@ string TempNameGenerator::generateName(int numId) {
     return prefix + to_string(numId);
 }
 
-void TempNameGenerator::releaseAll(bool strong= false) {
+void TempNameGenerator::releaseAll(bool strong = false) {
     if (allocated) {
         for (int i = 0; i < curr_max_id_num; i++) {
             allocated[i] = 0;
         }
-    } else if(strong){
+    } else if (strong) {
         this->curr_max_id_num = 0;
     }
 }
@@ -95,7 +95,7 @@ IR *IRGenerator::generate(AST &ast) {
         }
     }
     for (Function *function:ast.getFunctions()) {
-        initCurrScopeSymbol ((LocalScope*)function->getScope());
+        initCurrScopeSymbol((LocalScope *) function->getScope());
         Optimizer irOptimizer;
         IRStatement *insts = complileFunctionBody(function);
         function->setIr(irOptimizer.optimize(insts));
@@ -133,7 +133,7 @@ void IRGenerator::visit(Variable *variable) {
         string object = pointer->generateName(pointer->allocate());
         int storageSize = variable->getType()->getSize();
         currIrStatement->addInstruction(IR_DEC, object, to_string(storageSize), "");
-        currIrStatement->addInstruction(IR_ADDRESS,getAddress(variable->getName()), object, "");
+        currIrStatement->addInstruction(IR_ADDRESS, getAddress(variable->getName()), object, "");
         return;
     }
 }
@@ -153,24 +153,68 @@ void IRGenerator::visit(BinaryExp *expNode) {
     }
     auto item = arithmeticMap.find(expNode->getOperatorType());
     if (item != arithmeticMap.end()) {
-        auto inst = IRInst(item->second, "tt", expNode->left->getSymbol(), expNode->right->getSymbol());
-        int value;
-        if (Optimizer::cacExpression(&inst, &value)) {
-            expNode->setSymbol("#" + to_string(value));
+        auto inst = new IRInst(item->second, "tt", expNode->left->getSymbol(), expNode->right->getSymbol());
+        int flag;
+        // flag be -1 means only optimized half (one argument), not calculate the real value
+        if (Optimizer::cacExpression(inst, &flag)) {
+            switch (flag){
+                case 1:
+                    expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
+                    inst->target = expNode->getSymbol();
+                    currIrStatement->addInstruction(inst);
+                    break;
+                case 2:
+                    expNode->setSymbol(inst->arg1);
+                    delete(inst);
+                    break;
+                case -1:
+                    this->errorHandler.recordError(expNode->getLocation(),ErrorType::OTHER_ERROR, "divide by 0");
+                    expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
+                    inst->target = expNode->getSymbol();
+                    currIrStatement->addInstruction(inst);
+                default:
+                    break;
+            }
         } else {
             expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
-            currIrStatement->addInstruction(item->second, expNode->getSymbol(),
-                                            expNode->left->getSymbol(), expNode->right->getSymbol());
+            inst->target = expNode->getSymbol();
+            currIrStatement->addInstruction(inst);
         }
         return;
     }
     if (expNode->getOperatorType() == ARRAY_INDEX_OP) {
         string offsetUnit = expNode->right->getSymbol();
-        string offsetName = tempVariable->generateName(tempVariable->allocate());
+        string offsetName;
         int unitSize = expNode->left->getType()->getElement()->getSize();
-        currIrStatement->addInstruction(IR_MUL, offsetName, offsetUnit, "#" + to_string(unitSize));
+
+        auto inst = new IRInst(IR_MUL, "tt", offsetUnit, "#" + to_string(unitSize));
+
+        int flag;
+        // flag be -1 means only optimized half (one argument), not calculate the real value
+        if (Optimizer::cacExpression(inst, &flag)) {
+            switch (flag){
+                case 1:
+                    offsetName = tempVariable->generateName(tempVariable->allocate());
+                    expNode->setSymbol(offsetName);
+                    inst->target = offsetName;
+                    currIrStatement->addInstruction(inst);
+                    break;
+                case 2:
+                    offsetName = inst->arg1;
+                    delete(inst);
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            offsetName = tempVariable->generateName(tempVariable->allocate());
+            expNode->setSymbol(offsetName);
+            inst->target = offsetName;
+            currIrStatement->addInstruction(inst);
+        }
 
         string tempName = tempVariable->generateName(tempVariable->allocate());
+        // this instruction can not be optimized, because base addr(left.getSymbol()) is unknown in compile time
         currIrStatement->addInstruction(IR_ADD, tempName, expNode->left->getSymbol(), offsetName);
         if (expNode->isArray() || expNode->getType()->getElementType() == STRUCT_TYPE) {
             expNode->setSymbol(tempName);
@@ -284,7 +328,7 @@ void IRGenerator::visit(GetAttributeExp *expNode) {
 
 string IRGenerator::getAddress(string &id) {
     auto item = this->symbolAddrTable.find(id);
-    if(item!=symbolAddrTable.end()){
+    if (item != symbolAddrTable.end()) {
         return item->second;
     }
     return id;
@@ -293,7 +337,7 @@ string IRGenerator::getAddress(string &id) {
 void IRGenerator::initCurrScopeSymbol(LocalScope *localScope) {
     symbolAddrTable.clear();
 //    varVariable->releaseAll(true);
-    for(auto item: localScope->getVariables()){
+    for (auto item: localScope->getVariables()) {
         string newVarName = varVariable->generateName(varVariable->allocate());
         symbolAddrTable.insert(pair<string, string>(item.first, newVarName));
     }

@@ -14,7 +14,7 @@ class Optimizer {
 
     void optimizerConstant(list<IRInst *> &insts, int max_depth);
 
-    bool mergeInst(list<IRInst *> &insts, list<IRInst *>::iterator &itor);
+    bool mergeInst(list<IRInst *> &insts);
 
     void addReferCount(list<IRInst *>::iterator &iterator);
 
@@ -23,7 +23,14 @@ class Optimizer {
 public:
     IR *optimize(IR *ir);
 
-    static bool cacExpression(IRInst *inst, int *value);
+    /**
+     *
+     * @param inst
+     * @param flag 1 means optimized half, 2 means optimized to number,
+     *             0 not optimized, -1 will be runtime error (divide by 0)
+     * @return
+     */
+    static IRInst *cacExpression(IRInst *inst, int *flag);
 };
 
 #endif //SPL_OPTIMIZER_H

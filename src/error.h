@@ -15,7 +15,7 @@ public:
         return !errorList.empty();
     }
 
-    void recordError(Location* loc, ErrorType  type, string& message){
+    void recordError(Location* loc, ErrorType  type, const string& message){
         Error* error = new Error{loc, type, message};
         errorList.push_back(error);
     }
