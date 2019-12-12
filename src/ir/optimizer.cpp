@@ -174,7 +174,7 @@ void Optimizer::optimizerConstant(list<IRInst *> &insts, int max_depth = 3) {
             }
         }
         if (constant1 != 0) {
-            negSymbol.push_back("#"+to_string(constant1));
+            negSymbol.push_back("#" + to_string(constant1));
         }
 
         int constant2 = 0;
@@ -184,20 +184,40 @@ void Optimizer::optimizerConstant(list<IRInst *> &insts, int max_depth = 3) {
                 constant2 += value * right.second;
             } else
                 for (int i = 0; i < right.second; i++) {
-                posSymbol.push_back(right.first);
-            }
+                    posSymbol.push_back(right.first);
+                }
         }
         if (constant2 != 0) {
-            posSymbol.push_back("#"+to_string(constant2));
+            posSymbol.push_back("#" + to_string(constant2));
         }
 
-        if (posSymbol.size() == 1 && negSymbol.empty()) {
+        int posSymbolNum = posSymbol.size();
+        int negSymbolNum = negSymbol.size();
+        if (posSymbolNum + negSymbolNum <= 2) {
             curr = iterator;
             curr--;
             IRInst *preInst = *curr;
             if (isVar(preInst->target, 't')) {
-                currInst->arg1 = posSymbol.front();
-                currInst->irOperator = IR_ASSIGN;
+                if (posSymbolNum == 2) {
+                    currInst->arg1 = posSymbol.front();
+                    currInst->arg2 = posSymbol.back();
+                    currInst->irOperator = IR_ADD;
+                } else if (posSymbolNum == 1 && negSymbolNum == 0) {
+                    currInst->arg1 = posSymbol.front();
+                    currInst->irOperator = IR_ASSIGN;
+                } else if (posSymbolNum == 1 && negSymbolNum == 1) {
+                    currInst->arg1 = posSymbol.front();
+                    currInst->arg2 = negSymbol.front();
+                    currInst->irOperator = IR_SUB;
+                } else if (negSymbolNum == 0) {
+                    exit(-3);
+                } else if (negSymbolNum == 1) {
+                    exit(-3);
+                } else if (negSymbolNum == 2) {
+                    exit(-3);
+                }
+                int flag;
+                cacExpression(currInst, &flag);
                 iterator = insts.erase(curr);
                 delete (preInst);
             }
