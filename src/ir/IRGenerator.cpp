@@ -143,14 +143,43 @@ void IRGenerator::visit(BinaryExp *expNode) {
     expNode->left->accept(this);
     expNode->right->accept(this);
     if (expNode->getOperatorType() == ASSIGN_OP) {
-        currIrStatement->addInstruction(IR_ASSIGN, expNode->left->getSymbol(), expNode->right->getSymbol(), "");
+        // what about both of them are pointer
+        if (expNode->left->isPointer() && expNode->right->isPointer()) {
+            string tempValue = tempVariable->generateName(tempVariable->allocate());
+            currIrStatement->addInstruction(IR_GET_VALUE_IN_ADDRESS, tempValue,
+                                            expNode->right->getSymbol(), "");
+            currIrStatement->addInstruction(IR_COPY_VALUE_TO_ADDRESS, expNode->left->getSymbol(),
+                                            tempValue, "");
+        } else if (expNode->left->isPointer()) {
+            currIrStatement->addInstruction(IR_COPY_VALUE_TO_ADDRESS, expNode->left->getSymbol(),
+                                            expNode->right->getSymbol(), "");
+        } else if (expNode->right->isPointer()) {
+            currIrStatement->addInstruction(IR_GET_VALUE_IN_ADDRESS, expNode->left->getSymbol(),
+                                            expNode->right->getSymbol(), "");
+        } else {
+            currIrStatement->addInstruction(IR_ASSIGN, expNode->left->getSymbol(), expNode->right->getSymbol(), "");
 //        expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
+        }
         tempVariable->releaseAll();
         return;
     }
     auto item = arithmeticMap.find(expNode->getOperatorType());
     if (item != arithmeticMap.end()) {
-        auto inst = new IRInst(item->second, "tt", expNode->left->getSymbol(), expNode->right->getSymbol());
+        string leftSymbol, rightSymbol;
+        if (expNode->left->isPointer()) {
+            leftSymbol = tempVariable->generateName(tempVariable->allocate());
+            currIrStatement->addInstruction(IR_GET_VALUE_IN_ADDRESS, leftSymbol, expNode->left->getSymbol(), "");
+        } else {
+            leftSymbol = expNode->left->getSymbol();
+        }
+        if (expNode->right->isPointer()) {
+            rightSymbol = tempVariable->generateName(tempVariable->allocate());
+            currIrStatement->addInstruction(IR_GET_VALUE_IN_ADDRESS, rightSymbol, expNode->right->getSymbol(), "");
+        } else {
+            rightSymbol = expNode->right->getSymbol();
+        }
+
+        auto inst = new IRInst(item->second, "tt", leftSymbol, rightSymbol);
         int flag;
         // flag be -1 means only optimized half (one argument), not calculate the real value
         if (Optimizer::cacExpression(inst, &flag)) {
@@ -212,11 +241,19 @@ void IRGenerator::visit(BinaryExp *expNode) {
 
         string tempName = tempVariable->generateName(tempVariable->allocate());
         // this instruction can not be optimized, because base addr(left.getSymbol()) is unknown in compile time
-        currIrStatement->addInstruction(IR_ADD, tempName, expNode->left->getSymbol(), offsetName);
+        int offset;
+        if (isNumber(offsetName, &offset) && offset == 0) {
+            currIrStatement->addInstruction(IR_ASSIGN, tempName, expNode->left->getSymbol(), "");
+        } else {
+            currIrStatement->addInstruction(IR_ADD, tempName, expNode->left->getSymbol(), offsetName);
+        }
         if (expNode->isArray() || expNode->getType()->getElementType() == STRUCT_TYPE) {
             expNode->setSymbol(tempName);
-        } else
-            expNode->setSymbol("*" + tempName);
+        } else {
+            expNode->setPointer();
+//            currIrStatement->addInstruction(IR_GET_VALUE_IN_ADDRESS, valueName, tempName, "");
+            expNode->setSymbol(tempName);
+        }
 
     }
     if (expNode->getOperatorType() == OR_OP) {
@@ -261,7 +298,15 @@ void IRGenerator::visit(InvokeExp *expNode) {
             currIrStatement->addInstruction(IR_READ, tempName);
             expNode->setSymbol(tempName);
         } else if (function->getName() == "write") {
-            currIrStatement->addInstruction(IR_WRITE, expNode->args->getArguments().front()->getSymbol());
+            Exp *arg1 = expNode->args->getArguments().front();
+            string targetSymbol;
+            if (arg1->isPointer()) {
+                targetSymbol = tempVariable->generateName(tempVariable->allocate());
+                currIrStatement->addInstruction(IR_GET_VALUE_IN_ADDRESS, targetSymbol, arg1->getSymbol(), "");
+            } else {
+                targetSymbol = arg1->getSymbol();
+            }
+            currIrStatement->addInstruction(IR_WRITE, targetSymbol);
         }
     } else {
         list<Exp *> &args = expNode->args->getArguments();

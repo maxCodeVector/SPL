@@ -84,10 +84,10 @@ string IRInst::toString() {
             return target + " := " + arg1 + " / " + arg2;
         case IR_ADDRESS:
             return target + " := &" + arg1;
-        case IR_ASSIGN_VALUE_IN_ADDRESS:
-            break;
+        case IR_GET_VALUE_IN_ADDRESS:
+            return target + " := *" + arg1;
         case IR_COPY_VALUE_TO_ADDRESS:
-            break;
+            return "*" + target + " := " + arg1;
         case IR_GOTO:
             return "GOTO " + arg1;
         case IR_IF_LT:

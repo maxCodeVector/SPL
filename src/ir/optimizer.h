@@ -7,6 +7,8 @@
 
 #include "irnode.h"
 
+bool isNumber(const string &arg, int *value);
+
 class Optimizer {
 
     map<string, int> referCount;

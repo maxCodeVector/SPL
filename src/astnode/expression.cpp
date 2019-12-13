@@ -111,6 +111,14 @@ void Exp::setSymbol(const string &symbol) {
     Exp::symbol = symbol;
 }
 
+bool Exp::isPointer() const {
+    return pointer;
+}
+
+void Exp::setPointer() {
+    pointer = true;
+}
+
 
 BinaryExp::BinaryExp(AttrNode *le, AttrNode *rig, Operator operatorType) : Exp(DataType::INFER_TYPE) {
     this->left = (Exp *) le->baseNode;

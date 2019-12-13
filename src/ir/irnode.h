@@ -17,7 +17,7 @@ enum IROperator {
     IR_MUL,
     IR_DIV,
     IR_ADDRESS,
-    IR_ASSIGN_VALUE_IN_ADDRESS,
+    IR_GET_VALUE_IN_ADDRESS,
     IR_COPY_VALUE_TO_ADDRESS,
     IR_GOTO,
     IR_IF_LT,

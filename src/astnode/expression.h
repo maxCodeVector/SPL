@@ -20,7 +20,13 @@ class Exp : public BaseNode {
 
 protected:
     string symbol;
+    bool pointer;
 public:
+
+    bool isPointer() const;
+
+    void setPointer();
+
     const string &getSymbol() const;
 
     void setSymbol(const string &symbol);
