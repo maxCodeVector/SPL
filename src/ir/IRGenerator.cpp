@@ -93,7 +93,9 @@ IR *IRGenerator::generate(AST &ast) {
         Optimizer irOptimizer;
         IRStatement *insts = complileFunctionBody(function);
         if (insts) {
-            cerr << "before optimized, inst number:" << insts->getInstructions()->size() << endl;
+            cerr << "before optimized function: " << function->getName() << ", inst number:"
+                 << insts->getInstructions()->size()
+                 << endl;
             checkJumpLinks(insts);
             function->setIr(irOptimizer.optimize(insts));
             cerr << "after optimized, inst number:" << insts->getInstructions()->size() << endl;

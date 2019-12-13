@@ -25,6 +25,15 @@ bool isSimilarAssignOp(IROperator irOperator) {
            || irOperator == IR_MUL || irOperator == IR_DIV;
 }
 
+IR *Optimizer::optimize(IR *ir) {
+//    return ir;
+    if (!ir)
+        return ir;
+    optimizerConstant(ir->instructions, 2);
+    mergeInst(ir->instructions);
+    return ir;
+}
+
 bool Optimizer::mergeInst(list<IRInst *> &insts) {
     auto itor = insts.begin();
     while (itor != insts.end()) {
@@ -36,15 +45,13 @@ bool Optimizer::mergeInst(list<IRInst *> &insts) {
         pre--;
         IRInst *preInst = *pre;
         IRInst *curr = *itor;
-//        if (curr->irOperator == IR_GET_VALUE_IN_ADDRESS || curr->irOperator == IR_COPY_VALUE_TO_ADDRESS) {
-//            if(isVar(preInst->target, 't') && preInst->irOperator==IR_ASSIGN){
-//                curr->arg1 = preInst->arg1;
-//                itor = insts.erase(pre);
-//                delete (preInst);
-//            }
-//        } else
-            if (curr->irOperator == IR_ASSIGN) {
-            if (isSimilarAssignOp(preInst->irOperator) && preInst->target == curr->arg1) {
+        if (curr->irOperator == IR_ASSIGN) {
+            // case need to delete current instruction
+            if (preInst->target == curr->arg1 && (isSimilarAssignOp(preInst->irOperator)
+                                                  || preInst->irOperator == IR_GET_VALUE_IN_ADDRESS
+                                                  || preInst->irOperator == IR_CALL
+                                                  || preInst->irOperator == IR_READ)
+                    ) {
                 if (isVar(preInst->target, 't')) {
                     preInst->target = curr->target;
                     itor = insts.erase(itor);
@@ -52,6 +59,7 @@ bool Optimizer::mergeInst(list<IRInst *> &insts) {
                 }
             }
         } else if (preInst->irOperator == IR_ASSIGN) {
+            // case need to delete pre instruction
             if (isVar(preInst->target, 't')) {
                 int replace_flag = 0;
                 if (curr->arg1 == preInst->target) {
@@ -60,6 +68,10 @@ bool Optimizer::mergeInst(list<IRInst *> &insts) {
                 }
                 if (curr->arg2 == preInst->target) {
                     curr->arg2 = preInst->arg1;
+                    replace_flag = 1;
+                }
+                if (curr->target == preInst->target) {
+                    curr->target = preInst->arg1;
                     replace_flag = 1;
                 }
                 if (replace_flag) {
@@ -72,16 +84,6 @@ bool Optimizer::mergeInst(list<IRInst *> &insts) {
     }
 
     return false;
-}
-
-
-IR *Optimizer::optimize(IR *ir) {
-//    return ir;
-    if (!ir)
-        return ir;
-    optimizerConstant(ir->instructions, 2);
-    mergeInst(ir->instructions);
-    return ir;
 }
 
 void putSymbol(map<string, int> &symbol, string &key) {
