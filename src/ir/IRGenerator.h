@@ -45,7 +45,10 @@ class IRGenerator : public IRVisitor {
     map<Operator, IROperator> arithmeticMap;
     map<Operator, IROperator> compareOppositeMap;
     int exprNestLevel = 0;
-    void addInstToJumpEntry(string& labelName, IRInst* inst);
+
+    void getValueInBinaryExp(Exp *left, Exp *right, string *leftSymbol, string *rightSymbol);
+
+    void addInstToJumpEntry(string &labelName, IRInst *inst);
 
     void transformStmt(Statement *statement);
 
@@ -53,11 +56,11 @@ class IRGenerator : public IRVisitor {
 
     bool isStatement();
 
-    void checkJumpLinks(IR* ir);
+    void checkJumpLinks(IR *ir);
 
     IRStatement *complileFunctionBody(Function *f);
 
-    void initCurrScopeSymbol(LocalScope* localScope);
+    void initCurrScopeSymbol(LocalScope *localScope);
 
 public:
     IRGenerator();

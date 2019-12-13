@@ -166,18 +166,7 @@ void IRGenerator::visit(BinaryExp *expNode) {
     auto item = arithmeticMap.find(expNode->getOperatorType());
     if (item != arithmeticMap.end()) {
         string leftSymbol, rightSymbol;
-        if (expNode->left->isPointer()) {
-            leftSymbol = tempVariable->generateName(tempVariable->allocate());
-            currIrStatement->addInstruction(IR_GET_VALUE_IN_ADDRESS, leftSymbol, expNode->left->getSymbol(), "");
-        } else {
-            leftSymbol = expNode->left->getSymbol();
-        }
-        if (expNode->right->isPointer()) {
-            rightSymbol = tempVariable->generateName(tempVariable->allocate());
-            currIrStatement->addInstruction(IR_GET_VALUE_IN_ADDRESS, rightSymbol, expNode->right->getSymbol(), "");
-        } else {
-            rightSymbol = expNode->right->getSymbol();
-        }
+        getValueInBinaryExp(expNode->left, expNode->right, &leftSymbol, &rightSymbol);
 
         auto inst = new IRInst(item->second, "tt", leftSymbol, rightSymbol);
         int flag;
@@ -265,15 +254,50 @@ void IRGenerator::visit(BinaryExp *expNode) {
 
     auto compareItem = compareOppositeMap.find(expNode->getOperatorType());
     if (compareItem != compareOppositeMap.end()) {
+        string leftSymbol, rightSymbol;
+        getValueInBinaryExp(expNode->left, expNode->right, &leftSymbol, &rightSymbol);
+
         string gotolabel = label->generateName(label->allocate());
-        IRInst *jumpInst = currIrStatement->addInstruction(compareItem->second,
-                                                           gotolabel, expNode->left->getSymbol(),
-                                                           expNode->right->getSymbol());
+        IRInst *jumpInst = currIrStatement->addInstruction(compareItem->second, gotolabel, leftSymbol, rightSymbol);
         addInstToJumpEntry(gotolabel, jumpInst);
         labelStack.push_back(gotolabel);
         return;
     }
 
+}
+
+void IRGenerator::getValueInBinaryExp(Exp *left, Exp *right, string *leftSymbol, string *rightSymbol) {
+    if (left->isPointer()) {
+        *leftSymbol = tempVariable->generateName(tempVariable->allocate());
+        currIrStatement->addInstruction(IR_GET_VALUE_IN_ADDRESS, *leftSymbol, left->getSymbol(), "");
+    } else {
+        *leftSymbol = left->getSymbol();
+    }
+    if (right->isPointer()) {
+        *rightSymbol = tempVariable->generateName(tempVariable->allocate());
+        currIrStatement->addInstruction(IR_GET_VALUE_IN_ADDRESS, *rightSymbol, right->getSymbol(), "");
+    } else {
+        *rightSymbol = right->getSymbol();
+    }
+}
+
+void IRGenerator::visit(GetAttributeExp *expNode) {
+    expNode->object->accept(this);
+    Struct *object = (Struct *) expNode->object->getType();
+    int offset = object->getOffset(expNode->getAttrName());
+    const string &basePointer = expNode->object->getSymbol();
+    string tempName = tempVariable->generateName(tempVariable->allocate());
+    if (offset == 0) {
+        currIrStatement->addInstruction(IR_ASSIGN, tempName, basePointer, "");
+    } else {
+        currIrStatement->addInstruction(IR_ADD, tempName, basePointer, "#" + to_string(offset));
+    }
+    if (expNode->isArray() || expNode->getType()->getElementType() == STRUCT_TYPE) {
+        expNode->setSymbol(tempName);
+    } else {
+        expNode->setPointer();
+        expNode->setSymbol(tempName);
+    }
 }
 
 
@@ -356,19 +380,6 @@ void IRGenerator::visit(WhileStatement *statementNode) {
 void IRGenerator::visit(ReturnStatement *statementNode) {
     currIrStatement->addInstruction(IR_RETURN, statementNode->getExpression()->getSymbol());
     tempVariable->releaseAll();
-}
-
-void IRGenerator::visit(GetAttributeExp *expNode) {
-    expNode->object->accept(this);
-    Struct *object = (Struct *) expNode->object->getType();
-    int offset = object->getOffset(expNode->getAttrName());
-    const string &basePointer = expNode->object->getSymbol();
-    string tempName = tempVariable->generateName(tempVariable->allocate());
-    currIrStatement->addInstruction(IR_ADD, tempName, basePointer, "#" + to_string(offset));
-    if (expNode->isArray() || expNode->getType()->getElementType() == STRUCT_TYPE) {
-        expNode->setSymbol(tempName);
-    } else
-        expNode->setSymbol("*" + tempName);
 }
 
 string IRGenerator::getAddress(string &id) {
