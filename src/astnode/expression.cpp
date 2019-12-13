@@ -21,9 +21,11 @@ Exp::Exp(AttrNode *terminal, DataType dataType) {
 
 Error *Exp::checkReference(Scope *scope) {
     if (this->operatorType == CONT_OP) {
-        return new Error{getLocation(), OTHER_ERROR, "not support continue now"};
+//        return new Error{getLocation(), OTHER_ERROR, "not support continue now"};
+        return nullptr;
     } else if (this->operatorType == BREAK_OP) {
-        return new Error{getLocation(), OTHER_ERROR, "not support break now"};
+//        return new Error{getLocation(), OTHER_ERROR, "not support break now"};
+        return nullptr;
     }
     // after doing this, all referenced elementType are connected to its corresponding variable definition
     if (this->type->getElementType() == REF_TYPE) {
@@ -67,7 +69,7 @@ VariableType *Exp::getType() {
     if (type->getElementType() == REF_TYPE && referenceVar != nullptr) {
         VariableType *refType = ((Variable *) referenceVar)->getType()->getActualType();
         int currDim = this->dimension;
-        if(currDim == 0)
+        if (currDim == 0)
             return refType;
         VariableType *inner_element = refType->getElement();
         while (currDim > 0) {
@@ -93,6 +95,10 @@ bool Exp::isNumber() {
 }
 
 void Exp::accept(IRVisitor *visitor) {
+    if (this->operatorType == BREAK_OP || this->operatorType==CONT_OP) {
+        visitor->handleBreakAndContinue(operatorType, getLocation());
+        return;
+    }
     if (this->type->getElementType() == INT_TYPE) {
         setSymbol("#" + value);
     } else
@@ -276,9 +282,9 @@ Error *UnaryExp::inferType(ToplevelScope *toplevelScope) {
 }
 
 void UnaryExp::accept(IRVisitor *visitor) {
-    if(this->operand->type->getElementType()==INT_TYPE){
-        if(this->operatorType==SUB_OP){
-            setSymbol("#-"+operand->getValue());
+    if (this->operand->type->getElementType() == INT_TYPE) {
+        if (this->operatorType == SUB_OP) {
+            setSymbol("#-" + operand->getValue());
             return;
         }
     }

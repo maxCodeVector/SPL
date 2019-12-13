@@ -36,7 +36,14 @@ bool Optimizer::mergeInst(list<IRInst *> &insts) {
         pre--;
         IRInst *preInst = *pre;
         IRInst *curr = *itor;
-        if (curr->irOperator == IR_ASSIGN) {
+//        if (curr->irOperator == IR_GET_VALUE_IN_ADDRESS || curr->irOperator == IR_COPY_VALUE_TO_ADDRESS) {
+//            if(isVar(preInst->target, 't') && preInst->irOperator==IR_ASSIGN){
+//                curr->arg1 = preInst->arg1;
+//                itor = insts.erase(pre);
+//                delete (preInst);
+//            }
+//        } else
+            if (curr->irOperator == IR_ASSIGN) {
             if (isSimilarAssignOp(preInst->irOperator) && preInst->target == curr->arg1) {
                 if (isVar(preInst->target, 't')) {
                     preInst->target = curr->target;

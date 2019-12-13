@@ -58,6 +58,7 @@ check:
 	cd $(TEST_DIR)/diffc && gcc testb3.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc testb4.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc testb5.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc break_continue.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc testr1.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc testr2.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc testr3.c && ./a.out < input.txt
@@ -73,7 +74,7 @@ check:
 
 run:
 	@$(foreach var, $(TEST_SOURCE),\
-		irsim $(patsubst %.spl,%.ir,$(var)) -i 5,15,16,19,3,7; \
+		irsim $(patsubst %.spl,%.ir,$(var)) -i 5,15,6,19,3,7; \
 	)
 
 

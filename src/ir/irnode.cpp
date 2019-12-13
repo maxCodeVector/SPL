@@ -5,15 +5,14 @@
 #include "irnode.h"
 
 void IR::write(ostream &os) {
-    list<IRInst *> instructions;
+    int numOfInsts = 0;
     for (IR *block: blocks) {
         for (IRInst *inst: *block->getInstructions()) {
-            instructions.push_back(inst);
+            numOfInsts++;
+            os << inst << endl;
         }
     }
-    for (IRInst *inst: instructions)
-        os << inst << endl;
-    cerr << "inst number: " << instructions.size() << endl;
+    cerr << "inst number: " << numOfInsts << endl;
 }
 
 IRInst *
@@ -63,15 +62,15 @@ IRInst::IRInst(IROperator irOperator, const string &target, const string &arg1, 
 
 IRInst::IRInst(IROperator irOperator, const string &target) {
     this->irOperator = irOperator;
-    this->arg1 = target;
+    this->target = target;
 }
 
 string IRInst::toString() {
     switch (irOperator) {
         case IR_LABEL:
-            return "LABEL " + arg1 + " :";
+            return "LABEL " + target + " :";
         case IR_FUNCTION:
-            return "FUNCTION " + arg1 + " :";
+            return "FUNCTION " + target + " :";
         case IR_ASSIGN:
             return target + " := " + arg1;
         case IR_ADD:
@@ -89,7 +88,7 @@ string IRInst::toString() {
         case IR_COPY_VALUE_TO_ADDRESS:
             return "*" + target + " := " + arg1;
         case IR_GOTO:
-            return "GOTO " + arg1;
+            return "GOTO " + target;
         case IR_IF_LT:
             return "IF " + arg1 + " < " + arg2 + " GOTO " + target;
         case IR_IF_LE:
@@ -103,19 +102,19 @@ string IRInst::toString() {
         case IR_IF_NE:
             return "IF " + arg1 + " != " + arg2 + " GOTO " + target;
         case IR_RETURN:
-            return "RETURN " + arg1;
+            return "RETURN " + target;
         case IR_DEC:
             return "DEC " + target + " " + arg1;
         case IR_PARAM:
-            return "PARAM " + arg1;
+            return "PARAM " + target;
         case IR_ARG:
-            return "ARG " + arg1;
+            return "ARG " + target;
         case IR_CALL:
             return target + " := CALL " + arg1;
         case IR_READ:
-            return "READ " + arg1;
+            return "READ " + target;
         case IR_WRITE:
-            return "WRITE " + arg1;
+            return "WRITE " + target;
     }
     return "fuckyou";
 }

@@ -108,6 +108,8 @@ public:
         return id;
     }
 
+    virtual void handleBreakAndContinue(Operator bc, Location* location) = 0;
+
     virtual void visit(BinaryExp *expNode) = 0;
 
     virtual void visit(UnaryExp *expNode) = 0;
@@ -130,7 +132,8 @@ class JumpEntry {
     string labelName;
     list<IRInst *> jumpInst;
 public:
-    const list<IRInst*> & getJumpInst() const;
+    const list<IRInst *> &getJumpInst() const;
+
 public:
     explicit JumpEntry(string &labelName);
 

@@ -44,7 +44,6 @@ class IRGenerator : public IRVisitor {
     map<string, JumpEntry *> jumpMap;
     map<Operator, IROperator> arithmeticMap;
     map<Operator, IROperator> compareOppositeMap;
-    int exprNestLevel = 0;
 
     void getValueInBinaryExp(Exp *left, Exp *right, string *leftSymbol, string *rightSymbol);
 
@@ -54,7 +53,6 @@ class IRGenerator : public IRVisitor {
 
     IRExpr *transformExpr(Exp *exp);
 
-    bool isStatement();
 
     void checkJumpLinks(IR *ir);
 
@@ -68,6 +66,8 @@ public:
     IR *generate(AST &ast);
 
     string getAddress(string &id) override;
+
+    void handleBreakAndContinue(Operator bc, Location* location) override;
 
     void visit(BinaryExp *expNode) override;
 
