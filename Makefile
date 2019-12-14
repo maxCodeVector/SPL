@@ -54,6 +54,8 @@ test: bin/splc
 
 check:
 	cd $(TEST_DIR)/diffc && gcc break_continue.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc empty_if.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc nested_struct_array.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc short_circuit.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc testb1.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc testb2.c && ./a.out < input.txt
