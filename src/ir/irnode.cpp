@@ -127,7 +127,7 @@ ostream &operator<<(ostream &os, IRInst *inst) {
     return operator<<(os, *inst);
 }
 
-JumpEntry::JumpEntry(string &labelName) {
+JumpEntry::JumpEntry(const string &labelName) {
     this->labelName = labelName;
 }
 
@@ -137,4 +137,8 @@ void JumpEntry::addInst(IRInst *inst) {
 
 const list<IRInst *> &JumpEntry::getJumpInst() const {
     return jumpInst;
+}
+
+void JumpEntry::removeInst(IRInst *inst) {
+    this->jumpInst.remove(inst);
 }

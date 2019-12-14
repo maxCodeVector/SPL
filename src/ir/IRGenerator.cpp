@@ -54,8 +54,19 @@ void TempNameGenerator::releaseAll(bool strong = false) {
 }
 
 
-IRGenerator::IRGenerator() {
-    this->label = new TempNameGenerator("label", -1);
+bool isSimilarGoto(IROperator irOperator) {
+    return irOperator == IR_GOTO
+           || irOperator == IR_IF_LT
+           || irOperator == IR_IF_LE
+           || irOperator == IR_IF_GT
+           || irOperator == IR_IF_GE
+           || irOperator == IR_IF_EQ
+           || irOperator == IR_IF_NE;
+}
+
+IRGenerator::IRGenerator(bool optimized) {
+    this->optimized = optimized;
+    this->labelGenerator = new TempNameGenerator("label", -1);
     this->tempVariable = new TempNameGenerator("t", -1);
     this->pointer = new TempNameGenerator("p", -1);
     this->varVariable = new TempNameGenerator("v", -1);
@@ -76,30 +87,27 @@ void IRGenerator::transformStmt(Statement *statement) {
     statement->accept(this);
 }
 
-IRExpr *IRGenerator::transformExpr(Exp *exp) {
-    exp->accept(this);
-    return nullptr;
-}
-
 IR *IRGenerator::generate(AST &ast) {
     currAst = &ast;
     for (Variable *variable: ast.getDefinedVars()) {
         if (variable->hasInitializer()) {
-            variable->setIR(transformExpr(variable->getInitializer()));
+            variable->getInitializer()->accept(this);
+//            variable->setIR((variable->getInitializer()));
         }
     }
     for (Function *function:ast.getFunctions()) {
         initCurrScopeSymbol((LocalScope *) function->getScope());
         Optimizer irOptimizer;
         IRStatement *insts = complileFunctionBody(function);
-        if (insts) {
+        if (insts && this->optimized) {
             cerr << "before optimized function: " << function->getName() << ", inst number:"
                  << insts->getInstructions()->size()
                  << endl;
             checkJumpLinks(insts);
             function->setIr(irOptimizer.optimize(insts));
             cerr << "after optimized, inst number:" << insts->getInstructions()->size() << endl;
-        }
+        } else
+            function->setIr(insts);
     }
     if (this->errorHandler.errorOccured()) {
         errorHandler.showError(cerr);
@@ -171,7 +179,7 @@ void IRGenerator::visit(BinaryExp *expNode) {
         auto inst = new IRInst(item->second, "tt", leftSymbol, rightSymbol);
         int flag;
         // flag be -1 means only optimized half (one argument), not calculate the real value
-        if (Optimizer::cacExpression(inst, &flag)) {
+        if (this->optimized && Optimizer::cacExpression(inst, &flag)) {
             switch (flag) {
                 case 1:
                     expNode->setSymbol(tempVariable->generateName(tempVariable->allocate()));
@@ -206,7 +214,7 @@ void IRGenerator::visit(BinaryExp *expNode) {
 
         int flag;
         // flag be -1 means only optimized half (one argument), not calculate the real value
-        if (Optimizer::cacExpression(inst, &flag)) {
+        if (this->optimized && Optimizer::cacExpression(inst, &flag)) {
             switch (flag) {
                 case 1:
                     offsetName = tempVariable->generateName(tempVariable->allocate());
@@ -245,24 +253,8 @@ void IRGenerator::visit(BinaryExp *expNode) {
         }
 
     }
-    if (expNode->getOperatorType() == OR_OP) {
-
-    }
-    if (expNode->getOperatorType() == AND_OP) {
-
-    }
-
-    auto compareItem = compareOppositeMap.find(expNode->getOperatorType());
-    if (compareItem != compareOppositeMap.end()) {
-        string leftSymbol, rightSymbol;
-        getValueInBinaryExp(expNode->left, expNode->right, &leftSymbol, &rightSymbol);
-
-        string gotolabel = labelStack.back();
-        IRInst *jumpInst = currIrStatement->addInstruction(compareItem->second, gotolabel, leftSymbol, rightSymbol);
-        addInstToJumpEntry(gotolabel, jumpInst);
-        labelStack.push_back(gotolabel);
-        return;
-    }
+//     can not have other operation type
+//    translateConditionExp(expNode, <#initializer#>, <#initializer#>);
 
 }
 
@@ -346,14 +338,50 @@ void IRGenerator::visit(InvokeExp *expNode) {
 
 }
 
-void IRGenerator::visit(IfStatement *statementNode) {
-    string endIfLabel = label->generateName(label->allocate());
-    labelStack.push_back(endIfLabel);
-    statementNode->getExpression()->accept(this);
+void IRGenerator::translateConditionExp(const Exp *expNode, const string &label_t, const string &label_f) {
+    if (expNode->getOperatorType() == NOT_OP) {
+        translateConditionExp(((UnaryExp *) expNode)->operand, label_f, label_t);
+        return;
+    }
+    BinaryExp *binaryExp = (BinaryExp *) expNode;
+    if (expNode->getOperatorType() == OR_OP) {
+        string nextOr = this->labelGenerator->generateName(this->labelGenerator->allocate());
+        translateConditionExp(binaryExp->left, label_t, nextOr);
+        this->currIrStatement->addInstruction(IR_LABEL, nextOr);
+        translateConditionExp(binaryExp->right, label_t, label_f);
+    }
+    if (expNode->getOperatorType() == AND_OP) {
+        string nextAnd = this->labelGenerator->generateName(this->labelGenerator->allocate());
+        translateConditionExp(binaryExp->left, nextAnd, label_f);
+        this->currIrStatement->addInstruction(IR_LABEL, nextAnd);
+        translateConditionExp(binaryExp->right, label_t, label_f);
+    }
 
+    auto compareItem = compareOppositeMap.find(expNode->getOperatorType());
+    if (compareItem != compareOppositeMap.end()) {
+        binaryExp->left->accept(this);
+        binaryExp->right->accept(this);
+        string leftSymbol, rightSymbol;
+        getValueInBinaryExp(binaryExp->left, binaryExp->right, &leftSymbol, &rightSymbol);
+
+        IRInst *jumpInst = currIrStatement->addInstruction(compareItem->second, label_f, leftSymbol, rightSymbol);
+        IRInst *jumpTrueInst = currIrStatement->addInstruction(IR_GOTO, label_t);
+        addInstToJumpEntry(label_f, jumpInst);
+        addInstToJumpEntry(label_t, jumpTrueInst);
+        return;
+    }
+}
+
+void IRGenerator::visit(IfStatement *statementNode) {
+    string ifLabel = labelGenerator->generateName(labelGenerator->allocate());
+    string endIfLabel = labelGenerator->generateName(labelGenerator->allocate());
+
+    translateConditionExp(statementNode->getExpression(), ifLabel, endIfLabel);
+
+    currIrStatement->addInstruction(IR_LABEL, ifLabel);
     statementNode->ifBody->accept(this);
     if (statementNode->elseBody) {
-        string elseLabel = label->generateName(label->allocate());
+        string elseLabel = labelGenerator->generateName(labelGenerator->allocate());
         IRInst *jumpInst = currIrStatement->addInstruction(IR_GOTO, elseLabel);
         addInstToJumpEntry(elseLabel, jumpInst);
 
@@ -363,25 +391,26 @@ void IRGenerator::visit(IfStatement *statementNode) {
     } else {
         currIrStatement->addInstruction(IR_LABEL, endIfLabel);
     }
-    labelStack.pop_back();
 }
 
 void IRGenerator::visit(WhileStatement *statementNode) {
-    string startLabel = label->generateName(label->allocate());
-    string endLabel = label->generateName(label->allocate());
-    labelStack.push_back(endLabel);
+    string startLabel = labelGenerator->generateName(labelGenerator->allocate());
+    string startBodyLabel = labelGenerator->generateName(labelGenerator->allocate());
+    string endLabel = labelGenerator->generateName(labelGenerator->allocate());
+
     breakStack.push_back(endLabel);
     currIrStatement->addInstruction(IR_LABEL, startLabel);
     continueStack.push_back(startLabel);
 
-    statementNode->getExpression()->accept(this);
+    translateConditionExp(statementNode->getExpression(), startBodyLabel, endLabel);
+//    statementNode->getExpression()->accept(this);
+    currIrStatement->addInstruction(IR_LABEL, startBodyLabel);
     statementNode->loop->accept(this);
     IRInst *jumpInst = currIrStatement->addInstruction(IR_GOTO, startLabel);
     addInstToJumpEntry(startLabel, jumpInst);
 
     currIrStatement->addInstruction(IR_LABEL, endLabel);
 
-    labelStack.pop_back();
     continueStack.pop_back();
     breakStack.pop_back();
 }
@@ -411,24 +440,59 @@ void IRGenerator::initCurrScopeSymbol(LocalScope *localScope) {
 void IRGenerator::checkJumpLinks(IR *ir) {
     list<IRInst *> &list_ir_inst = *ir->getInstructions();
     auto curr = list_ir_inst.begin();
-    auto preInst = *curr;
+    auto pre = curr;
     curr++;
     while (curr != list_ir_inst.end()) {
         IRInst *currInst = *curr;
-        if (currInst->irOperator == IR_LABEL && preInst->irOperator == IR_LABEL) {
-            JumpEntry *entry = this->jumpMap.find(currInst->target)->second;
-            for (IRInst *inst:entry->getJumpInst()) {
-                inst->target = preInst->target;
+        IRInst *preInst = *pre;
+        if (currInst->irOperator == IR_LABEL) {
+            auto item = this->jumpMap.find(currInst->target);
+            if (item == jumpMap.end()) {
+//                printf("fuck no %s used\n", currInst->target.c_str());
+                pre = list_ir_inst.erase(curr);
+                curr = pre;
+                pre--;
+                continue;
             }
-            curr = list_ir_inst.erase(curr);
-            continue;
+            if (preInst->irOperator == IR_LABEL) {
+                if (item != jumpMap.end()) {
+                    JumpEntry *entry = item->second;
+                    for (IRInst *inst:entry->getJumpInst()) {
+                        inst->target = preInst->target;
+                    }
+                    curr = list_ir_inst.erase(curr);
+                    curr--;
+                    pre = curr;
+                    pre--;
+                    currInst = *curr;
+                    preInst = *pre;
+                }
+            }
+            if (isSimilarGoto(preInst->irOperator) && preInst->target == currInst->target) {
+                removeGotoInstFromJumpMap(preInst);
+                pre = list_ir_inst.erase(pre);
+                curr = pre;
+                pre--;
+                continue;
+            }
         }
-        preInst = currInst;
+        pre = curr;
         curr++;
     }
 }
 
-void IRGenerator::addInstToJumpEntry(string &labelName, IRInst *inst) {
+void IRGenerator::removeGotoInstFromJumpMap(IRInst *gotoInst) {
+    auto item = jumpMap.find(gotoInst->target);
+    if (item != jumpMap.end()) {
+        JumpEntry *entry = item->second;
+        entry->removeInst(gotoInst);
+        if (entry->getJumpInst().empty()) {
+            jumpMap.erase(item);
+        }
+    }
+}
+
+void IRGenerator::addInstToJumpEntry(const string &labelName, IRInst *inst) {
     auto item = this->jumpMap.find(labelName);
     if (item != jumpMap.end()) {
         JumpEntry *entry = item->second;
@@ -447,14 +511,16 @@ void IRGenerator::handleBreakAndContinue(Operator bc, Location *location) {
             return;
         }
         string nearestBreak = this->breakStack.back();
-        currIrStatement->addInstruction(IR_GOTO, nearestBreak);
+        IRInst *jumpInst = currIrStatement->addInstruction(IR_GOTO, nearestBreak);
+        addInstToJumpEntry(nearestBreak, jumpInst);
     } else if (bc == CONT_OP) {
         if (continueStack.empty()) {
             this->errorHandler.recordError(location, OTHER_ERROR, "can not continue here");
             return;
         }
         string nearestContinue = this->continueStack.back();
-        currIrStatement->addInstruction(IR_GOTO, nearestContinue);
+        IRInst *jumpInst = currIrStatement->addInstruction(IR_GOTO, nearestContinue);
+        addInstToJumpEntry(nearestContinue, jumpInst);
     } else
         this->errorHandler.recordError(location, OTHER_ERROR, "not break or continue statement");
 }

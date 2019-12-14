@@ -135,9 +135,11 @@ public:
     const list<IRInst *> &getJumpInst() const;
 
 public:
-    explicit JumpEntry(string &labelName);
+    explicit JumpEntry(const string &labelName);
 
     void addInst(IRInst *inst);
+
+    void removeInst(IRInst *inst);
 };
 
 

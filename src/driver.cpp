@@ -25,13 +25,16 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    IRGenerator irGenerator;
+    bool optimize = argc <= 3;// default be optimized
+    IRGenerator irGenerator(optimize);
     IR *ir = irGenerator.generate(*ast);
     if (ir) {
         string ir_file_name = out_file_name.substr(0, out_file_name.size() - 3) + "ir";
         ofstream outfile(ir_file_name);
 
-//        ir->write(std::cerr);
+        if (argc > 2 && string(argv[2]) == "-p") {
+            ir->write(std::cerr);
+        }
         ir->write(outfile);
     }
     delete (ast);

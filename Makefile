@@ -53,12 +53,13 @@ test: bin/splc
 	)
 
 check:
+	cd $(TEST_DIR)/diffc && gcc break_continue.c && ./a.out < input.txt
+	cd $(TEST_DIR)/diffc && gcc short_circuit.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc testb1.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc testb2.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc testb3.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc testb4.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc testb5.c && ./a.out < input.txt
-	cd $(TEST_DIR)/diffc && gcc break_continue.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc testr1.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc testr2.c && ./a.out < input.txt
 	cd $(TEST_DIR)/diffc && gcc testr3.c && ./a.out < input.txt

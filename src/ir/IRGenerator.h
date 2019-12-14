@@ -30,15 +30,15 @@ public:
 
 
 class IRGenerator : public IRVisitor {
-    list<string> labelStack;
     list<string> breakStack;
     list<string> continueStack;
     AST *currAst;
+    bool optimized;
 
     map<string, string> symbolAddrTable;
     TempNameGenerator *varVariable;
     TempNameGenerator *tempVariable;
-    TempNameGenerator *label;
+    TempNameGenerator *labelGenerator;
     TempNameGenerator *pointer;
     IRStatement *currIrStatement;
     map<string, JumpEntry *> jumpMap;
@@ -47,12 +47,9 @@ class IRGenerator : public IRVisitor {
 
     void getValueInBinaryExp(Exp *left, Exp *right, string *leftSymbol, string *rightSymbol);
 
-    void addInstToJumpEntry(string &labelName, IRInst *inst);
+    void addInstToJumpEntry(const string &labelName, IRInst *inst);
 
     void transformStmt(Statement *statement);
-
-    IRExpr *transformExpr(Exp *exp);
-
 
     void checkJumpLinks(IR *ir);
 
@@ -60,14 +57,18 @@ class IRGenerator : public IRVisitor {
 
     void initCurrScopeSymbol(LocalScope *localScope);
 
+    void translateConditionExp(const Exp *expNode, const string &label_t, const string &label_f);
+
+    void removeGotoInstFromJumpMap(IRInst *gotoInst);
+
 public:
-    IRGenerator();
+    explicit IRGenerator(bool optimized);
 
     IR *generate(AST &ast);
 
     string getAddress(string &id) override;
 
-    void handleBreakAndContinue(Operator bc, Location* location) override;
+    void handleBreakAndContinue(Operator bc, Location *location) override;
 
     void visit(BinaryExp *expNode) override;
 
