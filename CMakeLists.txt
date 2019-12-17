@@ -7,6 +7,7 @@ aux_source_directory(./src/ DIR_SRCS)
 aux_source_directory(./src/astnode DIR_SRCS)
 aux_source_directory(src/semantic DIR_SRCS)
 aux_source_directory(./src/ir DIR_SRCS)
+aux_source_directory(./src/asm DIR_SRCS)
 
 add_executable(splc ${DIR_SRCS} src/parse/syntax.cc src/parse/deliver.cpp)
 target_link_libraries(splc -ly -lfl)

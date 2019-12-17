@@ -4,6 +4,7 @@
 #include "parse/deliver.h"
 #include "semantic/semantic.h"
 #include "ir/IRGenerator.h"
+#include "asm/code_generator.h"
 #include <fstream>
 
 int main(int argc, char **argv) {
@@ -29,13 +30,19 @@ int main(int argc, char **argv) {
     IRGenerator irGenerator(optimize);
     IR *ir = irGenerator.generate(*ast);
     if (ir) {
-        string ir_file_name = out_file_name.substr(0, out_file_name.size() - 3) + "ir";
-        ofstream outfile(ir_file_name);
+//        string ir_file_name = out_file_name.substr(0, out_file_name.size() - 3) + "ir";
+//        ofstream outfile(ir_file_name);
 
         if (argc > 2 && string(argv[2]) == "-p") {
             ir->write(std::cerr);
         }
-        ir->write(outfile);
+//        ir->write(outfile);
+
+        CodeGenerator codeGenerator(ir);
+        Mips *mips = codeGenerator.generateMipsCode();
+        string asm_file_name = out_file_name.substr(0, out_file_name.size() - 3) + "s";
+        ofstream asm_outfile(asm_file_name);
+        mips->write(asm_outfile);
     }
     delete (ast);
     delete (handler);
