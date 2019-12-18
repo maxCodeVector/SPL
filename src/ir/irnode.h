@@ -36,20 +36,13 @@ enum IROperator {
 };
 
 
-class IRInst {
+struct IRInst {
     IROperator irOperator;
     string target;
     string arg1;
     string arg2;
 
     string toString();
-
-    friend class Optimizer;
-
-    friend class IRGenerator;
-
-
-public:
 
     IRInst(IROperator irOperator, const string &target, const string &arg1, const string &arg2);
 
@@ -63,9 +56,12 @@ ostream &operator<<(ostream &os, IRInst *inst);
 class IR {
 protected:
     list<IR *> blocks;
+protected:
     list<IRInst *> instructions;
 public:
     void write(ostream &basicOstream);
+
+    const list<IR *> &getBlocks() const;
 
     void addBlock(IR *ir);
 
@@ -108,7 +104,7 @@ public:
         return id;
     }
 
-    virtual void handleBreakAndContinue(Operator bc, Location* location) = 0;
+    virtual void handleBreakAndContinue(Operator bc, Location *location) = 0;
 
     virtual void visit(BinaryExp *expNode) = 0;
 

@@ -8,12 +8,53 @@
 #include "../ir/irnode.h"
 #include "mips.h"
 
-class CodeGenerator {
+
+struct Reg {
+    int id;
+    bool dirty;
+
+    string getName();
+};
+
+
+class RegisterAllocator {
+    static const int reg_number = 10;
+    string prefix;
+    Reg temp_regs[reg_number];
+
+
 public:
-    explicit CodeGenerator(IR* ir);
+    RegisterAllocator();
 
-    Mips* generateMipsCode();
+    Reg *allocate();
+};
 
+
+class CodeGenerator {
+    list<IRInst *> ir_code;
+    RegisterAllocator allocator;
+    map<string, Reg *> symbolTable;
+
+    void generateProcedure();
+
+    void generateCode(Mips *mips, IRInst *inst);
+
+    Reg * getRegOfSymbol(const string &varName);
+
+public:
+    explicit CodeGenerator(IR *ir);
+
+    Mips *generateMipsCode();
+
+    void generateAddSub(Mips *pMips, IRInst *pInst);
+
+    void generateAssign(Mips *mips, const IRInst *inst);
+
+    void generateMultiply(Mips *pMips, IRInst *pInst);
+
+    void generateWrite(Mips *pMips, IRInst *pInst);
+
+    void generateReturn(Mips *pMips, IRInst *pInst);
 };
 
 

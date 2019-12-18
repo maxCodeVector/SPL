@@ -15,6 +15,11 @@ void IR::write(ostream &os) {
     cerr << "inst number: " << numOfInsts << endl;
 }
 
+
+const list<IR *> &IR::getBlocks() const {
+    return this->blocks;
+}
+
 IRInst *
 IRStatement::addInstruction(IROperator irOperator, const string &target, const string &arg1, const string &arg2) {
     IRInst *inst = new IRInst(irOperator, target, arg1, arg2);
