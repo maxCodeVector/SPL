@@ -9,6 +9,7 @@
 #include <string>
 #include <list>
 #define NEWLINE "_ret"
+#define INPUT_HINT "_prompt"
 
 
 using namespace std;

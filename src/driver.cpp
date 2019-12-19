@@ -27,8 +27,8 @@ int main(int argc, char **argv) {
     }
 
     bool optimize = argc <= 3;// default be optimized
-    IRGenerator irGenerator(optimize);
-    IR *ir = irGenerator.generate(*ast);
+    IRGenerator irGenerator(optimize, ast);
+    IR *ir = irGenerator.generate();
     if (ir) {
         string ir_file_name = out_file_name.substr(0, out_file_name.size() - 3) + "ir";
         ofstream outfile(ir_file_name);

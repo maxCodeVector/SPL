@@ -62,9 +62,9 @@ class IRGenerator : public IRVisitor {
     void removeGotoInstFromJumpMap(IRInst *gotoInst);
 
 public:
-    explicit IRGenerator(bool optimized);
+    IRGenerator(bool optimized, AST * ast);
 
-    IR *generate(AST &ast);
+    IR *generate();
 
     string getAddress(string &id) override;
 

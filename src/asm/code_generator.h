@@ -19,7 +19,6 @@ struct Reg {
 
 class RegisterAllocator {
     static const int reg_number = 10;
-    string prefix;
     Reg temp_regs[reg_number];
 
 
@@ -39,7 +38,7 @@ class CodeGenerator {
 
     void generateCode(Mips *mips, IRInst *inst);
 
-    Reg * getRegOfSymbol(const string &varName);
+    Reg *getRegOfSymbol(const string &varName);
 
 public:
     explicit CodeGenerator(IR *ir);
@@ -55,6 +54,8 @@ public:
     void generateWrite(Mips *pMips, IRInst *pInst);
 
     void generateReturn(Mips *pMips, IRInst *pInst);
+
+    void generateRead(Mips *pMips, IRInst *pInst);
 };
 
 

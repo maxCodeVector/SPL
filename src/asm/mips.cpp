@@ -6,7 +6,8 @@
 
 void Mips::write(std::ostream &os) {
     os << ".data" << endl;
-    os << string(NEWLINE) + R"(: .asciiz "\n"  )" << endl;
+    os << NEWLINE << R"(: .asciiz "\n"  )" << endl;
+    os << INPUT_HINT << R"(: .asciiz "Enter an integer:")" << endl;
     os << ".globl main\n.text" << endl;
     for (MIPS_Instruction *instruction: this->mips) {
         if (instruction->op == MIPS_LABEL)
@@ -33,6 +34,7 @@ string MIPS_Instruction::to_string() {
         case MIPS_MOVE:
             return "move " + dest + ", " + src1;
         case MIPS_ADDI:
+            return "addi " + dest + ", " + src1 + ", " + src2;
         case MIPS_ADD:
             return "add " + dest + ", " + src1 + ", " + src2;
         case MIPS_SUB:
@@ -44,27 +46,27 @@ string MIPS_Instruction::to_string() {
         case MIPS_MFLO:
             return "mflo " + dest;
         case MIPS_LW:
-            break;
+            return "lw " + dest + ", " + src1;
         case MIPS_SW:
-            break;
+            return "sw " + dest + ", " + src1;
         case MIPS_J:
-            break;
+            return "j " + dest;
         case MIPS_JAL:
-            break;
+            return "jal " + dest;
         case MIPS_JR:
             return "jr " + dest;
         case MIPS_BLT:
-            break;
+            return "blt " + src1 + ", " + src2 + ", ", dest;
         case MIPS_BLE:
-            break;
+            return "ble " + src1 + ", " + src2 + ", ", dest;
         case MIPS_BGT:
-            break;
+            return "bgt " + src1 + ", " + src2 + ", ", dest;
         case MIPS_BGE:
-            break;
+            return "bge " + src1 + ", " + src2 + ", ", dest;
         case MIPS_BNE:
-            break;
+            return "bne " + src1 + ", " + src2 + ", ", dest;
         case MIPS_BEQ:
-            break;
+            return "beq " + src1 + ", " + src2 + ", ", dest;
         case MIPS_SYSCALL:
             return "syscall";
     }

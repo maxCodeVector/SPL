@@ -64,8 +64,9 @@ bool isSimilarGoto(IROperator irOperator) {
            || irOperator == IR_IF_NE;
 }
 
-IRGenerator::IRGenerator(bool optimized) {
+IRGenerator::IRGenerator(bool optimized, AST *ast) {
     this->optimized = optimized;
+    this->currAst = ast;
     this->labelGenerator = new TempNameGenerator("label", -1);
     this->tempVariable = new TempNameGenerator("t", -1);
     this->pointer = new TempNameGenerator("p", -1);
@@ -87,15 +88,14 @@ void IRGenerator::transformStmt(Statement *statement) {
     statement->accept(this);
 }
 
-IR *IRGenerator::generate(AST &ast) {
-    currAst = &ast;
-    for (Variable *variable: ast.getDefinedVars()) {
+IR *IRGenerator::generate() {
+    for (Variable *variable: currAst->getDefinedVars()) {
         if (variable->hasInitializer()) {
             variable->getInitializer()->accept(this);
 //            variable->setIR((variable->getInitializer()));
         }
     }
-    for (Function *function:ast.getFunctions()) {
+    for (Function *function:currAst->getFunctions()) {
         initCurrScopeSymbol((LocalScope *) function->getScope());
         Optimizer irOptimizer;
         IRStatement *insts = complileFunctionBody(function);
@@ -113,7 +113,7 @@ IR *IRGenerator::generate(AST &ast) {
         errorHandler.showError(cerr);
         return nullptr;
     }
-    return ast.getIR();
+    return currAst->getIR();
 }
 
 IRStatement *IRGenerator::complileFunctionBody(Function *f) {

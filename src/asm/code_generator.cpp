@@ -89,6 +89,7 @@ void CodeGenerator::generateCode(Mips *mips, IRInst *inst) {
         case IR_CALL:
             break;
         case IR_READ:
+            generateRead(mips, inst);
             break;
         case IR_WRITE:
             generateWrite(mips, inst);
@@ -132,6 +133,7 @@ void CodeGenerator::generateProcedure() {
 void CodeGenerator::generateMultiply(Mips *pMips, IRInst *pInst) {
     int value;
     Reg *src1, *src2;
+    // todo add zero register optimize
     if (isNumber(pInst->arg1, &value)) {
         src1 = allocator.allocate();
         auto inst = new MIPS_Instruction(MIPS_LI, src1->getName(), to_string(value));
@@ -148,6 +150,16 @@ void CodeGenerator::generateMultiply(Mips *pMips, IRInst *pInst) {
     Reg *dest = getRegOfSymbol(pInst->target);
     auto mul = new MIPS_Instruction(MIPS_MUL, dest->getName(), src1->getName(), src2->getName());
     pMips->addInstruction(mul);
+}
+
+void CodeGenerator::generateRead(Mips *pMips, IRInst *pInst) {
+    Reg *num = getRegOfSymbol(pInst->target);
+    pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "4"));
+    pMips->addInstruction(new MIPS_Instruction(MIPS_LA, "$a0", INPUT_HINT));
+    pMips->addInstruction(new MIPS_Instruction(MIPS_SYSCALL));
+    pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "5"));
+    pMips->addInstruction(new MIPS_Instruction(MIPS_SYSCALL));
+    pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, num->getName(), "$v0"));
 }
 
 void CodeGenerator::generateWrite(Mips *pMips, IRInst *pInst) {
