@@ -71,6 +71,7 @@ void CodeGenerator::generateCode(Mips *mips, IRInst *inst) {
     switch (inst->irOperator) {
 
         case IR_LABEL:
+            mips->addInstruction(new MIPS_Instruction{MIPS_LABEL, inst->target});
             break;
         case IR_FUNCTION: {
             auto *mipsInstruction = new MIPS_Instruction{MIPS_LABEL, inst->target};
@@ -83,12 +84,9 @@ void CodeGenerator::generateCode(Mips *mips, IRInst *inst) {
             break;
         case IR_ADD:
         case IR_SUB:
-            generateAddSub(mips, inst);
-            break;
         case IR_MUL:
-            generateMultiply(mips, inst);
-            break;
         case IR_DIV:
+            generateArithmetic(mips, inst);
             break;
         case IR_ADDRESS:
             break;
@@ -97,18 +95,15 @@ void CodeGenerator::generateCode(Mips *mips, IRInst *inst) {
         case IR_COPY_VALUE_TO_ADDRESS:
             break;
         case IR_GOTO:
+            mips->addInstruction(new MIPS_Instruction{MIPS_J, inst->target});
             break;
         case IR_IF_LT:
-            break;
         case IR_IF_LE:
-            break;
         case IR_IF_GT:
-            break;
         case IR_IF_GE:
-            break;
         case IR_IF_EQ:
-            break;
         case IR_IF_NE:
+            generateBranch(mips, inst);
             break;
         case IR_RETURN:
             generateReturn(mips, inst);
@@ -157,25 +152,9 @@ void CodeGenerator::generateAssign(Mips *mips, const IRInst *inst) {
 }
 
 
-void CodeGenerator::generateAddSub(Mips *pMips, IRInst *pInst) {
-    Reg *src1 = getRegOfSymbol(pInst->arg1);
-    Reg *src2 = getRegOfSymbol(pInst->arg2);
-    Reg *dest = getRegOfSymbol(pInst->target);
-    if (pInst->irOperator == IR_ADD) {
-        auto mips = new MIPS_Instruction(MIPS_ADD, dest->getName(), src1->getName(), src2->getName());
-        pMips->addInstruction(mips);
-    } else {
-        auto mips = new MIPS_Instruction(MIPS_SUB, dest->getName(), src1->getName(), src2->getName());
-        pMips->addInstruction(mips);
-    }
-    increaseUse(pInst->arg1, symbolTable);
-    increaseUse(pInst->arg2, symbolTable);
-}
-
-void CodeGenerator::generateMultiply(Mips *pMips, IRInst *pInst) {
+void CodeGenerator::generateArithmetic(Mips *pMips, IRInst *pInst) {
     int value;
     Reg *src1, *src2;
-    // todo add zero register optimize
     if (isNumber(pInst->arg1, &value)) {
         src1 = allocator.localAllocate(mips);
         auto inst = new MIPS_Instruction(MIPS_LI, src1->getName(), to_string(value));
@@ -189,9 +168,29 @@ void CodeGenerator::generateMultiply(Mips *pMips, IRInst *pInst) {
         pMips->addInstruction(inst);
     } else
         src2 = getRegOfSymbol(pInst->arg2);
+
     Reg *dest = getRegOfSymbol(pInst->target);
-    auto mul = new MIPS_Instruction(MIPS_MUL, dest->getName(), src1->getName(), src2->getName());
-    pMips->addInstruction(mul);
+    switch (pInst->irOperator) {
+        case IR_ADD: {
+            auto add = new MIPS_Instruction(MIPS_ADD, dest->getName(), src1->getName(), src2->getName());
+            pMips->addInstruction(add);
+        }
+            break;
+        case IR_SUB: {
+            auto sub = new MIPS_Instruction(MIPS_SUB, dest->getName(), src1->getName(), src2->getName());
+            pMips->addInstruction(sub);
+        }
+            break;
+        case IR_MUL: {
+            auto mul = new MIPS_Instruction(MIPS_MUL, dest->getName(), src1->getName(), src2->getName());
+            pMips->addInstruction(mul);
+        }
+            break;
+        case IR_DIV:
+            break;
+        default:
+            break;
+    }
     increaseUse(pInst->arg1, symbolTable);
     increaseUse(pInst->arg2, symbolTable);
 }
@@ -208,10 +207,15 @@ void CodeGenerator::generateRead(Mips *pMips, IRInst *pInst) {
 }
 
 void CodeGenerator::generateWrite(Mips *pMips, IRInst *pInst) {
-    Reg *num = getRegOfSymbol(pInst->target);
-    increaseUse(pInst->target, symbolTable);
     pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "1"));
-    pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, "$a0", num->getName()));
+    int value;
+    if (isNumber(pInst->target, &value)) {
+        pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$a0", to_string(value)));
+    } else {
+        Reg *num = getRegOfSymbol(pInst->target);
+        increaseUse(pInst->target, symbolTable);
+        pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, "$a0", num->getName()));
+    }
     pMips->addInstruction(new MIPS_Instruction(MIPS_SYSCALL));
     pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "4"));
     pMips->addInstruction(new MIPS_Instruction(MIPS_LA, "$a0", NEWLINE));
@@ -232,6 +236,57 @@ void CodeGenerator::generateReturn(Mips *pMips, IRInst *pInst) {
     auto jr = new MIPS_Instruction(MIPS_JR, "$ra");
     pMips->addInstruction(jr);
 }
+
+
+void CodeGenerator::generateBranch(Mips *pMips, IRInst *pInst) {
+
+    int value;
+    Reg *src1, *src2;
+    // todo add zero register optimize
+    if (isNumber(pInst->arg1, &value)) {
+        src1 = allocator.localAllocate(mips);
+        auto inst = new MIPS_Instruction(MIPS_LI, src1->getName(), to_string(value));
+        pMips->addInstruction(inst);
+    } else
+        src1 = getRegOfSymbol(pInst->arg1);
+
+    if (isNumber(pInst->arg2, &value)) {
+        src2 = allocator.localAllocate(mips);
+        auto inst = new MIPS_Instruction(MIPS_LI, src2->getName(), to_string(value));
+        pMips->addInstruction(inst);
+    } else
+        src2 = getRegOfSymbol(pInst->arg2);
+
+    increaseUse(pInst->arg1, symbolTable);
+    increaseUse(pInst->arg2, symbolTable);
+
+    MipsOperator branch;
+    switch (pInst->irOperator) {
+        case IR_IF_LT:
+            branch = MIPS_BLT;
+            break;
+        case IR_IF_LE:
+            branch = MIPS_BLE;
+            break;
+        case IR_IF_GT:
+            branch = MIPS_BGT;
+            break;
+        case IR_IF_GE:
+            branch = MIPS_BGE;
+            break;
+        case IR_IF_EQ:
+            branch = MIPS_BEQ;
+            break;
+        case IR_IF_NE:
+            branch = MIPS_BNE;
+            break;
+        default:
+            break;
+    }
+    mips->addInstruction(
+            new MIPS_Instruction(branch, pInst->target, src1->getName(), src2->getName()));
+}
+
 
 Reg *CodeGenerator::getRegOfSymbol(const string &varName) {
     auto item = this->symbolTable.find(varName);
@@ -391,9 +446,8 @@ void Block::analysisBlock(map<string, AddressDescriptor *> &symbolTable) {
             case IR_CALL:
                 break;
             case IR_READ:
-            case IR_WRITE: {
+            case IR_WRITE:
                 addSymbolUsed(inst->target, reverse_line, symbolTable);
-            }
                 break;
         }
 

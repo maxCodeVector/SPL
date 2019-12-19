@@ -15,7 +15,7 @@
 
 using namespace std;
 
-enum MipOperator {
+enum MipsOperator {
     MIPS_LABEL,
     MIPS_LI,
     MIPS_LA,
@@ -47,17 +47,17 @@ class MIPS_Instruction {
     string src2;
 
 public:
-    MipOperator op;
+    MipsOperator op;
 
     string to_string();
 
-    explicit MIPS_Instruction(MipOperator op);
+    explicit MIPS_Instruction(MipsOperator op);
 
-    MIPS_Instruction(MipOperator op, const string &dest);
+    MIPS_Instruction(MipsOperator op, const string &dest);
 
-    MIPS_Instruction(MipOperator op, const string &dest, const string &src1);
+    MIPS_Instruction(MipsOperator op, const string &dest, const string &src1);
 
-    MIPS_Instruction(MipOperator op, const string &dest, const string &src1, const string &src2);
+    MIPS_Instruction(MipsOperator op, const string &dest, const string &src1, const string &src2);
 
 };
 

@@ -56,17 +56,17 @@ string MIPS_Instruction::to_string() {
         case MIPS_JR:
             return "jr " + dest;
         case MIPS_BLT:
-            return "blt " + src1 + ", " + src2 + ", ", dest;
+            return "blt " + src1 + ", " + src2 + ", " + dest;
         case MIPS_BLE:
-            return "ble " + src1 + ", " + src2 + ", ", dest;
+            return "ble " + src1 + ", " + src2 + ", " + dest;
         case MIPS_BGT:
-            return "bgt " + src1 + ", " + src2 + ", ", dest;
+            return "bgt " + src1 + ", " + src2 + ", " + dest;
         case MIPS_BGE:
-            return "bge " + src1 + ", " + src2 + ", ", dest;
+            return "bge " + src1 + ", " + src2 + ", " + dest;
         case MIPS_BNE:
-            return "bne " + src1 + ", " + src2 + ", ", dest;
+            return "bne " + src1 + ", " + src2 + ", " + dest;
         case MIPS_BEQ:
-            return "beq " + src1 + ", " + src2 + ", ", dest;
+            return "beq " + src1 + ", " + src2 + ", " + dest;
         case MIPS_SYSCALL:
             return "syscall";
     }
@@ -74,7 +74,7 @@ string MIPS_Instruction::to_string() {
 }
 
 MIPS_Instruction::MIPS_Instruction(
-        MipOperator op,
+        MipsOperator op,
         const string &dest,
         const string &src1,
         const string &src2) {
@@ -85,7 +85,7 @@ MIPS_Instruction::MIPS_Instruction(
 }
 
 MIPS_Instruction::MIPS_Instruction(
-        MipOperator op,
+        MipsOperator op,
         const string &dest,
         const string &src1) {
     this->op = op;
@@ -94,14 +94,14 @@ MIPS_Instruction::MIPS_Instruction(
 }
 
 MIPS_Instruction::MIPS_Instruction(
-        MipOperator op,
+        MipsOperator op,
         const string &dest) {
     this->op = op;
     this->dest = dest;
 }
 
 MIPS_Instruction::MIPS_Instruction(
-        MipOperator op) {
+        MipsOperator op) {
     this->op = op;
 }
 

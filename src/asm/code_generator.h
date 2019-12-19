@@ -85,11 +85,9 @@ class CodeGenerator {
 
     void generateBlockCode(Mips *pMips, Block *pBlock);
 
-    void generateAddSub(Mips *pMips, IRInst *pInst);
+    void generateArithmetic(Mips *pMips, IRInst *pInst);
 
     void generateAssign(Mips *mips, const IRInst *inst);
-
-    void generateMultiply(Mips *pMips, IRInst *pInst);
 
     void generateWrite(Mips *pMips, IRInst *pInst);
 
@@ -103,6 +101,7 @@ public:
 
     Mips *generateMipsCode();
 
+    void generateBranch(Mips *pMips, IRInst *pInst);
 };
 
 
