@@ -138,5 +138,6 @@ public:
     void removeInst(IRInst *inst);
 };
 
+bool isSimilarGoto(IROperator irOperator);
 
 #endif //SPL_IRNODE_H

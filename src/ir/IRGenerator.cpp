@@ -4,6 +4,7 @@
 
 #include "IRGenerator.h"
 #include "optimizer.h"
+#include "irnode.h"
 
 TempNameGenerator::TempNameGenerator(const string &prefix, int size) {
     this->prefix = prefix;
@@ -51,17 +52,6 @@ void TempNameGenerator::releaseAll(bool strong = false) {
     } else if (strong) {
         this->curr_max_id_num = 0;
     }
-}
-
-
-bool isSimilarGoto(IROperator irOperator) {
-    return irOperator == IR_GOTO
-           || irOperator == IR_IF_LT
-           || irOperator == IR_IF_LE
-           || irOperator == IR_IF_GT
-           || irOperator == IR_IF_GE
-           || irOperator == IR_IF_EQ
-           || irOperator == IR_IF_NE;
 }
 
 IRGenerator::IRGenerator(bool optimized, AST *ast) {

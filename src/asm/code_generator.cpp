@@ -7,32 +7,62 @@
 
 CodeGenerator::CodeGenerator(IR *ir) {
     for (auto block: ir->getBlocks()) {
-        for (IRInst *inst: *block->getInstructions()) {
-            this->ir_code.push_back(inst);
-        }
+        findBlocks(*block->getInstructions());
+//        for (IRInst *inst: *block->getInstructions()) {
+//            this->ir_code.push_back(inst);
+//        }
     }
 }
 
+void CodeGenerator::findBlocks(list<IRInst *> &irList) {
+    auto itor = irList.begin();
+    Block *block = new Block;
+    block->start = itor;
+    while (itor != irList.end()) {
+        IRInst *inst = *itor;
+        if (inst->irOperator == IR_LABEL) {
+            block->end = itor;
+            this->irBlocks.push_back(block);
+            block = new Block;
+            block->start = itor;
+        } else if (itor != irList.begin()) {
+            itor--;
+            IRInst *pre = *itor;
+            itor++;
+            if (isSimilarGoto(pre->irOperator)) {
+                block->end = itor;
+                this->irBlocks.push_back(block);
+                block = new Block;
+                block->start = itor;
+            }
+        }
+        itor++;
+    }
+    if (block->start != itor) {
+        block->end = itor;
+        this->irBlocks.push_back(block);
+    } else
+        delete (block);
+}
 
 Mips *CodeGenerator::generateMipsCode() {
     Mips *mips = new Mips;
-    auto iter = this->ir_code.begin();
-    while (iter != this->ir_code.end()) {
-        generateCode(mips, *iter);
+    auto iter = this->irBlocks.begin();
+    while (iter != this->irBlocks.end()) {
+        generateBlockCode(mips, *iter);
         iter++;
     }
     return mips;
 }
 
-Reg *CodeGenerator::getRegOfSymbol(const string &varName) {
-    auto item = this->symbolTable.find(varName);
-    if (item != symbolTable.end()) {
-        return item->second;
+
+void CodeGenerator::generateBlockCode(Mips *pMips, Block *pBlock) {
+    auto itor = pBlock->start;
+    const auto &temp = pBlock->getAllIRcode();
+    while (itor != pBlock->end) {
+        generateCode(pMips, *itor);
+        itor++;
     }
-    //todo load from memory
-    Reg *reg = allocator.allocate();
-    symbolTable.insert(pair<string, Reg *>(varName, reg));
-    return reg;
 }
 
 void CodeGenerator::generateCode(Mips *mips, IRInst *inst) {
@@ -174,12 +204,11 @@ void CodeGenerator::generateWrite(Mips *pMips, IRInst *pInst) {
 
 void CodeGenerator::generateReturn(Mips *pMips, IRInst *pInst) {
     int value;
-    Reg *src;
     if (isNumber(pInst->target, &value)) {
         auto move = new MIPS_Instruction(MIPS_LI, "$v0", to_string(value));
         pMips->addInstruction(move);
     } else {
-        src = getRegOfSymbol(pInst->target);
+        auto src = getRegOfSymbol(pInst->target);
         auto move = new MIPS_Instruction(MIPS_MOVE, "$v0", src->getName());
         pMips->addInstruction(move);
     }
@@ -187,10 +216,21 @@ void CodeGenerator::generateReturn(Mips *pMips, IRInst *pInst) {
     pMips->addInstruction(jr);
 }
 
+Reg *CodeGenerator::getRegOfSymbol(const string &varName) {
+    auto item = this->symbolTable.find(varName);
+    if (item != symbolTable.end()) {
+        return item->second;
+    }
+    //todo load from memory
+    Reg *reg = allocator.allocate();
+    symbolTable.insert(pair<string, Reg *>(varName, reg));
+    return reg;
+}
+
 Reg *RegisterAllocator::allocate() {
     for (Reg &reg: temp_regs) {
-        if (!reg.dirty) {
-            reg.dirty = true;
+        if (!reg.idle) {
+            reg.idle = true;
             return &reg;
         }
     }
@@ -200,11 +240,12 @@ Reg *RegisterAllocator::allocate() {
 
 RegisterAllocator::RegisterAllocator() {
     for (int i = 0; i < reg_number; i++) {
+        temp_regs[i].prefix = "$t";
         temp_regs[i].id = i;
-        temp_regs[i].dirty = false;
+        temp_regs[i].idle = false;
     }
 }
 
 string Reg::getName() {
-    return "$t" + to_string(id);
+    return prefix + to_string(id);
 }

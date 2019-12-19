@@ -10,10 +10,28 @@
 
 
 struct Reg {
+    string prefix;
     int id;
+    bool idle;
     bool dirty;
 
     string getName();
+};
+
+struct Block {
+    list<IRInst *>::iterator start;
+    list<IRInst *>::iterator end;
+
+    // debug used
+    list<IRInst *> getAllIRcode() {
+        list<IRInst *> list;
+        auto itor = start;
+        while (itor != end) {
+            list.push_back(*itor);
+            itor++;
+        }
+        return list;
+    }
 };
 
 
@@ -30,9 +48,10 @@ public:
 
 
 class CodeGenerator {
-    list<IRInst *> ir_code;
+//    list<IRInst *> ir_code;
     RegisterAllocator allocator;
     map<string, Reg *> symbolTable;
+    list<Block *> irBlocks;
 
     void generateProcedure();
 
@@ -40,10 +59,9 @@ class CodeGenerator {
 
     Reg *getRegOfSymbol(const string &varName);
 
-public:
-    explicit CodeGenerator(IR *ir);
+    void findBlocks(list<IRInst *> &irList);
 
-    Mips *generateMipsCode();
+    void generateBlockCode(Mips *pMips, Block *pBlock);
 
     void generateAddSub(Mips *pMips, IRInst *pInst);
 
@@ -56,6 +74,13 @@ public:
     void generateReturn(Mips *pMips, IRInst *pInst);
 
     void generateRead(Mips *pMips, IRInst *pInst);
+
+
+public:
+    explicit CodeGenerator(IR *ir);
+
+    Mips *generateMipsCode();
+
 };
 
 

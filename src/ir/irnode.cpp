@@ -2,6 +2,8 @@
 // Created by hya on 12/8/19.
 //
 
+#include "optimizer.h"
+#include "IRGenerator.h"
 #include "irnode.h"
 
 void IR::write(ostream &os) {
@@ -146,4 +148,14 @@ const list<IRInst *> &JumpEntry::getJumpInst() const {
 
 void JumpEntry::removeInst(IRInst *inst) {
     this->jumpInst.remove(inst);
+}
+
+bool isSimilarGoto(IROperator irOperator) {
+    return irOperator == IR_GOTO
+           || irOperator == IR_IF_LT
+           || irOperator == IR_IF_LE
+           || irOperator == IR_IF_GT
+           || irOperator == IR_IF_GE
+           || irOperator == IR_IF_EQ
+           || irOperator == IR_IF_NE;
 }
