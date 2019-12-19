@@ -8,6 +8,7 @@
 #include <ostream>
 #include <string>
 #include <list>
+
 #define NEWLINE "_ret"
 #define INPUT_HINT "_prompt"
 
@@ -71,5 +72,21 @@ public:
     void write(std::ostream &os);
 };
 
+
+class AddressDescriptor;
+
+struct Reg {
+    string prefix;
+    int id;
+    bool dirty;
+    /**
+     * may be null, the corresponding address in memory.
+     * some may be null because they do not need to stored in memory
+     * (example: temporary variable)
+     */
+    AddressDescriptor *addr = nullptr;
+
+    string getName();
+};
 
 #endif //SPL_MIPS_H

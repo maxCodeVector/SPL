@@ -46,9 +46,9 @@ string MIPS_Instruction::to_string() {
         case MIPS_MFLO:
             return "mflo " + dest;
         case MIPS_LW:
-            return "lw " + dest + ", " + src1;
+            return "lw " + dest + ", " + src2 + '(' + src1 + ')';
         case MIPS_SW:
-            return "sw " + dest + ", " + src1;
+            return "sw " + dest + ", " + src2 + '(' + src1 + ')';
         case MIPS_J:
             return "j " + dest;
         case MIPS_JAL:
@@ -103,4 +103,8 @@ MIPS_Instruction::MIPS_Instruction(
 MIPS_Instruction::MIPS_Instruction(
         MipOperator op) {
     this->op = op;
+}
+
+string Reg::getName() {
+    return prefix + to_string(id);
 }

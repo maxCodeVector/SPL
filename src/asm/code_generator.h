@@ -8,19 +8,34 @@
 #include "../ir/irnode.h"
 #include "mips.h"
 
+struct AddressDescriptor {
+    /** the reg that store this address's value now
+     * may be null because they are in memory not in register currently
+     */
+    Reg *reg;
+    /** the offset relative by current stack pointer
+     * if it only appeared in register, then offset is negative
+     */
+    int offset;
+private:
+    string name;
+    list<int> next_used;
+public:
+    bool isAlive();
 
-struct Reg {
-    string prefix;
-    int id;
-    bool idle;
-    bool dirty;
+    void setNextUsed(int line);
 
-    string getName();
+    void use();
+
+    int getNextUsed();
+
+    AddressDescriptor(const string &name, Reg *reg, int offset);
 };
 
 struct Block {
     list<IRInst *>::iterator start;
     list<IRInst *>::iterator end;
+    int numOfInst = 0;
 
     // debug used
     list<IRInst *> getAllIRcode() {
@@ -32,28 +47,35 @@ struct Block {
         }
         return list;
     }
+
+    void analysisBlock(map<string, AddressDescriptor *> &symbolTable);
+
 };
 
 
 class RegisterAllocator {
-    static const int reg_number = 10;
+    static const int reg_number = 3;
     Reg temp_regs[reg_number];
+    int fp_offset;
 
+    int getSpace();
+
+    Reg *getRegByLru();
 
 public:
     RegisterAllocator();
 
-    Reg *allocate();
+    Reg *localAllocate(Mips *mips);
+
 };
 
 
 class CodeGenerator {
 //    list<IRInst *> ir_code;
+    Mips *mips;
     RegisterAllocator allocator;
-    map<string, Reg *> symbolTable;
+    map<string, AddressDescriptor *> symbolTable;
     list<Block *> irBlocks;
-
-    void generateProcedure();
 
     void generateCode(Mips *mips, IRInst *inst);
 
