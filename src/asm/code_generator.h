@@ -13,7 +13,8 @@ struct AddressDescriptor {
      * may be null because they are in memory not in register currently
      */
     Reg *reg;
-    /** the offset relative by current stack pointer
+    /** the offset relative by current stack pointer ($fp), noticed that it is different
+     * from $sp address
      * if it only appeared in register, then offset is negative
      */
     int offset;
@@ -33,7 +34,7 @@ public:
 };
 
 class RegisterAllocator {
-    static const int reg_number = 10;
+    static const int reg_number = 3;
     Reg temp_regs[reg_number];
     int fp_offset;
 

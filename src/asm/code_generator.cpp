@@ -158,7 +158,7 @@ void Block::generateCaller(Mips *pMips, IRInst *pInst) {
     }
     /** update top_sp ($fp) */
     pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, "$fp", "$sp"));
-    pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, "$fp", "$sp"));
+//    pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, "$fp", "$sp"));
     this->arguments_of_next_call.clear();
 
 
@@ -362,7 +362,7 @@ Reg *Block::getRegOfSymbol(const string &varName) {
             Reg *reg = allocator->localAllocate(mips);
             int offset = addr->offset;
             if (offset > 0) {
-                auto lw = new MIPS_Instruction(MIPS_LW, reg->getName(), "$fp", to_string(offset));
+                auto lw = new MIPS_Instruction(MIPS_LW, reg->getName(), "$fp", to_string(-offset));
                 mips->addInstruction(lw);
             }
             addr->reg = reg;
@@ -466,7 +466,8 @@ Reg *RegisterAllocator::localAllocate(Mips *mips) {
     addr->reg = nullptr;
     spill->addr = nullptr;
     if (spill->isDirty()) {
-        mips->addInstruction(new MIPS_Instruction(MIPS_SW, spill->getName(), "$fp", to_string(addr->offset)));
+        mips->addInstruction(
+                new MIPS_Instruction(MIPS_SW, spill->getName(), "$fp", to_string(-addr->offset)));
         spill->removeDirty();
     }
     return spill;
@@ -502,7 +503,7 @@ RegisterAllocator::RegisterAllocator() {
 
 int RegisterAllocator::getSpace() {
     fp_offset++;
-    return fp_offset * -4;
+    return fp_offset * 4;
 }
 
 AddressDescriptor::AddressDescriptor(const string &name, Reg *reg, int offset) {
