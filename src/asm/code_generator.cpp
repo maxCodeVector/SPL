@@ -287,18 +287,26 @@ void Block::generateArithmetic(Mips *pMips, IRInst *pInst) {
 }
 
 void Block::generateRead(Mips *pMips, IRInst *pInst) {
-    Reg *num = getRegOfSymbol(pInst->target);
-    increaseUse(pInst->target, symbolTable);
+    saveRegisterStatus(mips);
+
     pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "4"));
     pMips->addInstruction(new MIPS_Instruction(MIPS_LA, "$a0", INPUT_HINT));
     pMips->addInstruction(new MIPS_Instruction(MIPS_SYSCALL));
+
+    restoreRegisterStatus(mips);
+
+    Reg *num = getRegOfSymbol(pInst->target);
+    increaseUse(pInst->target, symbolTable);
     pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "5"));
     pMips->addInstruction(new MIPS_Instruction(MIPS_SYSCALL));
     pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, num->getName(), "$v0"));
     num->setDirty();
+
 }
 
 void Block::generateWrite(Mips *pMips, IRInst *pInst) {
+    saveRegisterStatus(mips);
+
     pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "1"));
     int value;
     if (isNumber(pInst->target, &value)) {
@@ -312,6 +320,9 @@ void Block::generateWrite(Mips *pMips, IRInst *pInst) {
     pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "4"));
     pMips->addInstruction(new MIPS_Instruction(MIPS_LA, "$a0", NEWLINE));
     pMips->addInstruction(new MIPS_Instruction(MIPS_SYSCALL));
+
+    restoreRegisterStatus(mips);
+
 }
 
 
