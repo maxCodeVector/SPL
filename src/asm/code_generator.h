@@ -32,29 +32,8 @@ public:
     AddressDescriptor(const string &name, Reg *reg, int offset);
 };
 
-struct Block {
-    list<IRInst *>::iterator start;
-    list<IRInst *>::iterator end;
-    int numOfInst = 0;
-
-    // debug used
-    list<IRInst *> getAllIRcode() {
-        list<IRInst *> list;
-        auto itor = start;
-        while (itor != end) {
-            list.push_back(*itor);
-            itor++;
-        }
-        return list;
-    }
-
-    void analysisBlock(map<string, AddressDescriptor *> &symbolTable);
-
-};
-
-
 class RegisterAllocator {
-    static const int reg_number = 3;
+    static const int reg_number = 10;
     Reg temp_regs[reg_number];
     int fp_offset;
 
@@ -70,20 +49,31 @@ public:
 };
 
 
-class CodeGenerator {
-//    list<IRInst *> ir_code;
-    Mips *mips;
-    RegisterAllocator allocator;
+class Block {
+
+    RegisterAllocator *allocator;
+    Mips *mips = nullptr;
+
+public:
+
+private:
+
     map<string, AddressDescriptor *> symbolTable;
-    list<Block *> irBlocks;
+    list<IRInst *> arguments_of_next_call;
+    list<IRInst *> parameters_of_function;
 
-    void generateCode(Mips *mips, IRInst *inst);
+    // debug used
+    list<IRInst *> getAllIRcode() {
+        list<IRInst *> list;
+        auto itor = start;
+        while (itor != end) {
+            list.push_back(*itor);
+            itor++;
+        }
+        return list;
+    }
 
-    Reg *getRegOfSymbol(const string &varName);
-
-    void findBlocks(list<IRInst *> &irList);
-
-    void generateBlockCode(Mips *pMips, Block *pBlock);
+    void generateCode(IRInst *inst);
 
     void generateArithmetic(Mips *pMips, IRInst *pInst);
 
@@ -95,14 +85,51 @@ class CodeGenerator {
 
     void generateRead(Mips *pMips, IRInst *pInst);
 
+    void generateBranch(Mips *pMips, IRInst *pInst);
+
+    void generateCallee(Mips *mips, const IRInst *inst) const;
+
+    void generateCaller(Mips *pMips, IRInst *pInst);
+
+    void generateArgument(Mips *pMips, IRInst *pInst);
+
+    void generateParameter(Mips *pMips, IRInst *pInst);
+
+    void savaRegisterStatus(Mips *pMips) const;
+
+    Reg *getRegOfSymbol(const string &varName);
+
+public:
+
+    list<IRInst *>::iterator start;
+    list<IRInst *>::iterator end;
+    int numOfInst = 0;
+
+    explicit Block(RegisterAllocator *allocator);
+
+    void setMips(Mips *mips);
+
+    void analysis();
+
+    void generateCode();
+
+};
+
+
+class CodeGenerator {
+
+//    list<IRInst *> ir_code;
+    Mips *mips = nullptr;
+    RegisterAllocator allocator;
+    list<Block *> irBlocks;
+
+    void findBlocks(list<IRInst *> &irList);
 
 public:
     explicit CodeGenerator(IR *ir);
 
     Mips *generateMipsCode();
 
-    void generateBranch(Mips *pMips, IRInst *pInst);
 };
-
 
 #endif //SPL_CODE_GENERATOR_H

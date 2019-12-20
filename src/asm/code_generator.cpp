@@ -5,25 +5,23 @@
 #include "code_generator.h"
 #include "../ir/optimizer.h"
 
+
 CodeGenerator::CodeGenerator(IR *ir) {
     for (auto block: ir->getBlocks()) {
         findBlocks(*block->getInstructions());
-//        for (IRInst *inst: *block->getInstructions()) {
-//            this->ir_code.push_back(inst);
-//        }
     }
 }
 
 void CodeGenerator::findBlocks(list<IRInst *> &irList) {
     auto itor = irList.begin();
-    Block *block = new Block;
+    Block *block = new Block(&allocator);
     block->start = itor;
     while (itor != irList.end()) {
         IRInst *inst = *itor;
         if (inst->irOperator == IR_LABEL) {
             block->end = itor;
             this->irBlocks.push_back(block);
-            block = new Block;
+            block = new Block(&allocator);;
             block->start = itor;
         } else if (itor != irList.begin()) {
             itor--;
@@ -32,7 +30,7 @@ void CodeGenerator::findBlocks(list<IRInst *> &irList) {
             if (isSimilarGoto(pre->irOperator)) {
                 block->end = itor;
                 this->irBlocks.push_back(block);
-                block = new Block;
+                block = new Block(&allocator);;
                 block->start = itor;
             }
         }
@@ -46,38 +44,38 @@ void CodeGenerator::findBlocks(list<IRInst *> &irList) {
         delete (block);
 }
 
+
 Mips *CodeGenerator::generateMipsCode() {
     mips = new Mips;
     auto iter = this->irBlocks.begin();
     while (iter != this->irBlocks.end()) {
-        generateBlockCode(mips, *iter);
+        Block *block = (*iter);
+        block->setMips(mips);
+        block->generateCode();
         iter++;
     }
     return mips;
 }
 
 
-void CodeGenerator::generateBlockCode(Mips *pMips, Block *pBlock) {
-    pBlock->analysisBlock(this->symbolTable);
-    auto itor = pBlock->start;
-    const auto &temp = pBlock->getAllIRcode();
-    while (itor != pBlock->end) {
-        generateCode(pMips, *itor);
+void Block::generateCode() {
+    this->analysis();
+    auto itor = start;
+    const auto &temp = getAllIRcode();
+    while (itor != end) {
+        generateCode(*itor);
         itor++;
     }
 }
 
-void CodeGenerator::generateCode(Mips *mips, IRInst *inst) {
+void Block::generateCode(IRInst *inst) {
     switch (inst->irOperator) {
 
         case IR_LABEL:
             mips->addInstruction(new MIPS_Instruction{MIPS_LABEL, inst->target});
             break;
-        case IR_FUNCTION: {
-            auto *mipsInstruction = new MIPS_Instruction{MIPS_LABEL, inst->target};
-            mips->addInstruction(mipsInstruction);
-            mips->addInstruction(new MIPS_Instruction(MIPS_MOVE, "$fp", "$sp"));
-        }
+        case IR_FUNCTION:
+            generateCallee(mips, inst);
             break;
         case IR_ASSIGN:
             generateAssign(mips, inst);
@@ -111,10 +109,13 @@ void CodeGenerator::generateCode(Mips *mips, IRInst *inst) {
         case IR_DEC:
             break;
         case IR_PARAM:
+            generateParameter(mips, inst);
             break;
         case IR_ARG:
+            generateArgument(mips, inst);
             break;
         case IR_CALL:
+            generateCaller(mips, inst);
             break;
         case IR_READ:
             generateRead(mips, inst);
@@ -123,6 +124,67 @@ void CodeGenerator::generateCode(Mips *mips, IRInst *inst) {
             generateWrite(mips, inst);
             break;
     }
+
+}
+
+void Block::generateArgument(Mips *pMips, IRInst *pInst) {
+    this->arguments_of_next_call.push_back(pInst);
+}
+
+void Block::generateCaller(Mips *pMips, IRInst *pInst) {
+    int numOfArgs = this->arguments_of_next_call.size();
+    // first 4 bytes is used to store number of parameters,
+    // todo, can be removed since we can known number of parameters in callee
+    pMips->push(4);
+    Reg *numReg = allocator->localAllocate(mips);
+    pMips->addInstruction(new MIPS_Instruction(MIPS_LI, numReg->getName(), to_string(numOfArgs)));
+    pMips->addInstruction(new MIPS_Instruction(MIPS_SW, numReg->getName(), "$sp", "0"));
+
+    /**
+     * other space used to store control link, access link, in particular
+     * 1. current top_sp ($fp)
+     * 2. return address ($ra)
+     * we do not need to leave space to store return value,
+     * because we only return integer, so put it in $v0 directly
+     */
+    pMips->push(4 * numOfArgs + 8);
+    pMips->addInstruction(new MIPS_Instruction(MIPS_SW, "$fp", "$sp", to_string(0)));
+    pMips->addInstruction(new MIPS_Instruction(MIPS_SW, "$ra", "$sp", to_string(-4)));
+    int arg_count = 2;
+    for (IRInst *inst: arguments_of_next_call) {
+        Reg *arg = getRegOfSymbol(inst->target);
+        pMips->addInstruction(new MIPS_Instruction(MIPS_SW, arg->getName(), "$sp", to_string(arg_count * -4)));
+        arg_count++;
+    }
+    /** update top_sp ($fp) */
+    pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, "$fp", "$sp"));
+    pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, "$fp", "$sp"));
+    this->arguments_of_next_call.clear();
+
+
+    pMips->addInstruction(new MIPS_Instruction(MIPS_JAL, pInst->arg1));
+    Reg *ret = getRegOfSymbol(pInst->target);
+    pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, ret->getName(), "$v0"));
+}
+
+
+void Block::generateParameter(Mips *pMips, IRInst *pInst) {
+    this->parameters_of_function.push_back(pInst);
+}
+
+void Block::generateCallee(Mips *mips, const IRInst *inst) const {
+    auto *mipsInstruction = new MIPS_Instruction{MIPS_LABEL, inst->target};
+    mips->addInstruction(mipsInstruction);
+    mips->addInstruction(new MIPS_Instruction(MIPS_MOVE, "$fp", "$sp"));
+    /**
+     * saves the register values and other status info, not including $ra,
+     * $ra's value should be stored in caller, and loaded in return
+     */
+    savaRegisterStatus(mips);
+
+
+    int numberOfPara = parameters_of_function.size();
+
 
 }
 
@@ -136,7 +198,7 @@ void increaseUse(const string &var, map<string, AddressDescriptor *> &symbolTabl
 }
 
 
-void CodeGenerator::generateAssign(Mips *mips, const IRInst *inst) {
+void Block::generateAssign(Mips *mips, const IRInst *inst) {
     Reg *dest = getRegOfSymbol(inst->target);
     int value;
     if (isNumber(inst->arg1, &value)) {
@@ -149,21 +211,22 @@ void CodeGenerator::generateAssign(Mips *mips, const IRInst *inst) {
         mips->addInstruction(mipsInst);
         increaseUse(inst->arg1, symbolTable);
     }
+    dest->setDirty();
 }
 
 
-void CodeGenerator::generateArithmetic(Mips *pMips, IRInst *pInst) {
+void Block::generateArithmetic(Mips *pMips, IRInst *pInst) {
     int value;
     Reg *src1, *src2;
     if (isNumber(pInst->arg1, &value)) {
-        src1 = allocator.localAllocate(mips);
+        src1 = allocator->localAllocate(mips);
         auto inst = new MIPS_Instruction(MIPS_LI, src1->getName(), to_string(value));
         pMips->addInstruction(inst);
     } else
         src1 = getRegOfSymbol(pInst->arg1);
 
     if (isNumber(pInst->arg2, &value)) {
-        src2 = allocator.localAllocate(mips);
+        src2 = allocator->localAllocate(mips);
         auto inst = new MIPS_Instruction(MIPS_LI, src2->getName(), to_string(value));
         pMips->addInstruction(inst);
     } else
@@ -193,9 +256,10 @@ void CodeGenerator::generateArithmetic(Mips *pMips, IRInst *pInst) {
     }
     increaseUse(pInst->arg1, symbolTable);
     increaseUse(pInst->arg2, symbolTable);
+    dest->setDirty();
 }
 
-void CodeGenerator::generateRead(Mips *pMips, IRInst *pInst) {
+void Block::generateRead(Mips *pMips, IRInst *pInst) {
     Reg *num = getRegOfSymbol(pInst->target);
     increaseUse(pInst->target, symbolTable);
     pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "4"));
@@ -204,9 +268,10 @@ void CodeGenerator::generateRead(Mips *pMips, IRInst *pInst) {
     pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "5"));
     pMips->addInstruction(new MIPS_Instruction(MIPS_SYSCALL));
     pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, num->getName(), "$v0"));
+    num->setDirty();
 }
 
-void CodeGenerator::generateWrite(Mips *pMips, IRInst *pInst) {
+void Block::generateWrite(Mips *pMips, IRInst *pInst) {
     pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "1"));
     int value;
     if (isNumber(pInst->target, &value)) {
@@ -222,7 +287,7 @@ void CodeGenerator::generateWrite(Mips *pMips, IRInst *pInst) {
     pMips->addInstruction(new MIPS_Instruction(MIPS_SYSCALL));
 }
 
-void CodeGenerator::generateReturn(Mips *pMips, IRInst *pInst) {
+void Block::generateReturn(Mips *pMips, IRInst *pInst) {
     int value;
     if (isNumber(pInst->target, &value)) {
         auto move = new MIPS_Instruction(MIPS_LI, "$v0", to_string(value));
@@ -238,20 +303,19 @@ void CodeGenerator::generateReturn(Mips *pMips, IRInst *pInst) {
 }
 
 
-void CodeGenerator::generateBranch(Mips *pMips, IRInst *pInst) {
+void Block::generateBranch(Mips *pMips, IRInst *pInst) {
 
     int value;
     Reg *src1, *src2;
-    // todo add zero register optimize
     if (isNumber(pInst->arg1, &value)) {
-        src1 = allocator.localAllocate(mips);
+        src1 = allocator->localAllocate(mips);
         auto inst = new MIPS_Instruction(MIPS_LI, src1->getName(), to_string(value));
         pMips->addInstruction(inst);
     } else
         src1 = getRegOfSymbol(pInst->arg1);
 
     if (isNumber(pInst->arg2, &value)) {
-        src2 = allocator.localAllocate(mips);
+        src2 = allocator->localAllocate(mips);
         auto inst = new MIPS_Instruction(MIPS_LI, src2->getName(), to_string(value));
         pMips->addInstruction(inst);
     } else
@@ -283,19 +347,19 @@ void CodeGenerator::generateBranch(Mips *pMips, IRInst *pInst) {
         default:
             break;
     }
-    mips->addInstruction(
+    pMips->addInstruction(
             new MIPS_Instruction(branch, pInst->target, src1->getName(), src2->getName()));
 }
 
 
-Reg *CodeGenerator::getRegOfSymbol(const string &varName) {
+Reg *Block::getRegOfSymbol(const string &varName) {
     auto item = this->symbolTable.find(varName);
     // var has been in the register or memory
     if (item != symbolTable.end()) {
         auto addr = item->second;
         if (!addr->reg) {
             // load from memory
-            Reg *reg = allocator.localAllocate(mips);
+            Reg *reg = allocator->localAllocate(mips);
             int offset = addr->offset;
             if (offset > 0) {
                 auto lw = new MIPS_Instruction(MIPS_LW, reg->getName(), "$fp", to_string(offset));
@@ -307,87 +371,13 @@ Reg *CodeGenerator::getRegOfSymbol(const string &varName) {
         return addr->reg;
     }
     // first used for this variable
-    Reg *reg = allocator.localAllocate(mips);
+    Reg *reg = allocator->localAllocate(mips);
     symbolTable.insert(pair<string, AddressDescriptor *>(varName, new AddressDescriptor(varName, reg, -1)));
     return reg;
 }
 
-Reg *RegisterAllocator::localAllocate(Mips *mips) {
+void Block::savaRegisterStatus(Mips *pMips) const {
 
-    for (Reg &reg: temp_regs) {
-        if (!reg.addr) {
-            return &reg;
-        }
-    }
-    Reg *spill = getRegByLru();
-    AddressDescriptor *addr = spill->addr;
-    if (addr->offset < 0) {
-        addr->offset = getSpace();
-    }
-    addr->reg = nullptr;
-    spill->addr = nullptr;
-    mips->addInstruction(new MIPS_Instruction(MIPS_SW, spill->getName(), "$fp", to_string(addr->offset)));
-    return spill;
-}
-
-Reg *RegisterAllocator::getRegByLru() {
-    int farthest_used = 0;
-    Reg *lru = nullptr;
-    for (auto &reg: temp_regs) {
-        AddressDescriptor *addr = reg.addr;
-        if (addr) {
-            if (!addr->isAlive()) {
-                return &reg;
-            }
-            if (farthest_used < addr->getNextUsed()) {
-                farthest_used = addr->getNextUsed();
-                lru = &reg;
-            }
-        } else
-            return &reg;
-    }
-    return lru;
-}
-
-
-RegisterAllocator::RegisterAllocator() {
-    for (int i = 0; i < reg_number; i++) {
-        temp_regs[i].prefix = "$t";
-        temp_regs[i].id = i;
-    }
-    fp_offset = 0;
-}
-
-int RegisterAllocator::getSpace() {
-    fp_offset++;
-    return fp_offset * 4;
-}
-
-AddressDescriptor::AddressDescriptor(const string &name, Reg *reg, int offset) {
-    this->name = name;
-    this->reg = reg;
-    this->offset = offset;
-    if (reg) {
-        reg->addr = this;
-    }
-}
-
-void AddressDescriptor::setNextUsed(int line) {
-    this->next_used.push_front(line);
-}
-
-bool AddressDescriptor::isAlive() {
-//    if (this->name[0] != 't')
-//        return true;
-    return !this->next_used.empty();
-}
-
-int AddressDescriptor::getNextUsed() {
-    return next_used.front();
-}
-
-void AddressDescriptor::use() {
-    this->next_used.pop_front();
 }
 
 void addSymbolUsed(const string &var, int lineNo, map<string, AddressDescriptor *> &symbolTable) {
@@ -404,7 +394,7 @@ void addSymbolUsed(const string &var, int lineNo, map<string, AddressDescriptor 
     addr->setNextUsed(lineNo);
 }
 
-void Block::analysisBlock(map<string, AddressDescriptor *> &symbolTable) {
+void Block::analysis() {
     auto itor = this->end;
     int reverse_line = this->numOfInst;
     while (itor != this->start) {
@@ -441,10 +431,9 @@ void Block::analysisBlock(map<string, AddressDescriptor *> &symbolTable) {
                 break;
             case IR_PARAM:
                 break;
-            case IR_ARG:
-                break;
             case IR_CALL:
                 break;
+            case IR_ARG:
             case IR_READ:
             case IR_WRITE:
                 addSymbolUsed(inst->target, reverse_line, symbolTable);
@@ -452,4 +441,95 @@ void Block::analysisBlock(map<string, AddressDescriptor *> &symbolTable) {
         }
 
     }
+}
+
+void Block::setMips(Mips *pmips) {
+    Block::mips = pmips;
+}
+
+Block::Block(RegisterAllocator *allocator) {
+    this->allocator = allocator;
+}
+
+Reg *RegisterAllocator::localAllocate(Mips *mips) {
+
+    for (Reg &reg: temp_regs) {
+        if (!reg.addr) {
+            return &reg;
+        }
+    }
+    Reg *spill = getRegByLru();
+    AddressDescriptor *addr = spill->addr;
+    if (addr->offset < 0) {
+        addr->offset = getSpace();
+    }
+    addr->reg = nullptr;
+    spill->addr = nullptr;
+    if (spill->isDirty()) {
+        mips->addInstruction(new MIPS_Instruction(MIPS_SW, spill->getName(), "$fp", to_string(addr->offset)));
+        spill->removeDirty();
+    }
+    return spill;
+}
+
+Reg *RegisterAllocator::getRegByLru() {
+    int farthest_used = 0;
+    Reg *lru = nullptr;
+    for (auto &reg: temp_regs) {
+        AddressDescriptor *addr = reg.addr;
+        if (addr) {
+            if (!addr->isAlive()) {
+                return &reg;
+            }
+            if (farthest_used < addr->getNextUsed()) {
+                farthest_used = addr->getNextUsed();
+                lru = &reg;
+            }
+        } else
+            return &reg;
+    }
+    return lru;
+}
+
+
+RegisterAllocator::RegisterAllocator() {
+    for (int i = 0; i < reg_number; i++) {
+        temp_regs[i].prefix = "$t";
+        temp_regs[i].id = i;
+    }
+    fp_offset = 0;
+}
+
+int RegisterAllocator::getSpace() {
+    fp_offset++;
+    return fp_offset * -4;
+}
+
+AddressDescriptor::AddressDescriptor(const string &name, Reg *reg, int offset) {
+    this->name = name;
+    this->reg = reg;
+    this->offset = offset;
+    if (reg) {
+        reg->addr = this;
+    }
+}
+
+void AddressDescriptor::setNextUsed(int line) {
+    this->next_used.push_front(line);
+}
+
+bool AddressDescriptor::isAlive() {
+//    if (this->name[0] != 't')
+//        return true;
+    return !this->next_used.empty();
+}
+
+int AddressDescriptor::getNextUsed() {
+    return next_used.front();
+}
+
+void AddressDescriptor::use() {
+    // todo why pop empty?
+    if (!next_used.empty())
+        this->next_used.pop_front();
 }

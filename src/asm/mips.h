@@ -70,6 +70,8 @@ public:
     MIPS_Instruction *addInstruction(MIPS_Instruction *instruction);
 
     void write(std::ostream &os);
+
+    void push(int bytes);
 };
 
 
@@ -87,6 +89,12 @@ struct Reg {
     AddressDescriptor *addr = nullptr;
 
     string getName();
+
+    void setDirty();
+
+    void removeDirty();
+
+    bool isDirty();
 };
 
 #endif //SPL_MIPS_H

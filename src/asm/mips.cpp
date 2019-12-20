@@ -22,6 +22,10 @@ MIPS_Instruction *Mips::addInstruction(MIPS_Instruction *instruction) {
     return instruction;
 }
 
+void Mips::push(int bytes) {
+    this->mips.push_back(new MIPS_Instruction(MIPS_ADDI, "$sp", "$sp", to_string(-bytes)));
+}
+
 string MIPS_Instruction::to_string() {
     switch (this->op) {
 
@@ -107,4 +111,16 @@ MIPS_Instruction::MIPS_Instruction(
 
 string Reg::getName() {
     return prefix + to_string(id);
+}
+
+void Reg::setDirty() {
+    this->dirty = true;
+}
+
+void Reg::removeDirty() {
+    this->dirty = false;
+}
+
+bool Reg::isDirty() {
+    return dirty;
 }
