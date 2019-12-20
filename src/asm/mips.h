@@ -70,6 +70,8 @@ public:
 class Mips {
 
     list<MIPS_Instruction *> mips;
+public:
+    list<MIPS_Instruction *> &getMips();
 
 public:
     MIPS_Instruction *addInstruction(MIPS_Instruction *instruction);
@@ -77,6 +79,7 @@ public:
     void write(std::ostream &os);
 
     void push(int bytes);
+
     void pop(int bytes);
 };
 
@@ -101,6 +104,8 @@ struct Reg {
     void removeDirty();
 
     bool isDirty();
+
+    void reset();
 };
 
 #endif //SPL_MIPS_H

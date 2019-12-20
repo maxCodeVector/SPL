@@ -7,57 +7,7 @@
 
 #include "../ir/irnode.h"
 #include "mips.h"
-
-struct AddressDescriptor {
-    /** the reg that store this address's value now
-     * may be null because they are in memory not in register currently
-     */
-    Reg *reg;
-    /** the offset relative by current stack pointer ($fp), noticed that it is different
-     * from $sp address
-     * if it only appeared in register, then offset is negative
-     */
-    int offset;
-    /**
-     * default is false, true means the address is in the opposite of increased direction of $fp
-     */
-    bool forward = false;
-private:
-    string name;
-    list<int> next_used;
-public:
-    bool isAlive();
-
-    void setNextUsed(int line);
-
-    void use();
-
-    int getNextUsed();
-
-    AddressDescriptor(const string &name, Reg *reg, int offset);
-
-    void loadToReg(Reg *pReg, Mips *pMips);
-};
-
-class RegisterAllocator {
-    static const int reg_number = 10;
-    Reg temp_regs[reg_number];
-    Reg static_regs[reg_number];
-    Reg arg_regs[4];
-    int fp_offset;
-
-    int getSpace();
-
-    Reg *getRegByLru();
-
-public:
-    RegisterAllocator();
-
-    Reg *localAllocate(Mips *mips);
-
-    Reg *allocateArgReg(Mips *mips);
-
-};
+#include "memory.h"
 
 
 class Block {
@@ -103,12 +53,13 @@ private:
 
     void generateParameter(Mips *pMips, IRInst *pInst);
 
-    void savaRegisterStatus(Mips *pMips) const;
-
     Reg *getRegOfSymbol(const string &varName);
 
-    void bindingArgumentRegister(Reg *arg, string& argName, int offset) const;
+    void bindingArgumentRegister(Reg *arg, string &argName, int offset) const;
 
+    void restoreRegisterStatus(Mips *pMips);
+
+    void saveRegisterStatus(Mips *pMips) const;
 
 public:
 

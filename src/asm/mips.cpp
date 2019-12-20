@@ -30,6 +30,10 @@ void Mips::pop(int bytes) {
     this->mips.push_back(new MIPS_Instruction(MIPS_ADDI, "$sp", "$sp", to_string(bytes)));
 }
 
+list<MIPS_Instruction *> &Mips::getMips() {
+    return this->mips;
+}
+
 string MIPS_Instruction::toString() {
     switch (this->op) {
 
@@ -127,4 +131,9 @@ void Reg::removeDirty() {
 
 bool Reg::isDirty() {
     return dirty;
+}
+
+void Reg::reset() {
+    dirty = false;
+    addr = nullptr;
 }

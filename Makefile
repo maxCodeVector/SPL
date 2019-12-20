@@ -77,8 +77,14 @@ check:
 
 run:
 	@$(foreach var, $(TEST_SOURCE),\
+		spim -file $(patsubst %.spl,%.s,$(var)); \
+		echo $(patsubst %.spl,%.s,$(var));\
+		echo "";\
+	)
+	@$(foreach var, $(TEST_SOURCE),\
 		irsim $(patsubst %.spl,%.ir,$(var)) -i 5,15,6,19,3,7; \
 	)
+
 
 
 
