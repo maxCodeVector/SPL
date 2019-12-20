@@ -54,12 +54,9 @@ class Block {
 
     RegisterAllocator *allocator;
     Mips *mips = nullptr;
-
-public:
+    map<string, AddressDescriptor *> &symbolTable;
 
 private:
-
-    map<string, AddressDescriptor *> symbolTable;
     list<IRInst *> arguments_of_next_call;
     list<IRInst *> parameters_of_function;
 
@@ -106,7 +103,7 @@ public:
     list<IRInst *>::iterator end;
     int numOfInst = 0;
 
-    explicit Block(RegisterAllocator *allocator);
+    explicit Block(RegisterAllocator *allocator, map<string, AddressDescriptor *> &symbolTable);
 
     void setMips(Mips *mips);
 
@@ -123,6 +120,7 @@ class CodeGenerator {
     Mips *mips = nullptr;
     RegisterAllocator allocator;
     list<Block *> irBlocks;
+    map<string, AddressDescriptor *> currSymbolTable;
 
     void findBlocks(list<IRInst *> &irList);
 

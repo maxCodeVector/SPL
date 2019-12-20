@@ -14,14 +14,14 @@ CodeGenerator::CodeGenerator(IR *ir) {
 
 void CodeGenerator::findBlocks(list<IRInst *> &irList) {
     auto itor = irList.begin();
-    Block *block = new Block(&allocator);
+    Block *block = new Block(&allocator, currSymbolTable);
     block->start = itor;
     while (itor != irList.end()) {
         IRInst *inst = *itor;
         if (inst->irOperator == IR_LABEL) {
             block->end = itor;
             this->irBlocks.push_back(block);
-            block = new Block(&allocator);;
+            block = new Block(&allocator, currSymbolTable);
             block->start = itor;
         } else if (itor != irList.begin()) {
             itor--;
@@ -30,7 +30,7 @@ void CodeGenerator::findBlocks(list<IRInst *> &irList) {
             if (isSimilarGoto(pre->irOperator)) {
                 block->end = itor;
                 this->irBlocks.push_back(block);
-                block = new Block(&allocator);;
+                block = new Block(&allocator, currSymbolTable);
                 block->start = itor;
             }
         }
@@ -397,6 +397,11 @@ void addSymbolUsed(const string &var, int lineNo, map<string, AddressDescriptor 
 void Block::analysis() {
     auto itor = this->end;
     int reverse_line = this->numOfInst;
+
+    if ((*this->start)->irOperator == IR_FUNCTION) {
+        // I do not know how to release new memory in map
+        symbolTable.clear();
+    }
     while (itor != this->start) {
         itor--;
         reverse_line--;
@@ -447,7 +452,8 @@ void Block::setMips(Mips *pmips) {
     Block::mips = pmips;
 }
 
-Block::Block(RegisterAllocator *allocator) {
+Block::Block(RegisterAllocator *allocator,
+             map<string, AddressDescriptor *> &symbolTable) : symbolTable(symbolTable) {
     this->allocator = allocator;
 }
 
