@@ -512,6 +512,8 @@ inline void Block::saveRegisterStatus(Mips *pMips) const {
 inline void Block::restoreRegisterStatus(Mips *pMips) {
     for (auto &item: this->symbolTable) {
         AddressDescriptor *addr = item.second;
+        if (!addr->reg)
+            continue;
         addr->loadToReg(pMips);
     }
 }

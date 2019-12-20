@@ -75,12 +75,14 @@ check:
 	rm $(TEST_DIR)/diffc/a.out
 
 
-run:
+asm_run:
 	@$(foreach var, $(TEST_SOURCE),\
 		spim -file $(patsubst %.spl,%.s,$(var)); \
 		echo $(patsubst %.spl,%.s,$(var));\
 		echo "";\
 	)
+
+ir_run:
 	@$(foreach var, $(TEST_SOURCE),\
 		irsim $(patsubst %.spl,%.ir,$(var)) -i 5,15,6,19,3,7; \
 	)
@@ -99,4 +101,4 @@ wc:
 clean:
 	@rm -rf bin/
 	@-cd src/parse && rm -f lex.yy.* syntax.tab* *.so syntax.output *.o
-	@-rm $(TEST_DIR)/*.res  $(TEST_DIR)/*.ir
+	@-rm $(TEST_DIR)/*.res  $(TEST_DIR)/*.ir $(TEST_DIR)/*.s
