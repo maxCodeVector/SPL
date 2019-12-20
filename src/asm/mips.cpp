@@ -11,9 +11,9 @@ void Mips::write(std::ostream &os) {
     os << ".globl main\n.text" << endl;
     for (MIPS_Instruction *instruction: this->mips) {
         if (instruction->op == MIPS_LABEL)
-            os << instruction->to_string() << endl;
+            os << instruction->toString() << endl;
         else
-            os << "\t" << instruction->to_string() << endl;
+            os << "\t" << instruction->toString() << endl;
     }
 }
 
@@ -26,7 +26,7 @@ void Mips::push(int bytes) {
     this->mips.push_back(new MIPS_Instruction(MIPS_ADDI, "$sp", "$sp", to_string(-bytes)));
 }
 
-string MIPS_Instruction::to_string() {
+string MIPS_Instruction::toString() {
     switch (this->op) {
 
         case MIPS_LABEL:

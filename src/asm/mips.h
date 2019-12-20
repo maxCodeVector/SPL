@@ -40,8 +40,13 @@ enum MipsOperator {
     MIPS_SYSCALL
 };
 
+class Instruction {
 
-class MIPS_Instruction {
+    virtual string toString() = 0;
+};
+
+
+class MIPS_Instruction : Instruction {
     string dest;
     string src1;
     string src2;
@@ -49,7 +54,7 @@ class MIPS_Instruction {
 public:
     MipsOperator op;
 
-    string to_string();
+    string toString() override;
 
     explicit MIPS_Instruction(MipsOperator op);
 

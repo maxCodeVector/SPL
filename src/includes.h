@@ -4,27 +4,32 @@
 
 #ifndef SPL_INCLUDES_H
 #define SPL_INCLUDES_H
+
 #include <list>
 #include <string>
 #include "parse/deliver.h"
+
 using namespace std;
 
 class Location {
 private:
     int lineNo;
+
     Location(int line, int col) {
         this->lineNo = line;
     }
+
 public:
 
     string toString() {
         return to_string(lineNo);
     }
+
     friend class BaseNode;
 };
 
-enum ErrorType{
-    UNDEFINED_VAR=1,
+enum ErrorType {
+    UNDEFINED_VAR = 1,
     UNDEFINED_FUN,
     REDEFINED_VAR,
     REDEFINED_FUN,
@@ -44,14 +49,14 @@ enum ErrorType{
     OTHER_ERROR
 };
 
-enum ErrorCode{
-    NULL_LOCATION=21,
+enum ErrorCode {
+    NULL_LOCATION = 21,
     ARRAY_TYPE_ARRAY
 };
 
 
-struct Error{
-    Location* loc;
+struct Error {
+    Location *loc;
     ErrorType errorType;
     string message;
 };
@@ -63,7 +68,7 @@ class ConstantEntry {
 };
 
 class ConstantTable {
-    list<ConstantEntry> entries;
+    list <ConstantEntry> entries;
 };
 
 enum NodeType {
@@ -75,7 +80,7 @@ enum NodeType {
     BUILD_NODE
 };
 
-enum DataType{
+enum DataType {
     INFER_TYPE, // means it is derivative elementType, need to be inferred from other expressions
     INT_TYPE,
     FLOAT_TYPE,
@@ -83,12 +88,12 @@ enum DataType{
     STRUCT_TYPE,
     REF_TYPE, //  ID expression has this elementType or other expression that can inferred to this elementType,
     // if inferred, elementType is REF_TYPE, before inferred, it is INFER_TYPE.
-    BOOL_TYPE,
+            BOOL_TYPE,
     ARRAY_TYPE
 };
 
 
-enum Operator{
+enum Operator {
     UNKNOWN_OP,
     ADD_OP,
     SUB_OP,
@@ -111,20 +116,20 @@ enum Operator{
     ARRAY_INDEX_OP
 };
 
-template <typename T>
-void free_all(list<T*>& element_list){
-    while (!element_list.empty()){
-        T* element = element_list.back();
+template<typename T>
+void free_all(list<T *> &element_list) {
+    while (!element_list.empty()) {
+        T *element = element_list.back();
         element_list.pop_back();
-        delete(element);
+        delete (element);
     }
 }
 
 
-template <typename T>
-void copy_all(list<T*>& element_list, list<T*>& dest){
-    while (!element_list.empty()){
-        T* element = element_list.front();
+template<typename T>
+void copy_all(list<T *> &element_list, list<T *> &dest) {
+    while (!element_list.empty()) {
+        T *element = element_list.front();
         element_list.pop_front();
         dest.push_back(element);
     }
