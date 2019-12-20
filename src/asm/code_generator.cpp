@@ -132,14 +132,6 @@ void Block::generateArgument(Mips *pMips, IRInst *pInst) {
 }
 
 void Block::generateCaller(Mips *pMips, IRInst *pInst) {
-    int numOfArgs = this->arguments_of_next_call.size();
-    // first 4 bytes is used to store number of parameters,
-    // todo, can be removed since we can known number of parameters in callee
-    pMips->push(4);
-    Reg *numReg = allocator->localAllocate(mips);
-    pMips->addInstruction(new MIPS_Instruction(MIPS_LI, numReg->getName(), to_string(numOfArgs)));
-    pMips->addInstruction(new MIPS_Instruction(MIPS_SW, numReg->getName(), "$sp", "0"));
-
     /**
      * other space used to store control link, access link, in particular
      * 1. current top_sp ($fp)
@@ -147,17 +139,19 @@ void Block::generateCaller(Mips *pMips, IRInst *pInst) {
      * we do not need to leave space to store return value,
      * because we only return integer, so put it in $v0 directly
      */
+    int numOfArgs = this->arguments_of_next_call.size();
     pMips->push(4 * numOfArgs + 8);
-    pMips->addInstruction(new MIPS_Instruction(MIPS_SW, "$fp", "$sp", to_string(0)));
-    pMips->addInstruction(new MIPS_Instruction(MIPS_SW, "$ra", "$sp", to_string(-4)));
+    pMips->addInstruction(new MIPS_Instruction(MIPS_SW, "$fp", "$sp", "0"));
+    pMips->addInstruction(new MIPS_Instruction(MIPS_SW, "$ra", "$sp", "4"));
     int arg_count = 2;
     for (IRInst *inst: arguments_of_next_call) {
+        // todo use $a0, $a1, $a2, $a3
         Reg *arg = getRegOfSymbol(inst->target);
-        pMips->addInstruction(new MIPS_Instruction(MIPS_SW, arg->getName(), "$sp", to_string(arg_count * -4)));
+        pMips->addInstruction(new MIPS_Instruction(MIPS_SW, arg->getName(), "$sp", to_string(arg_count * 4)));
         arg_count++;
     }
     /** update top_sp ($fp) */
-    pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, "$fp", "$sp"));
+//    pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, "$fp", "$sp"));
 //    pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, "$fp", "$sp"));
     this->arguments_of_next_call.clear();
 
@@ -165,25 +159,36 @@ void Block::generateCaller(Mips *pMips, IRInst *pInst) {
     pMips->addInstruction(new MIPS_Instruction(MIPS_JAL, pInst->arg1));
     Reg *ret = getRegOfSymbol(pInst->target);
     pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, ret->getName(), "$v0"));
+    pMips->addInstruction(new MIPS_Instruction(MIPS_LW, "$fp", "$sp", "0"));
+    pMips->addInstruction(new MIPS_Instruction(MIPS_LW, "$ra", "$sp", "4"));
+    pMips->pop(4 * numOfArgs + 8);
 }
 
 
 void Block::generateParameter(Mips *pMips, IRInst *pInst) {
-    this->parameters_of_function.push_back(pInst);
 }
 
 void Block::generateCallee(Mips *mips, const IRInst *inst) const {
     auto *mipsInstruction = new MIPS_Instruction{MIPS_LABEL, inst->target};
     mips->addInstruction(mipsInstruction);
     mips->addInstruction(new MIPS_Instruction(MIPS_MOVE, "$fp", "$sp"));
+
+    int numberOfPara = parameters_of_function.size();
+    int num_arg_offset = 2 + numberOfPara;
+    for (IRInst *para: parameters_of_function) {
+        num_arg_offset--;
+        Reg *arg = allocator->allocateArgReg(mips);
+        // sometimes arg has binding the address
+        if (!arg->addr) {
+            bindingArgumentRegister(arg, para->target, num_arg_offset * 4);
+        }
+    }
+
     /**
      * saves the register values and other status info, not including $ra,
      * $ra's value should be stored in caller, and loaded in return
      */
     savaRegisterStatus(mips);
-
-
-    int numberOfPara = parameters_of_function.size();
 
 
 }
@@ -362,8 +367,7 @@ Reg *Block::getRegOfSymbol(const string &varName) {
             Reg *reg = allocator->localAllocate(mips);
             int offset = addr->offset;
             if (offset > 0) {
-                auto lw = new MIPS_Instruction(MIPS_LW, reg->getName(), "$fp", to_string(-offset));
-                mips->addInstruction(lw);
+                addr->loadToReg(reg, mips);
             }
             addr->reg = reg;
             reg->addr = addr;
@@ -435,6 +439,7 @@ void Block::analysis() {
             case IR_DEC:
                 break;
             case IR_PARAM:
+                this->parameters_of_function.push_front(inst);
                 break;
             case IR_CALL:
                 break;
@@ -457,6 +462,23 @@ Block::Block(RegisterAllocator *allocator,
     this->allocator = allocator;
 }
 
+void Block::bindingArgumentRegister(Reg *arg, string &argName, int offset) const {
+    auto item = this->symbolTable.find(argName);
+    if (item != symbolTable.end()) {
+        AddressDescriptor *addr = item->second;
+        addr->reg = arg;
+        arg->addr = addr;
+        addr->forward = true;
+        addr->offset = offset;
+        addr->loadToReg(arg, mips);
+    } else {
+        auto addr = new AddressDescriptor(argName, arg, offset);
+        this->symbolTable.insert(pair<string, AddressDescriptor *>(argName, addr));
+        addr->forward = true;
+        addr->loadToReg(arg, mips);
+    }
+}
+
 Reg *RegisterAllocator::localAllocate(Mips *mips) {
 
     for (Reg &reg: temp_regs) {
@@ -468,6 +490,7 @@ Reg *RegisterAllocator::localAllocate(Mips *mips) {
     AddressDescriptor *addr = spill->addr;
     if (addr->offset < 0) {
         addr->offset = getSpace();
+        mips->push(4);
     }
     addr->reg = nullptr;
     spill->addr = nullptr;
@@ -503,6 +526,13 @@ RegisterAllocator::RegisterAllocator() {
     for (int i = 0; i < reg_number; i++) {
         temp_regs[i].prefix = "$t";
         temp_regs[i].id = i;
+
+        static_regs[i].prefix = "$s";
+        static_regs[i].id = i;
+    }
+    for (int i = 0; i < 4; i++) {
+        arg_regs[i].prefix = "$a";
+        arg_regs[i].id = i;
     }
     fp_offset = 0;
 }
@@ -510,6 +540,15 @@ RegisterAllocator::RegisterAllocator() {
 int RegisterAllocator::getSpace() {
     fp_offset++;
     return fp_offset * 4;
+}
+
+Reg *RegisterAllocator::allocateArgReg(Mips *mips) {
+    for (Reg &reg: arg_regs) {
+        if (!reg.addr) {
+            return &reg;
+        }
+    }
+    return this->localAllocate(mips);
 }
 
 AddressDescriptor::AddressDescriptor(const string &name, Reg *reg, int offset) {
@@ -539,4 +578,15 @@ void AddressDescriptor::use() {
     // todo why pop empty?
     if (!next_used.empty())
         this->next_used.pop_front();
+}
+
+void AddressDescriptor::loadToReg(Reg *pReg, Mips *pMips) {
+    MIPS_Instruction *lw;
+    if (this->forward) {
+        // used for $a0, $a1..
+        lw = new MIPS_Instruction(MIPS_LW, reg->getName(), "$fp", to_string(offset));
+    } else {
+        lw = new MIPS_Instruction(MIPS_LW, reg->getName(), "$fp", to_string(-offset));
+    }
+    pMips->addInstruction(lw);
 }

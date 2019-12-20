@@ -26,6 +26,10 @@ void Mips::push(int bytes) {
     this->mips.push_back(new MIPS_Instruction(MIPS_ADDI, "$sp", "$sp", to_string(-bytes)));
 }
 
+void Mips::pop(int bytes) {
+    this->mips.push_back(new MIPS_Instruction(MIPS_ADDI, "$sp", "$sp", to_string(bytes)));
+}
+
 string MIPS_Instruction::toString() {
     switch (this->op) {
 

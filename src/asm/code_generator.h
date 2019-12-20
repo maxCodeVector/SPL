@@ -18,6 +18,10 @@ struct AddressDescriptor {
      * if it only appeared in register, then offset is negative
      */
     int offset;
+    /**
+     * default is false, true means the address is in the opposite of increased direction of $fp
+     */
+    bool forward = false;
 private:
     string name;
     list<int> next_used;
@@ -31,11 +35,15 @@ public:
     int getNextUsed();
 
     AddressDescriptor(const string &name, Reg *reg, int offset);
+
+    void loadToReg(Reg *pReg, Mips *pMips);
 };
 
 class RegisterAllocator {
-    static const int reg_number = 3;
+    static const int reg_number = 10;
     Reg temp_regs[reg_number];
+    Reg static_regs[reg_number];
+    Reg arg_regs[4];
     int fp_offset;
 
     int getSpace();
@@ -46,6 +54,8 @@ public:
     RegisterAllocator();
 
     Reg *localAllocate(Mips *mips);
+
+    Reg *allocateArgReg(Mips *mips);
 
 };
 
@@ -96,6 +106,9 @@ private:
     void savaRegisterStatus(Mips *pMips) const;
 
     Reg *getRegOfSymbol(const string &varName);
+
+    void bindingArgumentRegister(Reg *arg, string& argName, int offset) const;
+
 
 public:
 

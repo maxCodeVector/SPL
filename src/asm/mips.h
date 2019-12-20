@@ -77,6 +77,7 @@ public:
     void write(std::ostream &os);
 
     void push(int bytes);
+    void pop(int bytes);
 };
 
 
