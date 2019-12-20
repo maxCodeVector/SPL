@@ -80,7 +80,7 @@ class AddressDescriptor;
 struct Reg {
     string prefix;
     int id;
-    bool dirty;
+    bool dirty = false;
     /**
      * may be null, the corresponding address in memory.
      * some may be null because they do not need to stored in memory

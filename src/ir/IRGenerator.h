@@ -35,6 +35,8 @@ class IRGenerator : public IRVisitor {
     AST *currAst;
     bool optimized;
 
+    //todo, this symbol Table only can deal with unique identifier,
+    // should use a tree structure similar with semantic analysis
     map<string, string> symbolAddrTable;
     TempNameGenerator *varVariable;
     TempNameGenerator *tempVariable;
@@ -62,7 +64,7 @@ class IRGenerator : public IRVisitor {
     void removeGotoInstFromJumpMap(IRInst *gotoInst);
 
 public:
-    IRGenerator(bool optimized, AST * ast);
+    IRGenerator(bool optimized, AST *ast);
 
     IR *generate();
 
