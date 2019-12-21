@@ -170,7 +170,7 @@ void Block::generateCaller(Mips *pMips, IRInst *pInst) {
             mips->addInstruction(new MIPS_Instruction(MIPS_LI, arg->getName(), to_string(value)));
         } else {
             arg = getRegOfSymbol(inst->target);
-            arg->addr->use();
+            increaseUse(inst->target, this->symbolTable);
         }
         pMips->addInstruction(new MIPS_Instruction(MIPS_SW, arg->getName(), "$sp", to_string(arg_count * 4)));
         arg_count++;
@@ -185,6 +185,7 @@ void Block::generateCaller(Mips *pMips, IRInst *pInst) {
     /** restore register value from memory*/
     restoreRegisterStatus(mips);
     Reg *ret = getRegOfSymbol(pInst->target);
+    ret->setDirty();
     pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, ret->getName(), "$v0"));
 
     pMips->pop(4 * numOfArgs + 8);
@@ -234,7 +235,7 @@ void Block::generateAssign(Mips *mips, const IRInst *inst) {
         mips->addInstruction(mipsInst);
     } else {
         Reg *src = getRegOfSymbol(inst->arg1);
-        src->addr->use();
+        increaseUse(inst->arg1, symbolTable);
         auto *mipsInst = new MIPS_Instruction(MIPS_MOVE, dest->getName(), src->getName());
         mips->addInstruction(mipsInst);
         mipsInst->setComments(inst->toString());
@@ -246,11 +247,14 @@ void Block::generateAssign(Mips *mips, const IRInst *inst) {
 
 void Block::generateArithmetic(Mips *pMips, IRInst *pInst) {
     int value;
+    bool arg1_constant = false;
     Reg *src1, *src2;
     if (isNumber(pInst->arg1, &value)) {
         src1 = allocator->localAllocate(mips);
         auto inst = new MIPS_Instruction(MIPS_LI, src1->getName(), to_string(value));
         pMips->addInstruction(inst);
+        src1->addr = allocator->CONSTANT;
+        arg1_constant = true;
     } else
         src1 = getRegOfSymbol(pInst->arg1);
 
@@ -261,6 +265,9 @@ void Block::generateArithmetic(Mips *pMips, IRInst *pInst) {
     } else
         src2 = getRegOfSymbol(pInst->arg2);
 
+    if (arg1_constant) {
+        src1->addr = nullptr;
+    }
     Reg *dest = getRegOfSymbol(pInst->target);
     switch (pInst->irOperator) {
         case IR_ADD: {
@@ -309,7 +316,6 @@ void Block::generateRead(Mips *pMips, IRInst *pInst) {
     pMips->addInstruction(new MIPS_Instruction(MIPS_SYSCALL));
 
     Reg *num = getRegOfSymbol(pInst->target);
-    increaseUse(pInst->target, symbolTable);
     pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "5"));
     pMips->addInstruction(new MIPS_Instruction(MIPS_SYSCALL));
 
@@ -318,7 +324,6 @@ void Block::generateRead(Mips *pMips, IRInst *pInst) {
     pMips->addInstruction(getRetV);
     num->setDirty();
 
-    restoreRegisterArg0(mips);
 }
 
 void Block::generateWrite(Mips *pMips, IRInst *pInst) {
@@ -341,18 +346,19 @@ void Block::generateWrite(Mips *pMips, IRInst *pInst) {
     syscall->setComments(pInst->toString());
     pMips->addInstruction(syscall);
 
-    restoreRegisterArg0(mips);
 }
 
 
 void Block::generateBranch(Mips *pMips, IRInst *pInst) {
-
+    bool arg1_constant = false;
     int value;
     Reg *src1, *src2;
     if (isNumber(pInst->arg1, &value)) {
         src1 = allocator->localAllocate(mips);
         auto inst = new MIPS_Instruction(MIPS_LI, src1->getName(), to_string(value));
         pMips->addInstruction(inst);
+        src1->addr = allocator->CONSTANT;
+        arg1_constant = true;
     } else
         src1 = getRegOfSymbol(pInst->arg1);
 
@@ -363,6 +369,9 @@ void Block::generateBranch(Mips *pMips, IRInst *pInst) {
     } else
         src2 = getRegOfSymbol(pInst->arg2);
 
+    if (arg1_constant) {
+        src1->addr = nullptr;
+    }
     increaseUse(pInst->arg1, symbolTable);
     increaseUse(pInst->arg2, symbolTable);
 
@@ -480,7 +489,6 @@ void Block::analysis() {
             case IR_CALL:
                 break;
             case IR_ARG:
-            case IR_READ:
             case IR_WRITE:
                 addSymbolUsed(inst->target, reverse_line, symbolTable);
                 break;
@@ -496,7 +504,7 @@ void Block::resetSymbolTable() const {
             addr->reg->reset();
             addr->reg = nullptr;
         }
-        if (!addr->next_used.empty()) {
+        if (addr->hasNextUse()) {
             cerr << "why lie" << endl;
             exit(22);
         }
@@ -534,11 +542,14 @@ inline void Block::saveRegisterStatus(Mips *pMips) const {
         AddressDescriptor *addr = item.second;
         if (!addr->reg || addr->isUseless())
             continue;
-        if (addr->offset < 0) {
-            addr->offset = allocator->getSpace();
-            mips->push(4);
+        if (addr->reg->isDirty()) {
+            if (addr->offset < 0) {
+                addr->offset = allocator->getSpace();
+                mips->push(4);
+            }
+            addr->saveToMemory(pMips);
+            addr->reg->removeDirty();
         }
-        addr->saveToMemory(pMips);
     }
 }
 
@@ -557,17 +568,8 @@ void Block::saveRegisterArg0(Mips *pMips) {
         AddressDescriptor *addr = item.second;
         if (addr->reg && addr->reg->getName() == "$a0") {
             addr->saveToMemory(pMips);
+            addr->reg->reset();
             addr->reg = nullptr;
-        }
-    }
-}
-
-// should be deleted
-void Block::restoreRegisterArg0(Mips *pMips) {
-    for (auto &item: this->symbolTable) {
-        AddressDescriptor *addr = item.second;
-        if (addr->reg && addr->reg->getName() == "$a0") {
-            addr->loadToReg(pMips);
         }
     }
 }

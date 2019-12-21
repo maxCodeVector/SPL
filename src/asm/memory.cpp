@@ -62,6 +62,10 @@ bool AddressDescriptor::isUseless() {
     return this->name[0] == 't' && this->next_used.empty();
 }
 
+bool AddressDescriptor::hasNextUse() {
+    return !this->next_used.empty();
+}
+
 Reg *RegisterAllocator::localAllocate(Mips *mips) {
 
     for (Reg &reg: temp_regs) {
@@ -90,6 +94,9 @@ Reg *RegisterAllocator::getRegByLru() {
     Reg *lru = nullptr;
     for (auto &reg: temp_regs) {
         AddressDescriptor *addr = reg.addr;
+        if (addr == this->CONSTANT) {
+            continue;
+        }
         if (addr) {
             if (!addr->isAlive()) {
                 return &reg;
@@ -105,6 +112,7 @@ Reg *RegisterAllocator::getRegByLru() {
 }
 
 RegisterAllocator::RegisterAllocator() {
+    this->CONSTANT = new AddressDescriptor("constant", nullptr, -1);
     for (int i = 0; i < reg_number; i++) {
         temp_regs[i].prefix = "$t";
         temp_regs[i].id = i;

@@ -77,8 +77,6 @@ public:
 
     void saveRegisterArg0(Mips *pMips);
 
-    void restoreRegisterArg0(Mips *pMips);
-
     void resetSymbolTable() const;
 
 };

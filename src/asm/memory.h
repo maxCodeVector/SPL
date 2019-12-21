@@ -6,6 +6,7 @@
 #define SPL_MEMORY_H
 
 #include "mips.h"
+#include <map>
 
 struct AddressDescriptor {
     /** the reg that store this address's value now
@@ -21,16 +22,20 @@ struct AddressDescriptor {
      * default is false, true means the address is in the opposite of increased direction of $fp
      */
     bool forward = false;
-private:
+
     string name;
     list<int> next_used;
-    friend class Block;
+
+    friend void increaseUse(const string &var, map<string, AddressDescriptor *> &symbolTable);
+
+    void use();
+
 public:
     bool isAlive();
 
-    void setNextUsed(int line);
+    bool hasNextUse();
 
-    void use();
+    void setNextUsed(int line);
 
     int getNextUsed();
 
@@ -54,6 +59,9 @@ class RegisterAllocator {
     Reg *getRegByLru();
 
 public:
+
+    AddressDescriptor *CONSTANT;
+
     RegisterAllocator();
 
     Reg *localAllocate(Mips *mips);
