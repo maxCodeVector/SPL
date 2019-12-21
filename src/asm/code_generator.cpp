@@ -292,13 +292,11 @@ void Block::generateArithmetic(Mips *pMips, IRInst *pInst) {
 }
 
 void Block::generateRead(Mips *pMips, IRInst *pInst) {
-    saveRegisterStatus(mips);
+    saveRegisterArg0(mips);
 
     pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "4"));
     pMips->addInstruction(new MIPS_Instruction(MIPS_LA, "$a0", INPUT_HINT));
     pMips->addInstruction(new MIPS_Instruction(MIPS_SYSCALL));
-
-    restoreRegisterStatus(mips);
 
     Reg *num = getRegOfSymbol(pInst->target);
     increaseUse(pInst->target, symbolTable);
@@ -307,10 +305,11 @@ void Block::generateRead(Mips *pMips, IRInst *pInst) {
     pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, num->getName(), "$v0"));
     num->setDirty();
 
+    restoreRegisterArg0(mips);
 }
 
 void Block::generateWrite(Mips *pMips, IRInst *pInst) {
-    saveRegisterStatus(mips);
+    saveRegisterArg0(mips);
 
     pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "1"));
     int value;
@@ -326,8 +325,7 @@ void Block::generateWrite(Mips *pMips, IRInst *pInst) {
     pMips->addInstruction(new MIPS_Instruction(MIPS_LA, "$a0", NEWLINE));
     pMips->addInstruction(new MIPS_Instruction(MIPS_SYSCALL));
 
-    restoreRegisterStatus(mips);
-
+    restoreRegisterArg0(mips);
 }
 
 
@@ -503,7 +501,7 @@ void Block::bindingArgumentRegister(Reg *arg, string &argName, int offset) const
 inline void Block::saveRegisterStatus(Mips *pMips) const {
     for (auto &item: this->symbolTable) {
         AddressDescriptor *addr = item.second;
-        if (!addr->reg)
+        if (!addr->reg || addr->isUseless())
             continue;
         if (addr->offset < 0) {
             addr->offset = allocator->getSpace();
@@ -517,9 +515,27 @@ inline void Block::saveRegisterStatus(Mips *pMips) const {
 inline void Block::restoreRegisterStatus(Mips *pMips) {
     for (auto &item: this->symbolTable) {
         AddressDescriptor *addr = item.second;
-        if (!addr->reg)
+        if (!addr->reg || addr->isUseless())
             continue;
         addr->loadToReg(pMips);
+    }
+}
+
+void Block::saveRegisterArg0(Mips *pMips) {
+    for (auto &item: this->symbolTable) {
+        AddressDescriptor *addr = item.second;
+        if (addr->reg && addr->reg->getName() == "$a0") {
+            addr->loadToReg(pMips);
+        }
+    }
+}
+
+void Block::restoreRegisterArg0(Mips *pMips) {
+    for (auto &item: this->symbolTable) {
+        AddressDescriptor *addr = item.second;
+        if (addr->reg && addr->reg->getName() == "$a0") {
+            addr->loadToReg(pMips);
+        }
     }
 }
 

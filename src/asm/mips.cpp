@@ -3,18 +3,23 @@
 //
 
 #include "mips.h"
+#include "iostream"
+
 
 void Mips::write(std::ostream &os) {
+    int numOfInsts = 5;
     os << ".data" << endl;
     os << NEWLINE << R"(: .asciiz "\n"  )" << endl;
     os << INPUT_HINT << R"(: .asciiz "Enter an integer:")" << endl;
     os << ".globl main\n.text" << endl;
     for (MIPS_Instruction *instruction: this->mips) {
+        numOfInsts++;
         if (instruction->op == MIPS_LABEL)
             os << instruction->toString() << endl;
         else
             os << "\t" << instruction->toString() << endl;
     }
+    cerr << "mips inst number: " << numOfInsts << endl;
 }
 
 MIPS_Instruction *Mips::addInstruction(MIPS_Instruction *instruction) {

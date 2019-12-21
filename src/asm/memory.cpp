@@ -61,6 +61,10 @@ void AddressDescriptor::saveToMemory(Mips *pMips) {
     pMips->addInstruction(lw);
 }
 
+bool AddressDescriptor::isUseless() {
+    return this->name[0] == 't' && this->next_used.empty();
+}
+
 Reg *RegisterAllocator::localAllocate(Mips *mips) {
 
     for (Reg &reg: temp_regs) {
@@ -136,7 +140,7 @@ void RegisterAllocator::reset() {
         temp_regs[i].reset();
         static_regs[i].reset();
     }
-    for (auto & arg_reg : arg_regs) {
+    for (auto &arg_reg : arg_regs) {
         arg_reg.reset();
     }
     fp_offset = 0;

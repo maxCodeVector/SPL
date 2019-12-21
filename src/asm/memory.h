@@ -38,6 +38,8 @@ public:
     void loadToReg(Mips *pMips);
 
     void saveToMemory(Mips *pMips);
+
+    bool isUseless();
 };
 
 class RegisterAllocator {
