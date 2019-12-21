@@ -49,7 +49,7 @@ public:
 };
 
 class RegisterAllocator {
-    static const int reg_number = 3;
+    static const int reg_number = 10;
     Reg temp_regs[reg_number];
     Reg static_regs[reg_number];
     Reg arg_regs[4];

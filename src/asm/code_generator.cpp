@@ -221,6 +221,7 @@ void Block::generateReturn(Mips *pMips, IRInst *pInst) {
         auto move = new MIPS_Instruction(MIPS_MOVE, "$v0", src->getName());
         pMips->addInstruction(move);
     }
+    mips->addInstruction(new MIPS_Instruction(MIPS_MOVE, "$sp", "$fp"));
     auto jr = new MIPS_Instruction(MIPS_JR, "$ra");
     pMips->addInstruction(jr);
 }
@@ -247,14 +248,12 @@ void Block::generateAssign(Mips *mips, const IRInst *inst) {
 
 void Block::generateArithmetic(Mips *pMips, IRInst *pInst) {
     int value;
-    bool arg1_constant = false;
     Reg *src1, *src2;
     if (isNumber(pInst->arg1, &value)) {
         src1 = allocator->localAllocate(mips);
         auto inst = new MIPS_Instruction(MIPS_LI, src1->getName(), to_string(value));
         pMips->addInstruction(inst);
         src1->addr = allocator->CONSTANT;
-        arg1_constant = true;
     } else
         src1 = getRegOfSymbol(pInst->arg1);
 
@@ -262,12 +261,10 @@ void Block::generateArithmetic(Mips *pMips, IRInst *pInst) {
         src2 = allocator->localAllocate(mips);
         auto inst = new MIPS_Instruction(MIPS_LI, src2->getName(), to_string(value));
         pMips->addInstruction(inst);
+        src2->addr = allocator->CONSTANT;
     } else
         src2 = getRegOfSymbol(pInst->arg2);
 
-    if (arg1_constant) {
-        src1->addr = nullptr;
-    }
     Reg *dest = getRegOfSymbol(pInst->target);
     switch (pInst->irOperator) {
         case IR_ADD: {
@@ -305,6 +302,12 @@ void Block::generateArithmetic(Mips *pMips, IRInst *pInst) {
     }
     increaseUse(pInst->arg1, symbolTable);
     increaseUse(pInst->arg2, symbolTable);
+    if (src1->addr == allocator->CONSTANT) {
+        src1->addr = nullptr;
+    }
+    if (src2->addr == allocator->CONSTANT) {
+        src2->addr = nullptr;
+    }
     dest->setDirty();
 }
 
@@ -350,7 +353,6 @@ void Block::generateWrite(Mips *pMips, IRInst *pInst) {
 
 
 void Block::generateBranch(Mips *pMips, IRInst *pInst) {
-    bool arg1_constant = false;
     int value;
     Reg *src1, *src2;
     if (isNumber(pInst->arg1, &value)) {
@@ -358,7 +360,6 @@ void Block::generateBranch(Mips *pMips, IRInst *pInst) {
         auto inst = new MIPS_Instruction(MIPS_LI, src1->getName(), to_string(value));
         pMips->addInstruction(inst);
         src1->addr = allocator->CONSTANT;
-        arg1_constant = true;
     } else
         src1 = getRegOfSymbol(pInst->arg1);
 
@@ -366,12 +367,10 @@ void Block::generateBranch(Mips *pMips, IRInst *pInst) {
         src2 = allocator->localAllocate(mips);
         auto inst = new MIPS_Instruction(MIPS_LI, src2->getName(), to_string(value));
         pMips->addInstruction(inst);
+        src2->addr = allocator->CONSTANT;
     } else
         src2 = getRegOfSymbol(pInst->arg2);
 
-    if (arg1_constant) {
-        src1->addr = nullptr;
-    }
     increaseUse(pInst->arg1, symbolTable);
     increaseUse(pInst->arg2, symbolTable);
 
@@ -401,6 +400,12 @@ void Block::generateBranch(Mips *pMips, IRInst *pInst) {
     auto b = new MIPS_Instruction(branch, pInst->target, src1->getName(), src2->getName());
     pMips->addInstruction(b);
     b->setComments(pInst->toString());
+    if (src1->addr == allocator->CONSTANT) {
+        src1->addr = nullptr;
+    }
+    if (src2->addr == allocator->CONSTANT) {
+        src2->addr = nullptr;
+    }
 
 }
 
