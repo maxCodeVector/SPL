@@ -276,7 +276,12 @@ void Block::generateArithmetic(Mips *pMips, IRInst *pInst) {
             pMips->addInstruction(mul);
         }
             break;
-        case IR_DIV:
+        case IR_DIV: {
+            auto mul = new MIPS_Instruction(MIPS_DIV, "", src1->getName(), src2->getName());
+            auto mflo = new MIPS_Instruction(MIPS_MFLO, dest->getName());
+            pMips->addInstruction(mul);
+            pMips->addInstruction(mflo);
+        }
             break;
         default:
             break;

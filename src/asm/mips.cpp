@@ -54,7 +54,7 @@ string MIPS_Instruction::toString() {
         case MIPS_MUL:
             return "mul " + dest + ", " + src1 + ", " + src2;
         case MIPS_DIV:
-            return "div " + dest + ", " + src1 + ", " + src2;
+            return "div " + src1 + ", " + src2;
         case MIPS_MFLO:
             return "mflo " + dest;
         case MIPS_LW:

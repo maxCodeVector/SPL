@@ -75,14 +75,14 @@ check:
 	rm $(TEST_DIR)/diffc/a.out
 
 
-asm_run:
+asm:
 	@$(foreach var, $(TEST_SOURCE),\
-		spim -file $(patsubst %.spl,%.s,$(var)); \
+		spim -file $(patsubst %.spl,%.s,$(var)) < proj3-test/diffc/input.txt; \
 		echo $(patsubst %.spl,%.s,$(var));\
 		echo "";\
 	)
 
-ir_run:
+ir:
 	@$(foreach var, $(TEST_SOURCE),\
 		irsim $(patsubst %.spl,%.ir,$(var)) -i 5,15,6,19,3,7; \
 	)
