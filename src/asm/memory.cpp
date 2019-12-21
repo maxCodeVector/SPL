@@ -28,7 +28,6 @@ int AddressDescriptor::getNextUsed() {
 }
 
 void AddressDescriptor::use() {
-    // todo why pop empty?
     if (!next_used.empty())
         this->next_used.pop_front();
 }

@@ -168,8 +168,10 @@ void Block::generateCaller(Mips *pMips, IRInst *pInst) {
         if (isNumber(inst->target, &value)) {
             arg = allocator->localAllocate(mips);
             mips->addInstruction(new MIPS_Instruction(MIPS_LI, arg->getName(), to_string(value)));
-        } else
+        } else {
             arg = getRegOfSymbol(inst->target);
+            arg->addr->use();
+        }
         pMips->addInstruction(new MIPS_Instruction(MIPS_SW, arg->getName(), "$sp", to_string(arg_count * 4)));
         arg_count++;
     }
@@ -396,22 +398,21 @@ void Block::generateBranch(Mips *pMips, IRInst *pInst) {
 
 Reg *Block::getRegOfSymbol(const string &varName) {
     auto item = this->symbolTable.find(varName);
-    // var has been in the register or memory
     if (item != symbolTable.end()) {
         auto addr = item->second;
         if (!addr->reg) {
-            // load from memory
             Reg *reg = allocator->localAllocate(mips);
             addr->reg = reg;
             reg->addr = addr;
             int offset = addr->offset;
+            // if it is in memory, load to reg, negative offset means first use
             if (offset > 0) {
                 addr->loadToReg(mips);
             }
         }
         return addr->reg;
     }
-    // first used for this variable
+    // for some variable will not used by follow inst
     Reg *reg = allocator->localAllocate(mips);
     symbolTable.insert(pair<string, AddressDescriptor *>(varName, new AddressDescriptor(varName, reg, -1)));
     return reg;
@@ -495,6 +496,10 @@ void Block::resetSymbolTable() const {
             addr->reg->reset();
             addr->reg = nullptr;
         }
+        if (!addr->next_used.empty()) {
+            cerr << "why lie" << endl;
+            exit(22);
+        }
     }
 }
 
@@ -552,6 +557,7 @@ void Block::saveRegisterArg0(Mips *pMips) {
         AddressDescriptor *addr = item.second;
         if (addr->reg && addr->reg->getName() == "$a0") {
             addr->saveToMemory(pMips);
+            addr->reg = nullptr;
         }
     }
 }

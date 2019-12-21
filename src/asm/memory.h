@@ -24,6 +24,7 @@ struct AddressDescriptor {
 private:
     string name;
     list<int> next_used;
+    friend class Block;
 public:
     bool isAlive();
 
