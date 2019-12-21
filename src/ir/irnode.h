@@ -42,7 +42,7 @@ struct IRInst {
     string arg1;
     string arg2;
 
-    string toString();
+    string toString() const;
 
     IRInst(IROperator irOperator, const string &target, const string &arg1, const string &arg2);
 

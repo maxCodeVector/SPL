@@ -39,7 +39,7 @@ list<MIPS_Instruction *> &Mips::getMips() {
     return this->mips;
 }
 
-string MIPS_Instruction::toString() {
+string MIPS_Instruction::__toString() {
     switch (this->op) {
 
         case MIPS_LABEL:
@@ -120,6 +120,17 @@ MIPS_Instruction::MIPS_Instruction(
 MIPS_Instruction::MIPS_Instruction(
         MipsOperator op) {
     this->op = op;
+}
+
+void MIPS_Instruction::setComments(const string &comments) {
+    this->comments = comments;
+}
+
+string MIPS_Instruction::toString() {
+    if (!comments.empty())
+        return __toString() + "\t# " + comments;
+    else
+        return __toString();
 }
 
 string Reg::getName() {

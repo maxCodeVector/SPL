@@ -51,7 +51,13 @@ class MIPS_Instruction : Instruction {
     string src1;
     string src2;
 
+    string comments;
+
+    string __toString();
+
 public:
+    void setComments(const string &comments);
+
     MipsOperator op;
 
     string toString() override;

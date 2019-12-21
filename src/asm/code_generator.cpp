@@ -56,7 +56,7 @@ void CodeGenerator::findBlocks(list<IRInst *> &irList) {
 
 
 Mips *CodeGenerator::generateMipsCode() {
-    mips = new Mips;
+    Mips *mips = new Mips;
     auto iter = this->irBlocks.begin();
     while (iter != this->irBlocks.end()) {
         Block *block = (*iter);
@@ -70,15 +70,22 @@ Mips *CodeGenerator::generateMipsCode() {
 
 void Block::generateCode() {
     this->analysis();
-    auto itor = start;
+    auto &itor = start;
     const auto &temp = getAllIRcode();
     while (itor != end) {
         generateCode(*itor);
         itor++;
     }
+    if (!isSaved) {
+        saveRegisterStatus(mips);
+    }
 }
 
 void Block::generateCode(IRInst *inst) {
+    if (isSimilarGoto(inst->irOperator)) {
+        saveRegisterStatus(mips);
+        this->isSaved = true;
+    }
     switch (inst->irOperator) {
 
         case IR_LABEL:
@@ -119,10 +126,9 @@ void Block::generateCode(IRInst *inst) {
         case IR_DEC:
             break;
         case IR_PARAM:
-            generateParameter(mips, inst);
             break;
         case IR_ARG:
-            generateArgument(mips, inst);
+            this->arguments_of_next_call.push_back(inst);
             break;
         case IR_CALL:
             generateCaller(mips, inst);
@@ -135,10 +141,6 @@ void Block::generateCode(IRInst *inst) {
             break;
     }
 
-}
-
-void Block::generateArgument(Mips *pMips, IRInst *pInst) {
-    this->arguments_of_next_call.push_back(pInst);
 }
 
 void Block::generateCaller(Mips *pMips, IRInst *pInst) {
@@ -178,7 +180,7 @@ void Block::generateCaller(Mips *pMips, IRInst *pInst) {
     pMips->addInstruction(new MIPS_Instruction(MIPS_LW, "$ra", "$fp", "4"));
     pMips->addInstruction(new MIPS_Instruction(MIPS_LW, "$fp", "$fp", "0"));
 
-    /** restore register value form memory*/
+    /** restore register value from memory*/
     restoreRegisterStatus(mips);
     Reg *ret = getRegOfSymbol(pInst->target);
     pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, ret->getName(), "$v0"));
@@ -186,10 +188,6 @@ void Block::generateCaller(Mips *pMips, IRInst *pInst) {
     pMips->pop(4 * numOfArgs + 8);
 }
 
-
-void Block::generateParameter(Mips *pMips, IRInst *pInst) {
-    // useless
-}
 
 void Block::generateCallee(Mips *mips, const IRInst *inst) const {
     auto *mipsInstruction = new MIPS_Instruction{MIPS_LABEL, inst->target};
@@ -230,12 +228,14 @@ void Block::generateAssign(Mips *mips, const IRInst *inst) {
     int value;
     if (isNumber(inst->arg1, &value)) {
         auto *mipsInst = new MIPS_Instruction(MIPS_LI, dest->getName(), to_string(value));
+        mipsInst->setComments(inst->toString());
         mips->addInstruction(mipsInst);
     } else {
         Reg *src = getRegOfSymbol(inst->arg1);
         src->addr->use();
         auto *mipsInst = new MIPS_Instruction(MIPS_MOVE, dest->getName(), src->getName());
         mips->addInstruction(mipsInst);
+        mipsInst->setComments(inst->toString());
         increaseUse(inst->arg1, symbolTable);
     }
     dest->setDirty();
@@ -263,22 +263,30 @@ void Block::generateArithmetic(Mips *pMips, IRInst *pInst) {
     switch (pInst->irOperator) {
         case IR_ADD: {
             auto add = new MIPS_Instruction(MIPS_ADD, dest->getName(), src1->getName(), src2->getName());
+
+            add->setComments(pInst->toString());
             pMips->addInstruction(add);
         }
             break;
         case IR_SUB: {
             auto sub = new MIPS_Instruction(MIPS_SUB, dest->getName(), src1->getName(), src2->getName());
+
+            sub->setComments(pInst->toString());
             pMips->addInstruction(sub);
         }
             break;
         case IR_MUL: {
             auto mul = new MIPS_Instruction(MIPS_MUL, dest->getName(), src1->getName(), src2->getName());
+
+            mul->setComments(pInst->toString());
             pMips->addInstruction(mul);
         }
             break;
         case IR_DIV: {
             auto mul = new MIPS_Instruction(MIPS_DIV, "", src1->getName(), src2->getName());
             auto mflo = new MIPS_Instruction(MIPS_MFLO, dest->getName());
+
+            mflo->setComments(pInst->toString());
             pMips->addInstruction(mul);
             pMips->addInstruction(mflo);
         }
@@ -302,7 +310,10 @@ void Block::generateRead(Mips *pMips, IRInst *pInst) {
     increaseUse(pInst->target, symbolTable);
     pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "5"));
     pMips->addInstruction(new MIPS_Instruction(MIPS_SYSCALL));
-    pMips->addInstruction(new MIPS_Instruction(MIPS_MOVE, num->getName(), "$v0"));
+
+    auto *getRetV = new MIPS_Instruction(MIPS_MOVE, num->getName(), "$v0");
+    getRetV->setComments(pInst->toString());
+    pMips->addInstruction(getRetV);
     num->setDirty();
 
     restoreRegisterArg0(mips);
@@ -323,7 +334,10 @@ void Block::generateWrite(Mips *pMips, IRInst *pInst) {
     pMips->addInstruction(new MIPS_Instruction(MIPS_SYSCALL));
     pMips->addInstruction(new MIPS_Instruction(MIPS_LI, "$v0", "4"));
     pMips->addInstruction(new MIPS_Instruction(MIPS_LA, "$a0", NEWLINE));
-    pMips->addInstruction(new MIPS_Instruction(MIPS_SYSCALL));
+
+    auto *syscall = new MIPS_Instruction(MIPS_SYSCALL);
+    syscall->setComments(pInst->toString());
+    pMips->addInstruction(syscall);
 
     restoreRegisterArg0(mips);
 }
@@ -373,8 +387,10 @@ void Block::generateBranch(Mips *pMips, IRInst *pInst) {
         default:
             break;
     }
-    pMips->addInstruction(
-            new MIPS_Instruction(branch, pInst->target, src1->getName(), src2->getName()));
+    auto b = new MIPS_Instruction(branch, pInst->target, src1->getName(), src2->getName());
+    pMips->addInstruction(b);
+    b->setComments(pInst->toString());
+
 }
 
 
@@ -419,10 +435,11 @@ void Block::analysis() {
     auto itor = this->end;
     int reverse_line = this->numOfInst;
 
+    resetSymbolTable();
     if ((*this->start)->irOperator == IR_FUNCTION) {
         // I do not know how to release new memory in map
-        symbolTable.clear();
-        allocator->reset();
+        this->symbolTable.clear();
+        this->allocator->reset();
     }
     while (itor != this->start) {
         itor--;
@@ -457,7 +474,6 @@ void Block::analysis() {
             case IR_DEC:
                 break;
             case IR_PARAM:
-                addSymbolUsed(inst->target, reverse_line, symbolTable);
                 this->parameters_of_function.push_front(inst);
                 break;
             case IR_CALL:
@@ -469,6 +485,16 @@ void Block::analysis() {
                 break;
         }
 
+    }
+}
+
+void Block::resetSymbolTable() const {
+    for (const auto &item: symbolTable) {
+        AddressDescriptor *addr = item.second;
+        if (addr->reg) {
+            addr->reg->reset();
+            addr->reg = nullptr;
+        }
     }
 }
 
@@ -525,11 +551,12 @@ void Block::saveRegisterArg0(Mips *pMips) {
     for (auto &item: this->symbolTable) {
         AddressDescriptor *addr = item.second;
         if (addr->reg && addr->reg->getName() == "$a0") {
-            addr->loadToReg(pMips);
+            addr->saveToMemory(pMips);
         }
     }
 }
 
+// should be deleted
 void Block::restoreRegisterArg0(Mips *pMips) {
     for (auto &item: this->symbolTable) {
         AddressDescriptor *addr = item.second;

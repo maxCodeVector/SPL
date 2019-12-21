@@ -2,8 +2,6 @@
 // Created by hya on 12/20/19.
 //
 
-#include "../ir/optimizer.h"
-#include "code_generator.h"
 #include "memory.h"
 
 AddressDescriptor::AddressDescriptor(const string &name, Reg *reg, int offset) {
@@ -74,11 +72,12 @@ Reg *RegisterAllocator::localAllocate(Mips *mips) {
     }
     Reg *spill = getRegByLru();
     AddressDescriptor *addr = spill->addr;
-    if (addr->offset < 0) {
-        addr->offset = getSpace();
-        mips->push(4);
-    }
+
     if (spill->isDirty()) {
+        if (addr->offset < 0) {
+            addr->offset = getSpace();
+            mips->push(4);
+        }
         addr->saveToMemory(mips);
         spill->removeDirty();
     }

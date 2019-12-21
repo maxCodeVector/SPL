@@ -11,6 +11,10 @@
 
 
 class Block {
+    /**
+     * used to flag if current block's register has been saved
+     */
+    bool isSaved;
 
     RegisterAllocator *allocator;
     Mips *mips = nullptr;
@@ -49,10 +53,6 @@ private:
 
     void generateCaller(Mips *pMips, IRInst *pInst);
 
-    void generateArgument(Mips *pMips, IRInst *pInst);
-
-    void generateParameter(Mips *pMips, IRInst *pInst);
-
     Reg *getRegOfSymbol(const string &varName);
 
     void bindingArgumentRegister(Reg *arg, string &argName, int offset) const;
@@ -78,13 +78,15 @@ public:
     void saveRegisterArg0(Mips *pMips);
 
     void restoreRegisterArg0(Mips *pMips);
+
+    void resetSymbolTable() const;
+
 };
 
 
 class CodeGenerator {
 
 //    list<IRInst *> ir_code;
-    Mips *mips = nullptr;
     RegisterAllocator allocator;
     list<Block *> irBlocks;
     map<string, AddressDescriptor *> currSymbolTable;

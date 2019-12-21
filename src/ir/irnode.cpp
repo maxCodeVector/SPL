@@ -72,7 +72,7 @@ IRInst::IRInst(IROperator irOperator, const string &target) {
     this->target = target;
 }
 
-string IRInst::toString() {
+string IRInst::toString() const {
     switch (irOperator) {
         case IR_LABEL:
             return "LABEL " + target + " :";
