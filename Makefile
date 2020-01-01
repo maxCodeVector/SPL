@@ -77,7 +77,7 @@ check:
 
 asm:
 	@$(foreach var, $(TEST_SOURCE),\
-		spim -file $(patsubst %.spl,%.s,$(var)) < proj3-test/diffc/input.txt; \
+		spim -file $(patsubst %.spl,%.s,$(var)) < input.txt; \
 		echo $(patsubst %.spl,%.s,$(var));\
 		echo "";\
 	)
