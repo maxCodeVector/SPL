@@ -19,4 +19,6 @@ using make file to do simple test.
 
 
 ## To be continue
-In the target code generation part, it doesn't implement struct and array. The float and char support is not enough.
+- Could add string constants in the front end part.
+- In the intermediate code generation part, it doesn't implements scope variables. The float and char support is not enought, so string not supported.
+- In the target code generation part, it doesn't implement struct and array.
